@@ -1,0 +1,131 @@
+feature: poc-editor-shell-interactions-and-file-flow
+status: ready
+summary: >
+  Tighten the editor shell and core interactions so the window behaves like a
+  normal desktop app, property editing and file commands work, the viewport
+  workflow matches common editor expectations more closely, the orthographic
+  and perspective axis conventions follow a single explicit coordinate system,
+  and the 3D viewport uses readable brush visuals.
+user_need: >
+  The editor should have normal window chrome and standard desktop shortcuts,
+  the properties panel and open/save flow must actually work, the primitive
+  picker styling must be readable, viewport layout should be easy to maximize
+  and restore, redundant toolbar actions should be removed in favor of more
+  natural editor interactions, and the 3D viewport should render brushes with
+  the same transparent color family used in orthographic views.
+in_scope:
+  - Restore standard window movement and normal maximize/close behavior.
+  - Make the properties panel edit the selected entity values in the scene.
+  - Replace the primitive picker dropdown with explicit primitive creation buttons.
+  - Add standard desktop shortcuts for undo/redo/copy/paste and save/open behavior.
+  - Make open/save functional from the menu, toolbar, and keyboard shortcuts.
+  - Add an easy maximize/restore flow for viewports.
+  - Remove or reduce low-value toolbar actions that duplicate direct editor interaction.
+  - Shift object movement toward direct manipulation rather than requiring a dedicated Move button.
+  - Align orthographic and 3D axis guides to the explicit left-handed Y-up convention: +X right, +Y up, +Z forward.
+  - Make the 3D viewport render brushes with readable translucent color treatment aligned with orthographic visuals.
+out_of_scope:
+  - A full command/gizmo system redesign.
+  - Multi-window docking or detachable viewport panels.
+  - Full material editing or per-surface texture workflows.
+  - Clipboard interoperability with external apps beyond editor-local copy/paste of scene objects.
+functional_requirements:
+  - id: FR-1
+    requirement: >
+      The main window shall expose normal desktop window chrome so the user can
+      move the window and use default minimize, maximize, and close affordances.
+  - id: FR-2
+    requirement: >
+      Editing transform values in the properties panel for the selected brush
+      shall update the scene and remain consistent with selection and undo history.
+  - id: FR-3
+    requirement: >
+      The toolbar shall expose separate primitive creation buttons with
+      recognizable icons for box, cylinder, cone, and wedge rather than a dropdown selector.
+  - id: FR-4
+    requirement: >
+      The editor shall support standard keyboard shortcuts for undo, redo, copy,
+      paste, open, and save using common Ctrl-based bindings.
+  - id: FR-5
+    requirement: >
+      Copy and paste shall duplicate the current selected brush inside the
+      editor, preserving the source brush shape and creating a new selectable instance.
+  - id: FR-6
+    requirement: >
+      Open and save actions shall work from menu, toolbar, and keyboard
+      shortcuts without silently failing.
+  - id: FR-7
+    requirement: >
+      The user shall be able to maximize a single viewport and restore the
+      default 4-viewport layout through an easy editor action.
+  - id: FR-8
+    requirement: >
+      The toolbar shall prioritize useful mode/action buttons for the current
+      interaction model and shall not keep select/move buttons whose behavior is redundant with direct manipulation.
+  - id: FR-9
+    requirement: >
+      Primitive creation buttons shall behave as single-use toggles: activating one enables create-brush mode for that primitive, clicking the same active button again returns the editor to the default select mode, and creating a brush successfully returns the editor to select mode automatically.
+  - id: FR-10
+    requirement: >
+      With a brush selected in an orthographic viewport, dragging with the
+      expected direct-manipulation mouse gesture shall move the brush without requiring a dedicated Move mode button.
+  - id: FR-11
+    requirement: >
+      The orthographic viewports shall follow a consistent world-axis mapping
+      under a left-handed Y-up convention, with Top using X-right/Z-up on screen,
+      Front using X-right/Y-up on screen, and Side using Z-right/Y-up on screen.
+  - id: FR-12
+    requirement: >
+      The 3D viewport shall render brushes with visible translucent color that
+      matches the editor's orthographic color language closely enough for the
+      same brush state/operation to be recognizable.
+  - id: FR-13
+    requirement: >
+      The 3D viewport guide shall visualize the same world-axis definition with
+      red X, green Y, and blue Z axis cues that correspond to the orthographic views.
+acceptance_criteria:
+  - id: AC-1
+    criterion: >
+      The window can be moved normally and shows working standard maximize and close controls.
+  - id: AC-2
+    criterion: >
+      Changing a selected brush transform value in the properties panel updates
+      the selected brush and remains undoable.
+  - id: AC-3
+    criterion: >
+      The toolbar shows separate box, cylinder, cone, and wedge creation buttons with recognizable icons and only the active primitive button appears selected.
+  - id: AC-4
+    criterion: >
+      Ctrl+O, Ctrl+S, Ctrl+Z, Ctrl+Y, Ctrl+C, and Ctrl+V trigger the expected editor actions.
+  - id: AC-5
+    criterion: >
+      Saving a scene and reopening it through the editor works from the active build.
+  - id: AC-6
+    criterion: >
+      A viewport can be maximized and restored without restarting the editor.
+  - id: AC-7
+    criterion: >
+      Clicking an active primitive creation button returns the editor to select mode, and completing one brush creation also returns the editor to select mode automatically.
+  - id: AC-8
+    criterion: >
+      A selected brush can be moved with the direct-manipulation mouse gesture
+      chosen for this loop without first switching to a Move tool.
+  - id: AC-9
+    criterion: >
+      Top, Front, and Side orthographic views all use a stable world-axis definition that matches the left-handed Y-up convention and does not feel mirrored or inverted during brush creation/editing.
+  - id: AC-10
+    criterion: >
+      The perspective viewport shows brushes with visible translucent color rather than uncolored opaque geometry.
+  - id: AC-11
+    criterion: >
+      The perspective viewport guide shows red, green, and blue axis cues that correspond to X, Y, and Z respectively.
+constraints:
+  - Remain within the current WPF/.NET 10 PoC stack.
+  - Keep the loop fast and lightweight; acceptance-test automation and DoD remain skipped per user preference.
+  - Reuse the existing command-based scene mutation flow where practical so undo/redo stays coherent.
+assumptions:
+  - Copy/paste scope for this loop is selected-brush duplication inside the editor rather than system-wide data interchange.
+  - Viewport maximize/restore may be implemented as a toggle action or double-click workflow as long as it is easy and discoverable.
+  - Direct-manipulation movement only needs to cover the current orthographic editing workflow in this iteration.
+  - The coordinate system contract for editor visuals and interaction is left-handed with Y-up, +X right, and +Z forward.
+open_questions: []

@@ -1,0 +1,39 @@
+<UserControl x:Class="MapEditor.App.Views.ViewportPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:MapEditor.App.Views">
+    <Grid Background="#1E1E1E">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="22"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Viewport label bar -->
+        <Border Grid.Row="0"
+                Background="#2D2D30"
+                BorderBrush="#3F3F46"
+                BorderThickness="0,0,0,1"
+                MouseLeftButtonDown="OnHeaderMouseLeftButtonDown">
+            <DockPanel>
+                <Button x:Name="LayoutToggleButton"
+                        DockPanel.Dock="Right"
+                        Width="44"
+                        Margin="0,0,4,0"
+                        Padding="4,0"
+                        FontSize="10"
+                        Click="OnLayoutToggleClick"
+                        Content="Max"
+                        ToolTip="Toggle viewport maximize"/>
+                <TextBlock x:Name="LabelText"
+                           Foreground="#CCCCCC"
+                           FontSize="11"
+                           Padding="8,3"
+                           VerticalAlignment="Center"
+                           Text="{Binding ViewportLabel, RelativeSource={RelativeSource AncestorType=local:ViewportPanel}}"/>
+            </DockPanel>
+        </Border>
+
+        <!-- OpenGL viewport host -->
+        <local:GlViewportHost x:Name="GlHost" Grid.Row="1" />
+    </Grid>
+</UserControl>

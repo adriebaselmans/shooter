@@ -1,0 +1,15 @@
+feature: poc-editor-defect-loop-viewport-and-logging
+decision: approved
+summary: >
+  The defect-loop implementation matches the approved scope: orthographic resize
+  handles can be dragged from normal selection, the 3D wheel path no longer
+  overflows on 64-bit message payloads, and each session writes to a unique log
+  file with global managed exception hooks.
+findings: []
+residual_risks:
+  - Handle-based resizing is still orthographic-only by design for this PoC iteration.
+  - Logging covers managed global exception paths; it is not a full native crash-dump system.
+test_readiness: ready
+notes:
+  - App tests now cover wheel-delta decoding, session-log creation/exception writing, selection-driven handle resize, and resize cancellation when a brush disappears mid-drag.
+  - Focused runtime smoke confirmed repeated wheel input in the 3D viewport no longer terminates the app and that a fresh session log file is created on launch.

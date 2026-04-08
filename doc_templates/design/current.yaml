@@ -1,0 +1,91 @@
+feature: poc-editor-shell-interactions-and-file-flow
+status: approved
+summary: >
+  Restore standard desktop shell behavior, make editor-local file/property flows
+  functional, simplify interaction around direct selection/move/create, add
+  viewport maximize/restore, and align perspective brush visuals and axis
+  guides with the orthographic editor language.
+affected_modules:
+  - src/MapEditor.App/MainWindow.xaml
+  - src/MapEditor.App/MainWindow.xaml.cs
+  - src/MapEditor.App/App.xaml
+  - src/MapEditor.App/App.xaml.cs
+  - src/MapEditor.App/ViewModels/MainViewModel.cs
+  - src/MapEditor.App/ViewModels/PropertiesViewModel.cs
+  - src/MapEditor.App/ViewModels/StatusBarViewModel.cs
+  - src/MapEditor.App/Views/ViewportPanel.xaml
+  - src/MapEditor.App/Views/ViewportPanel.xaml.cs
+  - src/MapEditor.App/Services/ActiveToolService.cs
+  - src/MapEditor.App/Tools/SelectTool.cs
+  - src/MapEditor.App/Tools/MoveTool.cs
+  - src/MapEditor.Core/Commands/SceneCommands.cs
+  - src/MapEditor.Rendering/Renderers/PerspectiveViewportRenderer.cs
+  - tests/MapEditor.App.Tests/*
+design:
+  shell_and_window:
+    - Keep WPF-UI FluentWindow, but explicitly use the standard system title bar/chrome path rather than a content-extended title bar.
+    - Add real key bindings in the window for Ctrl+O, Ctrl+S, Ctrl+Z, Ctrl+Y, Ctrl+C, Ctrl+V, Delete, Escape, and the chosen viewport layout shortcut.
+    - Keep menu items and toolbar buttons bound to the same ViewModel commands so there is one command path per action.
+  toolbar_and_interaction_model:
+    - Treat selection as the always-available default interaction rather than a user-facing mode button.
+    - Remove user-facing Select and Move buttons from the toolbar.
+    - Replace the primitive dropdown with four primitive-specific create buttons for box, cylinder, cone, and wedge.
+    - Primitive create buttons behave as mutually exclusive toggles in the viewmodel rather than relying on radio-button UI state.
+    - Clicking an already active primitive button returns the editor to select mode.
+    - Successful brush creation is single-use and returns the editor to select mode automatically.
+    - Add viewport layout actions (maximize/restore) where they are discoverable.
+    - Reuse the existing SelectTool as the orchestration point for:
+      - left-click selection,
+      - left-drag resize handles,
+      - direct-manipulation brush movement when the selected brush is dragged with the chosen gesture.
+  movement_choice:
+    - Use orthographic middle-drag on the selected brush as the direct manipulation move gesture for this loop.
+    - When middle-drag starts over the current selected brush, SelectTool delegates to MoveTool.
+    - When middle-drag starts over empty space, ViewportPanel keeps its existing orthographic pan behavior.
+    - This preserves fast viewport navigation while matching the user preference for middle-mouse movement on selected objects.
+  properties_panel:
+    - Convert the editable property fields from raw Vector3 display binding to explicit text-backed edit state.
+    - Keep PropertiesViewModel focused on selection snapshot state, formatted edit strings, validation feedback, and whether the selected entity is brush-editable.
+    - MainViewModel owns commit commands that parse property edits and apply them through TransformBrushCommand and RenameEntityCommand.
+    - Commits happen on Enter and LostFocus so the panel behaves like a normal inspector without requiring a separate Apply button.
+    - Invalid property input should not silently mutate the scene; instead, keep the previous committed value and report the parse failure through the status flow/logging.
+  copy_paste:
+    - Add a small editor-local clipboard service that stores the last copied brush snapshot.
+    - Copy serializes the selected brush into an in-memory clone template.
+    - Paste creates a new brush instance from that template with a new Id, slight positional offset, scene insertion through CreateBrushCommand, and new selection on the pasted brush.
+    - Keep this service local to the editor process; no system clipboard integration is needed in this iteration.
+  file_flow:
+    - Keep MapFileService as the I/O boundary.
+    - Ensure open/save commands are reachable through real WPF input bindings and the shell UI.
+    - Surface explicit status messages and log exceptions from open/save failures through the existing session logger.
+    - Preserve current save-as fallback when no file path exists.
+  viewport_layout:
+    - Add lightweight viewport layout state at the window/view layer: normal four-view layout or single maximized viewport.
+    - Each ViewportPanel exposes a maximize/restore request surface (button and/or label double-click).
+    - MainWindow owns the grid visibility/size switching because this is pure layout orchestration, not domain logic.
+      - Add a quick restore action from toolbar/menu/shortcut so the user can always return to the default 4-view layout.
+  axis_convention:
+    - Use one explicit world convention across editor visuals and interaction: left-handed, Y-up, +X right, +Y up, +Z forward.
+    - Top view maps screen right to +X and screen up to +Z.
+    - Front view maps screen right to +X and screen up to +Y.
+    - Side view maps screen right to +Z and screen up to +Y.
+    - Keep orthographic world-point projection, camera view matrices, grid geometry, resize handles, and create-brush transforms on the same axis convention.
+    - The perspective guide should show red X, green Y, and blue Z axis cues that match the orthographic views.
+  perspective_visuals:
+    - Keep orthographic colors as the source of truth for additive/subtractive brush identity.
+    - Update the perspective solid pass to render brushes with alpha blending and operation-based translucent colors that visually track the orthographic palette.
+    - Continue to draw selected outlines on top so selection remains obvious.
+clean_code_constraints:
+  - Keep one source of truth for scene mutation: commands through SceneService.
+  - Keep viewport layout state in window/view orchestration, not in rendering or scene code.
+  - Avoid duplicating movement/resize math; SelectTool should delegate to existing MoveTool/ResizeTool behavior instead of reimplementing transforms.
+  - Keep property parsing/formatting centralized so the inspector does not scatter string-to-vector logic across code-behind and viewmodels.
+performance:
+  - The new viewport maximize flow only toggles visibility/layout state; it does not add extra renderers or scene copies.
+  - Editor-local clipboard stores at most a small brush snapshot, which is negligible for the PoC.
+  - Property commits are user-driven and infrequent, so parsing strings and issuing commands has negligible runtime cost.
+  - Perspective alpha blending adds minor per-frame cost but is acceptable for the PoC and localized to the perspective renderer.
+non_goals:
+  - No full transform gizmo/manipulator framework.
+  - No system clipboard interchange format.
+  - No generalized dock/undock layout engine.

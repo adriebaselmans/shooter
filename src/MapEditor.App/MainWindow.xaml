@@ -1,0 +1,326 @@
+<Window x:Class="MapEditor.App.MainWindow"
+        x:Name="RootWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:vm="clr-namespace:MapEditor.App.ViewModels"
+        xmlns:core="clr-namespace:MapEditor.Core.Entities;assembly=MapEditor.Core"
+        xmlns:views="clr-namespace:MapEditor.App.Views"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
+        Title="{Binding WindowTitle}"
+        Height="900" Width="1400"
+        MinHeight="600" MinWidth="900"
+        WindowStartupLocation="CenterScreen"
+        Closing="OnWindowClosing">
+
+    <Window.InputBindings>
+        <KeyBinding Modifiers="Control" Key="N" Command="{Binding DataContext.NewFileCommand, ElementName=RootWindow}"/>
+        <KeyBinding Modifiers="Control" Key="O" Command="{Binding DataContext.OpenFileCommand, ElementName=RootWindow}"/>
+        <KeyBinding Modifiers="Control" Key="S" Command="{Binding DataContext.SaveFileCommand, ElementName=RootWindow}"/>
+        <KeyBinding Modifiers="Control" Key="Z" Command="{Binding DataContext.UndoCommand, ElementName=RootWindow}"/>
+        <KeyBinding Modifiers="Control" Key="Y" Command="{Binding DataContext.RedoCommand, ElementName=RootWindow}"/>
+        <KeyBinding Modifiers="Control+Shift" Key="Z" Command="{Binding DataContext.RedoCommand, ElementName=RootWindow}"/>
+        <KeyBinding Modifiers="Control" Key="C" Command="{Binding DataContext.CopySelectedBrushCommand, ElementName=RootWindow}"/>
+        <KeyBinding Modifiers="Control" Key="V" Command="{Binding DataContext.PasteBrushCommand, ElementName=RootWindow}"/>
+        <KeyBinding Key="Delete" Command="{Binding DataContext.DeleteSelectedCommand, ElementName=RootWindow}"/>
+    </Window.InputBindings>
+
+    <Window.Resources>
+        <Style x:Key="PrimitiveToolButtonStyle" TargetType="ToggleButton">
+            <Setter Property="Foreground" Value="#D8D8D8"/>
+            <Setter Property="Background" Value="#3A3A3D"/>
+            <Setter Property="BorderBrush" Value="#4A4A4E"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="MinWidth" Value="78"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="ToolBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ToolBorder" Property="Background" Value="#46464A"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="ToolBorder" Property="Background" Value="#0E639C"/>
+                                <Setter TargetName="ToolBorder" Property="BorderBrush" Value="#3FA9F5"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>  <!-- Menu -->
+            <RowDefinition Height="Auto"/>  <!-- Toolbar -->
+            <RowDefinition Height="*"/>     <!-- Content -->
+            <RowDefinition Height="22"/>    <!-- Status bar -->
+        </Grid.RowDefinitions>
+
+        <!-- ═══ Menu bar ════════════════════════════════════════════════════════ -->
+        <Menu Grid.Row="0" Background="#2D2D30" Foreground="#CCCCCC">
+            <MenuItem Header="_File" Foreground="#CCCCCC">
+                <MenuItem Header="_New"        Command="{Binding NewFileCommand}"     InputGestureText="Ctrl+N"/>
+                <MenuItem Header="_Open…"      Command="{Binding OpenFileCommand}"  InputGestureText="Ctrl+O"/>
+                <Separator/>
+                <MenuItem Header="_Save"       Command="{Binding SaveFileCommand}"  InputGestureText="Ctrl+S"/>
+                <MenuItem Header="Save _As…"   Command="{Binding SaveFileAsCommand}"/>
+                <Separator/>
+                <MenuItem Header="_Exit"       Click="OnExitClick"/>
+            </MenuItem>
+            <MenuItem Header="_Edit" Foreground="#CCCCCC">
+                <MenuItem Header="_Undo"   Command="{Binding UndoCommand}" InputGestureText="Ctrl+Z"/>
+                <MenuItem Header="_Redo"   Command="{Binding RedoCommand}" InputGestureText="Ctrl+Y"/>
+                <MenuItem Header="_Copy"   Command="{Binding CopySelectedBrushCommand}" InputGestureText="Ctrl+C"/>
+                <MenuItem Header="_Paste"  Command="{Binding PasteBrushCommand}" InputGestureText="Ctrl+V"/>
+                <Separator/>
+                <MenuItem Header="_Delete" Command="{Binding DeleteSelectedCommand}" InputGestureText="Del"/>
+            </MenuItem>
+            <MenuItem Header="_View" Foreground="#CCCCCC">
+                <MenuItem Header="Reset Camera" Click="OnResetCameraClick"/>
+                <MenuItem Header="Restore 4-View" Click="OnRestoreViewportLayoutClick"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- ═══ Toolbar ══════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="1" Background="#2D2D30" BorderBrush="#3F3F46" BorderThickness="0,0,0,1" Padding="4,2">
+            <ToolBar Background="Transparent" Band="0">
+                <!-- File actions -->
+                <Button ToolTip="New"  Command="{Binding NewFileCommand}">
+                    <ui:SymbolIcon Symbol="DocumentAdd24"/>
+                </Button>
+                <Button ToolTip="Open" Command="{Binding OpenFileCommand}">
+                    <ui:SymbolIcon Symbol="FolderOpen24"/>
+                </Button>
+                <Button ToolTip="Save" Command="{Binding SaveFileCommand}">
+                    <ui:SymbolIcon Symbol="Save24"/>
+                </Button>
+                <Separator/>
+                <!-- Undo/Redo -->
+                <Button ToolTip="Undo (Ctrl+Z)" Command="{Binding UndoCommand}">
+                    <ui:SymbolIcon Symbol="ArrowUndo24"/>
+                </Button>
+                <Button ToolTip="Redo (Ctrl+Y)" Command="{Binding RedoCommand}">
+                    <ui:SymbolIcon Symbol="ArrowRedo24"/>
+                </Button>
+                <Separator/>
+                <ToggleButton Style="{StaticResource PrimitiveToolButtonStyle}"
+                              ToolTip="Create Box brush"
+                              IsChecked="{Binding IsBoxBrushToolActive, Mode=OneWay}"
+                              Command="{Binding ToggleCreateBrushPrimitiveCommand}"
+                              CommandParameter="{x:Static core:BrushPrimitive.Box}">
+                    <StackPanel Orientation="Vertical">
+                        <Viewbox Width="18" Height="18" Margin="0,0,0,3">
+                            <Rectangle Width="14" Height="14" Stroke="#F2F2F2" StrokeThickness="1.5"/>
+                        </Viewbox>
+                        <TextBlock Text="Box" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </ToggleButton>
+                <ToggleButton Style="{StaticResource PrimitiveToolButtonStyle}"
+                              ToolTip="Create Cylinder brush"
+                              IsChecked="{Binding IsCylinderBrushToolActive, Mode=OneWay}"
+                              Command="{Binding ToggleCreateBrushPrimitiveCommand}"
+                              CommandParameter="{x:Static core:BrushPrimitive.Cylinder}">
+                    <StackPanel Orientation="Vertical">
+                        <Viewbox Width="18" Height="18" Margin="0,0,0,3">
+                            <Grid Width="16" Height="16">
+                                <Ellipse Width="12" Height="4" Stroke="#F2F2F2" StrokeThickness="1.2" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                                <Line X1="2" Y1="3" X2="2" Y2="12" Stroke="#F2F2F2" StrokeThickness="1.2"/>
+                                <Line X1="14" Y1="3" X2="14" Y2="12" Stroke="#F2F2F2" StrokeThickness="1.2"/>
+                                <Ellipse Width="12" Height="4" Stroke="#F2F2F2" StrokeThickness="1.2" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                            </Grid>
+                        </Viewbox>
+                        <TextBlock Text="Cylinder" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </ToggleButton>
+                <ToggleButton Style="{StaticResource PrimitiveToolButtonStyle}"
+                              ToolTip="Create Cone brush"
+                              IsChecked="{Binding IsConeBrushToolActive, Mode=OneWay}"
+                              Command="{Binding ToggleCreateBrushPrimitiveCommand}"
+                              CommandParameter="{x:Static core:BrushPrimitive.Cone}">
+                    <StackPanel Orientation="Vertical">
+                        <Viewbox Width="18" Height="18" Margin="0,0,0,3">
+                            <Grid Width="16" Height="16">
+                                <Polygon Points="8,2 2,13 14,13" Stroke="#F2F2F2" StrokeThickness="1.2" Fill="Transparent"/>
+                                <Ellipse Width="12" Height="3.5" Stroke="#F2F2F2" StrokeThickness="1.2" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                            </Grid>
+                        </Viewbox>
+                        <TextBlock Text="Cone" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </ToggleButton>
+                <ToggleButton Style="{StaticResource PrimitiveToolButtonStyle}"
+                              ToolTip="Create Wedge brush"
+                              IsChecked="{Binding IsWedgeBrushToolActive, Mode=OneWay}"
+                              Command="{Binding ToggleCreateBrushPrimitiveCommand}"
+                              CommandParameter="{x:Static core:BrushPrimitive.Wedge}">
+                    <StackPanel Orientation="Vertical">
+                        <Viewbox Width="18" Height="18" Margin="0,0,0,3">
+                            <Polygon Points="2,13 2,4 14,4 9,13" Stroke="#F2F2F2" StrokeThickness="1.2" Fill="Transparent"/>
+                        </Viewbox>
+                        <TextBlock Text="Wedge" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </ToggleButton>
+                <Button ToolTip="Restore 4-view layout" Click="OnRestoreViewportLayoutClick">
+                    <ui:SymbolIcon Symbol="Grid24"/>
+                </Button>
+            </ToolBar>
+        </Border>
+
+        <!-- ═══ Main content ═════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200" MinWidth="140"/>  <!-- Outliner -->
+                <ColumnDefinition Width="4"/>                   <!-- Splitter -->
+                <ColumnDefinition Width="*"/>                   <!-- Viewports -->
+                <ColumnDefinition Width="4"/>                   <!-- Splitter -->
+                <ColumnDefinition Width="220" MinWidth="160"/>  <!-- Properties -->
+            </Grid.ColumnDefinitions>
+
+            <!-- ── Outliner ──────────────────────────────────────────────────── -->
+            <Border Grid.Column="0" Background="#252526" BorderBrush="#3F3F46" BorderThickness="0,0,1,0">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="SCENE" Foreground="#969696"
+                               FontSize="10" FontWeight="SemiBold"
+                               Padding="8,6,8,4"/>
+                    <ListView ItemsSource="{Binding Outliner.Items}"
+                              SelectedValue="{Binding Outliner.SelectedEntityId}"
+                              SelectedValuePath="Id"
+                              Background="Transparent"
+                              BorderThickness="0"
+                              Foreground="#CCCCCC"
+                              FontSize="12">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Name}" Margin="0,0,6,0"/>
+                                    <TextBlock Text="{Binding Kind}" Foreground="#696969" FontSize="10"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </DockPanel>
+            </Border>
+
+            <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch"
+                          Background="#3F3F46" ResizeBehavior="PreviousAndNext"/>
+
+            <!-- ── 4-viewport area ───────────────────────────────────────────── -->
+            <Grid Grid.Column="2" x:Name="ViewportGrid">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="4"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="4"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <views:ViewportPanel x:Name="ViewportTop"    Grid.Row="0" Grid.Column="0" ViewportLabel="Top (XZ)"/>
+                <views:ViewportPanel x:Name="ViewportPersp"  Grid.Row="0" Grid.Column="2" ViewportLabel="Perspective"/>
+                <views:ViewportPanel x:Name="ViewportFront"  Grid.Row="2" Grid.Column="0" ViewportLabel="Front (XY)"/>
+                <views:ViewportPanel x:Name="ViewportSide"   Grid.Row="2" Grid.Column="2" ViewportLabel="Side (YZ)"/>
+
+                <GridSplitter x:Name="ViewportColumnSplitter" Grid.Row="0" Grid.Column="1" Grid.RowSpan="3"
+                              Width="4" HorizontalAlignment="Stretch"
+                              Background="#3F3F46" ResizeBehavior="PreviousAndNext"/>
+                <GridSplitter x:Name="ViewportRowSplitter" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3"
+                              Height="4" VerticalAlignment="Stretch"
+                              Background="#3F3F46" ResizeBehavior="PreviousAndNext"/>
+            </Grid>
+
+            <GridSplitter Grid.Column="3" Width="4" HorizontalAlignment="Stretch"
+                          Background="#3F3F46" ResizeBehavior="PreviousAndNext"/>
+
+            <!-- ── Properties panel ──────────────────────────────────────────── -->
+            <Border Grid.Column="4" Background="#252526" BorderBrush="#3F3F46" BorderThickness="1,0,0,0">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="PROPERTIES" Foreground="#969696"
+                               FontSize="10" FontWeight="SemiBold"
+                               Padding="8,6,8,4"/>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Visibility="{Binding Properties.HasEntity, Converter={StaticResource BoolToVisibility}}"
+                                    Margin="8">
+                            <TextBlock Text="{Binding Properties.EntityName}" Foreground="#FFFFFF"
+                                       FontSize="13" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding Properties.EntityKind}"  Foreground="#969696"
+                                       FontSize="10" Margin="0,0,0,12"/>
+
+                            <TextBlock Text="Position" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,2"/>
+                            <TextBox x:Name="PositionTextBox"
+                                     Text="{Binding Properties.PositionText, UpdateSourceTrigger=PropertyChanged}" Background="#2D2D30"
+                                     Foreground="#CCCCCC" BorderBrush="#3F3F46" Margin="0,0,0,8"
+                                     IsEnabled="{Binding Properties.CanEditTransform}"
+                                     KeyDown="OnPropertyEditorKeyDown"
+                                     LostFocus="OnPropertyEditorLostFocus"/>
+
+                            <TextBlock Text="Rotation" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,2"/>
+                            <TextBox x:Name="RotationTextBox"
+                                     Text="{Binding Properties.RotationText, UpdateSourceTrigger=PropertyChanged}" Background="#2D2D30"
+                                     Foreground="#CCCCCC" BorderBrush="#3F3F46" Margin="0,0,0,8"
+                                     IsEnabled="{Binding Properties.CanEditTransform}"
+                                     KeyDown="OnPropertyEditorKeyDown"
+                                     LostFocus="OnPropertyEditorLostFocus"/>
+
+                            <TextBlock Text="Scale" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,2"/>
+                            <TextBox x:Name="ScaleTextBox"
+                                     Text="{Binding Properties.ScaleText, UpdateSourceTrigger=PropertyChanged}" Background="#2D2D30"
+                                     Foreground="#CCCCCC" BorderBrush="#3F3F46"
+                                     IsEnabled="{Binding Properties.CanEditTransform}"
+                                     KeyDown="OnPropertyEditorKeyDown"
+                                     LostFocus="OnPropertyEditorLostFocus"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <!-- ═══ Status bar ═══════════════════════════════════════════════════════ -->
+        <Border Grid.Row="3" Background="#007ACC" Padding="8,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="{Binding StatusBar.Message}"
+                           Foreground="White" FontSize="11"
+                           VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1"
+                           Text="{Binding StatusBar.BrushCount, StringFormat='Brushes: {0}'}"
+                           Foreground="White" FontSize="11"
+                           VerticalAlignment="Center" Margin="0,0,16,0"/>
+                <TextBlock Grid.Column="2"
+                           Text="{Binding StatusBar.ActiveTool, StringFormat='Tool: {0}'}"
+                           Foreground="White" FontSize="11"
+                           VerticalAlignment="Center" Margin="0,0,16,0"/>
+                <TextBlock Grid.Column="3"
+                           Text="{Binding StatusBar.LogFileName, StringFormat='Log: {0}'}"
+                           ToolTip="{Binding StatusBar.LogFilePath}"
+                           Foreground="White" FontSize="11"
+                           VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
