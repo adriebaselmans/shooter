@@ -42,6 +42,17 @@ public sealed class EditorShortcutRouterTests
         target.Executed.Should().ContainSingle().Which.Should().Be($"{EditorShortcutAction.SelectTool}:Select");
     }
 
+    [Fact]
+    public void TryHandle_MapsTToTextureBrowserToggle()
+    {
+        var target = new FakeShortcutTarget();
+
+        var handled = EditorShortcutRouter.TryHandle(target, Key.T, ModifierKeys.None, originalSource: null);
+
+        handled.Should().BeTrue();
+        target.Executed.Should().ContainSingle().Which.Should().Be(EditorShortcutAction.ToggleTextureBrowser.ToString());
+    }
+
     private sealed class FakeShortcutTarget : IEditorShortcutTarget
     {
         public List<string> Executed { get; } = [];

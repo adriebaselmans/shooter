@@ -1,15 +1,15 @@
-feature: poc-editor-defect-loop-viewport-and-logging
+feature: poc-brush-texturing-ux-pass
 decision: approved
 summary: >
-  The defect-loop implementation matches the approved scope: orthographic resize
-  handles can be dragged from normal selection, the 3D wheel path no longer
-  overflows on 64-bit message payloads, and each session writes to a unique log
-  file with global managed exception hooks.
+  The implementation matches the updated texture UX scope: the texture browser is
+  moved into a bottom-docked panel, the properties panel is reduced to a compact
+  texturing inspector, perspective face picking is now direct and surface-aware,
+  and the editor exposes an in-app help entry for the new shortcut-driven workflow.
 findings: []
 residual_risks:
-  - Handle-based resizing is still orthographic-only by design for this PoC iteration.
-  - Logging covers managed global exception paths; it is not a full native crash-dump system.
+  - Perspective face picking currently ray-tests generated brush meshes on demand, which is appropriate for current PoC scene sizes but should be revisited if scene complexity grows substantially.
+  - The help surface is intentionally lightweight and modal for this iteration; if the shortcut set grows further, a richer reference panel may become worthwhile.
 test_readiness: ready
 notes:
-  - App tests now cover wheel-delta decoding, session-log creation/exception writing, selection-driven handle resize, and resize cancellation when a brush disappears mid-drag.
-  - Focused runtime smoke confirmed repeated wheel input in the 3D viewport no longer terminates the app and that a fresh session log file is created on launch.
+  - App tests now cover the texture browser toggle shortcut, the split surface-mapping fields/chip model, the browser visibility toggle command, and surface hit testing against generated brush meshes.
+  - The implementation keeps viewport input handling in the App layer and avoids pushing UI concerns into rendering or core domain code.

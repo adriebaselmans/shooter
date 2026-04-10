@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="Silk.NET.OpenGL" />
+    <PackageReference Include="StbImageSharp" />
   </ItemGroup>
 
   <ItemGroup>

@@ -65,6 +65,35 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style x:Key="SurfaceChipButtonStyle" TargetType="ToggleButton">
+            <Setter Property="Foreground" Value="#D8D8D8"/>
+            <Setter Property="Background" Value="#3A3A3D"/>
+            <Setter Property="BorderBrush" Value="#4A4A4E"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="ChipBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ChipBorder" Property="Background" Value="#4A4A4E"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="ChipBorder" Property="Background" Value="#0E639C"/>
+                                <Setter TargetName="ChipBorder" Property="BorderBrush" Value="#3FA9F5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid>
@@ -97,6 +126,9 @@
             <MenuItem Header="_View" Foreground="#CCCCCC">
                 <MenuItem Header="Reset Camera" Click="OnResetCameraClick"/>
                 <MenuItem Header="Restore 4-View" Click="OnRestoreViewportLayoutClick"/>
+            </MenuItem>
+            <MenuItem Header="_Help" Foreground="#CCCCCC">
+                <MenuItem Header="Texture Workflow _Shortcuts…" Click="OnTextureWorkflowHelpClick"/>
             </MenuItem>
         </Menu>
 
@@ -178,6 +210,10 @@
                         <TextBlock Text="Wedge" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </ToggleButton>
+                <Separator/>
+                <Button ToolTip="Toggle texture browser (T)" Command="{Binding ToggleTextureBrowserCommand}">
+                    <ui:SymbolIcon Symbol="Image24"/>
+                </Button>
                 <Button ToolTip="Restore 4-view layout" Click="OnRestoreViewportLayoutClick">
                     <ui:SymbolIcon Symbol="Grid24"/>
                 </Button>
@@ -186,6 +222,10 @@
 
         <!-- ═══ Main content ═════════════════════════════════════════════════════ -->
         <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="200" MinWidth="140"/>  <!-- Outliner -->
                 <ColumnDefinition Width="4"/>                   <!-- Splitter -->
@@ -252,7 +292,7 @@
                           Background="#3F3F46" ResizeBehavior="PreviousAndNext"/>
 
             <!-- ── Properties panel ──────────────────────────────────────────── -->
-            <Border Grid.Column="4" Background="#252526" BorderBrush="#3F3F46" BorderThickness="1,0,0,0">
+            <Border Grid.Row="0" Grid.Column="4" Background="#252526" BorderBrush="#3F3F46" BorderThickness="1,0,0,0">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="PROPERTIES" Foreground="#969696"
                                FontSize="10" FontWeight="SemiBold"
@@ -265,32 +305,227 @@
                             <TextBlock Text="{Binding Properties.EntityKind}"  Foreground="#969696"
                                        FontSize="10" Margin="0,0,0,12"/>
 
-                            <TextBlock Text="Position" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,2"/>
-                            <TextBox x:Name="PositionTextBox"
-                                     Text="{Binding Properties.PositionText, UpdateSourceTrigger=PropertyChanged}" Background="#2D2D30"
-                                     Foreground="#CCCCCC" BorderBrush="#3F3F46" Margin="0,0,0,8"
-                                     IsEnabled="{Binding Properties.CanEditTransform}"
-                                     KeyDown="OnPropertyEditorKeyDown"
-                                     LostFocus="OnPropertyEditorLostFocus"/>
+                            <Expander Header="Transform" IsExpanded="True" Foreground="#CCCCCC">
+                                <StackPanel Margin="0,8,0,0">
+                                    <TextBlock Text="Position" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,2"/>
+                                    <TextBox x:Name="PositionTextBox"
+                                             Text="{Binding Properties.PositionText, UpdateSourceTrigger=PropertyChanged}" Background="#2D2D30"
+                                             Foreground="#CCCCCC" BorderBrush="#3F3F46" Margin="0,0,0,8"
+                                             IsEnabled="{Binding Properties.CanEditTransform}"
+                                             KeyDown="OnPropertyEditorKeyDown"
+                                             LostFocus="OnPropertyEditorLostFocus"/>
 
-                            <TextBlock Text="Rotation" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,2"/>
-                            <TextBox x:Name="RotationTextBox"
-                                     Text="{Binding Properties.RotationText, UpdateSourceTrigger=PropertyChanged}" Background="#2D2D30"
-                                     Foreground="#CCCCCC" BorderBrush="#3F3F46" Margin="0,0,0,8"
-                                     IsEnabled="{Binding Properties.CanEditTransform}"
-                                     KeyDown="OnPropertyEditorKeyDown"
-                                     LostFocus="OnPropertyEditorLostFocus"/>
+                                    <TextBlock Text="Rotation" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,2"/>
+                                    <TextBox x:Name="RotationTextBox"
+                                             Text="{Binding Properties.RotationText, UpdateSourceTrigger=PropertyChanged}" Background="#2D2D30"
+                                             Foreground="#CCCCCC" BorderBrush="#3F3F46" Margin="0,0,0,8"
+                                             IsEnabled="{Binding Properties.CanEditTransform}"
+                                             KeyDown="OnPropertyEditorKeyDown"
+                                             LostFocus="OnPropertyEditorLostFocus"/>
 
-                            <TextBlock Text="Scale" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,2"/>
-                            <TextBox x:Name="ScaleTextBox"
-                                     Text="{Binding Properties.ScaleText, UpdateSourceTrigger=PropertyChanged}" Background="#2D2D30"
-                                     Foreground="#CCCCCC" BorderBrush="#3F3F46"
-                                     IsEnabled="{Binding Properties.CanEditTransform}"
-                                     KeyDown="OnPropertyEditorKeyDown"
-                                     LostFocus="OnPropertyEditorLostFocus"/>
+                                    <TextBlock Text="Scale" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,2"/>
+                                    <TextBox x:Name="ScaleTextBox"
+                                             Text="{Binding Properties.ScaleText, UpdateSourceTrigger=PropertyChanged}" Background="#2D2D30"
+                                             Foreground="#CCCCCC" BorderBrush="#3F3F46"
+                                             IsEnabled="{Binding Properties.CanEditTransform}"
+                                             KeyDown="OnPropertyEditorKeyDown"
+                                             LostFocus="OnPropertyEditorLostFocus"/>
+                                </StackPanel>
+                            </Expander>
+
+                            <Expander Header="Texturing"
+                                      IsExpanded="True"
+                                      Foreground="#CCCCCC"
+                                      Margin="0,12,0,0"
+                                      Visibility="{Binding Properties.CanEditTexturing, Converter={StaticResource BoolToVisibility}}">
+                                <StackPanel Margin="0,8,0,0">
+                                    <Border Background="#1F1F22" BorderBrush="#3F3F46" BorderThickness="1" Padding="8" Margin="0,0,0,10">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="42"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Border Width="36" Height="36" BorderBrush="#4A4A4E" BorderThickness="1" Margin="0,0,8,0">
+                                                <Image Source="{Binding SelectedTextureEntry.PreviewPath}" Stretch="Fill"/>
+                                            </Border>
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="{Binding SelectedTextureEntry.DisplayName, TargetNullValue=No texture selected}"
+                                                           Foreground="#F0F0F0" FontSize="11" FontWeight="SemiBold"/>
+                                                <TextBlock Text="{Binding SelectedTextureEntry.Key, TargetNullValue=Choose a texture below}"
+                                                           Foreground="#969696" FontSize="10"/>
+                                                <TextBlock Text="{Binding SelectedTextureEntry.AverageColorHex}" Foreground="#7FA3D4" FontSize="10"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+
+                                    <WrapPanel Margin="0,0,0,10">
+                                        <Button Content="Apply to Brush"
+                                                Command="{Binding ApplySelectedTextureToBrushCommand}"
+                                                Margin="0,0,6,6"/>
+                                        <Button Content="Apply to Faces"
+                                                Command="{Binding ApplySelectedTextureToSelectedSurfacesCommand}"
+                                                Margin="0,0,0,6"/>
+                                    </WrapPanel>
+
+                                    <TextBlock Text="Brush Texture" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding Properties.BrushTextureKey}" Background="#2D2D30"
+                                             Foreground="#CCCCCC" BorderBrush="#3F3F46" Margin="0,0,0,8"
+                                             IsReadOnly="True"/>
+
+                                    <TextBlock Text="Selected Faces" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,2"/>
+                                    <TextBlock Text="{Binding Properties.SelectedSurfaceSummary}" Foreground="#969696" FontSize="10" Margin="0,0,0,6"/>
+                                    <ItemsControl ItemsSource="{Binding Properties.SurfaceChips}" Margin="0,0,0,10">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <ToggleButton Content="{Binding DisplayName}"
+                                                              Tag="{Binding SurfaceId}"
+                                                              Style="{StaticResource SurfaceChipButtonStyle}"
+                                                              IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                                              Click="OnSurfaceChipClick"
+                                                              Margin="0,0,6,6"
+                                                              MinWidth="54"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <TextBlock Text="Offset" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,2"/>
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Grid.Column="0"
+                                                 Text="{Binding Properties.SurfaceOffsetUText, UpdateSourceTrigger=PropertyChanged}"
+                                                 Background="#2D2D30"
+                                                 Foreground="#CCCCCC"
+                                                 BorderBrush="#3F3F46"
+                                                 IsEnabled="{Binding Properties.CanEditSurfaceMapping}"
+                                                 KeyDown="OnSurfaceMappingEditorKeyDown"
+                                                 LostFocus="OnSurfaceMappingEditorLostFocus"/>
+                                        <TextBox Grid.Column="2"
+                                                 Text="{Binding Properties.SurfaceOffsetVText, UpdateSourceTrigger=PropertyChanged}"
+                                                 Background="#2D2D30"
+                                                 Foreground="#CCCCCC"
+                                                 BorderBrush="#3F3F46"
+                                                 IsEnabled="{Binding Properties.CanEditSurfaceMapping}"
+                                                 KeyDown="OnSurfaceMappingEditorKeyDown"
+                                                 LostFocus="OnSurfaceMappingEditorLostFocus"/>
+                                    </Grid>
+
+                                    <TextBlock Text="Scale" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,2"/>
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Grid.Column="0"
+                                                 Text="{Binding Properties.SurfaceScaleUText, UpdateSourceTrigger=PropertyChanged}"
+                                                 Background="#2D2D30"
+                                                 Foreground="#CCCCCC"
+                                                 BorderBrush="#3F3F46"
+                                                 IsEnabled="{Binding Properties.CanEditSurfaceMapping}"
+                                                 KeyDown="OnSurfaceMappingEditorKeyDown"
+                                                 LostFocus="OnSurfaceMappingEditorLostFocus"/>
+                                        <TextBox Grid.Column="2"
+                                                 Text="{Binding Properties.SurfaceScaleVText, UpdateSourceTrigger=PropertyChanged}"
+                                                 Background="#2D2D30"
+                                                 Foreground="#CCCCCC"
+                                                 BorderBrush="#3F3F46"
+                                                 IsEnabled="{Binding Properties.CanEditSurfaceMapping}"
+                                                 KeyDown="OnSurfaceMappingEditorKeyDown"
+                                                 LostFocus="OnSurfaceMappingEditorLostFocus"/>
+                                    </Grid>
+
+                                    <TextBlock Text="Rotation" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,2"/>
+                                    <TextBox x:Name="SurfaceRotationTextBox"
+                                             Text="{Binding Properties.SurfaceRotationText, UpdateSourceTrigger=PropertyChanged}"
+                                             Background="#2D2D30"
+                                             Foreground="#CCCCCC"
+                                             BorderBrush="#3F3F46"
+                                             Margin="0,0,0,8"
+                                             IsEnabled="{Binding Properties.CanEditSurfaceMapping}"
+                                             KeyDown="OnSurfaceMappingEditorKeyDown"
+                                             LostFocus="OnSurfaceMappingEditorLostFocus"/>
+
+                                    <CheckBox Content="Texture lock"
+                                              IsChecked="{Binding Properties.TextureLockEnabled}"
+                                              Foreground="#CCCCCC"
+                                              Margin="0,0,0,8"
+                                              IsEnabled="{Binding Properties.CanEditSurfaceMapping}"
+                                              Checked="OnTextureLockChanged"
+                                              Unchecked="OnTextureLockChanged"/>
+
+                                    <WrapPanel>
+                                        <Button Content="Fit"
+                                                Command="{Binding FitSelectedSurfaceMappingsCommand}"
+                                                Margin="0,0,6,6"/>
+                                        <Button Content="Reset"
+                                                Command="{Binding ResetSelectedSurfaceMappingsCommand}"
+                                                Margin="0,0,0,6"/>
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Expander>
                         </StackPanel>
                     </ScrollViewer>
                 </DockPanel>
+            </Border>
+
+            <Border Grid.Row="1"
+                    Grid.Column="0"
+                    Grid.ColumnSpan="5"
+                    Background="#1F1F22"
+                    BorderBrush="#3F3F46"
+                    BorderThickness="0,1,0,0">
+                <Expander IsExpanded="{Binding IsTextureBrowserVisible, Mode=TwoWay}">
+                    <Expander.Header>
+                        <DockPanel LastChildFill="False">
+                            <TextBlock Text="TEXTURES" Foreground="#CCCCCC" FontSize="10" FontWeight="SemiBold" Margin="0,0,12,0"/>
+                            <TextBlock Text="T toggles this panel" Foreground="#969696" FontSize="10"/>
+                        </DockPanel>
+                    </Expander.Header>
+                    <DockPanel Margin="8">
+                        <TextBox DockPanel.Dock="Top"
+                                 Text="{Binding TextureSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="#2D2D30"
+                                 Foreground="#CCCCCC"
+                                 BorderBrush="#3F3F46"
+                                 Margin="0,0,0,8"/>
+                        <ListBox ItemsSource="{Binding FilteredTextures}"
+                                 SelectedValue="{Binding SelectedTextureKey, Mode=TwoWay}"
+                                 SelectedValuePath="Key"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 Foreground="#CCCCCC"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel IsItemsHost="True"/>
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Width="112" Margin="0,0,8,8" Padding="6" Background="#252526" BorderBrush="#3F3F46" BorderThickness="1">
+                                        <StackPanel>
+                                            <Border Height="72" BorderBrush="#4A4A4E" BorderThickness="1" Margin="0,0,0,6">
+                                                <Image Source="{Binding PreviewPath}" Stretch="Fill"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding DisplayName}" Foreground="#F0F0F0" FontSize="11" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding Key}" Foreground="#969696" FontSize="10" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding AverageColorHex}" Foreground="#7FA3D4" FontSize="10"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+                </Expander>
             </Border>
         </Grid>
 

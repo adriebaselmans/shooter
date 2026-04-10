@@ -75,6 +75,30 @@ public sealed class BrushDto
     [JsonPropertyName("material_name")]
     public string MaterialName { get; set; } = "default";
 
+    [JsonPropertyName("surface_mappings")]
+    public Dictionary<string, SurfaceMappingDto>? SurfaceMappings { get; set; }
+
+    [JsonExtensionData]
+    public Dictionary<string, System.Text.Json.JsonElement>? AdditionalData { get; set; }
+}
+
+public sealed class SurfaceMappingDto
+{
+    [JsonPropertyName("texture_key")]
+    public string TextureKey { get; set; } = "default";
+
+    [JsonPropertyName("offset")]
+    public float[] Offset { get; set; } = [0f, 0f];
+
+    [JsonPropertyName("scale")]
+    public float[] Scale { get; set; } = [1f, 1f];
+
+    [JsonPropertyName("rotation")]
+    public float RotationDegrees { get; set; }
+
+    [JsonPropertyName("texture_locked")]
+    public bool TextureLocked { get; set; } = true;
+
     [JsonExtensionData]
     public Dictionary<string, System.Text.Json.JsonElement>? AdditionalData { get; set; }
 }

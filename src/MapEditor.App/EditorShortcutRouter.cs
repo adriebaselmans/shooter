@@ -43,6 +43,7 @@ internal static class EditorShortcutRouter
         {
             Key.Delete => target.TryExecuteShortcut(EditorShortcutAction.Delete),
             Key.B => target.TryExecuteShortcut(EditorShortcutAction.CreateBrush),
+            Key.T => target.TryExecuteShortcut(EditorShortcutAction.ToggleTextureBrowser),
             Key.Escape => target.TryExecuteShortcut(EditorShortcutAction.SelectTool, nameof(EditorToolKind.Select)),
             _ => false
         };

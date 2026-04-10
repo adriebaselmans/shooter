@@ -1,91 +1,208 @@
-feature: poc-editor-shell-interactions-and-file-flow
+feature: poc-brush-texturing-workflow
 status: approved
 summary: >
-  Restore standard desktop shell behavior, make editor-local file/property flows
-  functional, simplify interaction around direct selection/move/create, add
-  viewport maximize/restore, and align perspective brush visuals and axis
-  guides with the orthographic editor language.
+  Add a classic brush-editor texturing workflow inspired by Hammer,
+  TrenchBroom, and Radiant: a texture browser, brush-default assignment,
+  per-surface overrides, a compact surface inspector, in-app shortcut help,
+  and texture lock during supported brush edits. Keep the design simple by
+  introducing stable logical surfaces per primitive rather than exposing raw
+  triangle UV editing.
 affected_modules:
-  - src/MapEditor.App/MainWindow.xaml
-  - src/MapEditor.App/MainWindow.xaml.cs
-  - src/MapEditor.App/App.xaml
-  - src/MapEditor.App/App.xaml.cs
+  - src/MapEditor.Core/Entities/Brush.cs
+  - src/MapEditor.Core/Commands/SceneCommands.cs
+  - src/MapEditor.Core/Geometry/Mesh.cs
+  - src/MapEditor.Core/Geometry/MeshGenerator.cs
+  - src/MapEditor.Core/Scene/Scene.cs
+  - src/MapEditor.Formats/Dto/MapDtos.cs
+  - src/MapEditor.Formats/MapSerializer.cs
+  - src/MapEditor.Formats/MapFileService.cs
   - src/MapEditor.App/ViewModels/MainViewModel.cs
   - src/MapEditor.App/ViewModels/PropertiesViewModel.cs
-  - src/MapEditor.App/ViewModels/StatusBarViewModel.cs
   - src/MapEditor.App/Views/ViewportPanel.xaml
   - src/MapEditor.App/Views/ViewportPanel.xaml.cs
-  - src/MapEditor.App/Services/ActiveToolService.cs
-  - src/MapEditor.App/Tools/SelectTool.cs
-  - src/MapEditor.App/Tools/MoveTool.cs
-  - src/MapEditor.Core/Commands/SceneCommands.cs
+  - src/MapEditor.Rendering/Buffers/BrushMeshBuffer.cs
   - src/MapEditor.Rendering/Renderers/PerspectiveViewportRenderer.cs
+  - src/MapEditor.Rendering/Renderers/OrthographicViewportRenderer.cs
+  - src/MapEditor.Rendering/Shaders/brush_solid.vert.glsl
+  - src/MapEditor.Rendering/Shaders/brush_solid.frag.glsl
+  - tests/MapEditor.Core.Tests/*
+  - tests/MapEditor.Formats.Tests/*
   - tests/MapEditor.App.Tests/*
+  - tests/MapEditor.Rendering.Tests/*
 design:
-  shell_and_window:
-    - Keep WPF-UI FluentWindow, but explicitly use the standard system title bar/chrome path rather than a content-extended title bar.
-    - Add real key bindings in the window for Ctrl+O, Ctrl+S, Ctrl+Z, Ctrl+Y, Ctrl+C, Ctrl+V, Delete, Escape, and the chosen viewport layout shortcut.
-    - Keep menu items and toolbar buttons bound to the same ViewModel commands so there is one command path per action.
-  toolbar_and_interaction_model:
-    - Treat selection as the always-available default interaction rather than a user-facing mode button.
-    - Remove user-facing Select and Move buttons from the toolbar.
-    - Replace the primitive dropdown with four primitive-specific create buttons for box, cylinder, cone, and wedge.
-    - Primitive create buttons behave as mutually exclusive toggles in the viewmodel rather than relying on radio-button UI state.
-    - Clicking an already active primitive button returns the editor to select mode.
-    - Successful brush creation is single-use and returns the editor to select mode automatically.
-    - Add viewport layout actions (maximize/restore) where they are discoverable.
-    - Reuse the existing SelectTool as the orchestration point for:
-      - left-click selection,
-      - left-drag resize handles,
-      - direct-manipulation brush movement when the selected brush is dragged with the chosen gesture.
-  movement_choice:
-    - Use orthographic middle-drag on the selected brush as the direct manipulation move gesture for this loop.
-    - When middle-drag starts over the current selected brush, SelectTool delegates to MoveTool.
-    - When middle-drag starts over empty space, ViewportPanel keeps its existing orthographic pan behavior.
-    - This preserves fast viewport navigation while matching the user preference for middle-mouse movement on selected objects.
-  properties_panel:
-    - Convert the editable property fields from raw Vector3 display binding to explicit text-backed edit state.
-    - Keep PropertiesViewModel focused on selection snapshot state, formatted edit strings, validation feedback, and whether the selected entity is brush-editable.
-    - MainViewModel owns commit commands that parse property edits and apply them through TransformBrushCommand and RenameEntityCommand.
-    - Commits happen on Enter and LostFocus so the panel behaves like a normal inspector without requiring a separate Apply button.
-    - Invalid property input should not silently mutate the scene; instead, keep the previous committed value and report the parse failure through the status flow/logging.
-  copy_paste:
-    - Add a small editor-local clipboard service that stores the last copied brush snapshot.
-    - Copy serializes the selected brush into an in-memory clone template.
-    - Paste creates a new brush instance from that template with a new Id, slight positional offset, scene insertion through CreateBrushCommand, and new selection on the pasted brush.
-    - Keep this service local to the editor process; no system clipboard integration is needed in this iteration.
-  file_flow:
-    - Keep MapFileService as the I/O boundary.
-    - Ensure open/save commands are reachable through real WPF input bindings and the shell UI.
-    - Surface explicit status messages and log exceptions from open/save failures through the existing session logger.
-    - Preserve current save-as fallback when no file path exists.
-  viewport_layout:
-    - Add lightweight viewport layout state at the window/view layer: normal four-view layout or single maximized viewport.
-    - Each ViewportPanel exposes a maximize/restore request surface (button and/or label double-click).
-    - MainWindow owns the grid visibility/size switching because this is pure layout orchestration, not domain logic.
-      - Add a quick restore action from toolbar/menu/shortcut so the user can always return to the default 4-view layout.
-  axis_convention:
-    - Use one explicit world convention across editor visuals and interaction: left-handed, Y-up, +X right, +Y up, +Z forward.
-    - Top view maps screen right to +X and screen up to +Z.
-    - Front view maps screen right to +X and screen up to +Y.
-    - Side view maps screen right to +Z and screen up to +Y.
-    - Keep orthographic world-point projection, camera view matrices, grid geometry, resize handles, and create-brush transforms on the same axis convention.
-    - The perspective guide should show red X, green Y, and blue Z axis cues that match the orthographic views.
-  perspective_visuals:
-    - Keep orthographic colors as the source of truth for additive/subtractive brush identity.
-    - Update the perspective solid pass to render brushes with alpha blending and operation-based translucent colors that visually track the orthographic palette.
-    - Continue to draw selected outlines on top so selection remains obvious.
-clean_code_constraints:
-  - Keep one source of truth for scene mutation: commands through SceneService.
-  - Keep viewport layout state in window/view orchestration, not in rendering or scene code.
-  - Avoid duplicating movement/resize math; SelectTool should delegate to existing MoveTool/ResizeTool behavior instead of reimplementing transforms.
-  - Keep property parsing/formatting centralized so the inspector does not scatter string-to-vector logic across code-behind and viewmodels.
-performance:
-  - The new viewport maximize flow only toggles visibility/layout state; it does not add extra renderers or scene copies.
-  - Editor-local clipboard stores at most a small brush snapshot, which is negligible for the PoC.
-  - Property commits are user-driven and infrequent, so parsing strings and issuing commands has negligible runtime cost.
-  - Perspective alpha blending adds minor per-frame cost but is acceptable for the PoC and localized to the perspective renderer.
-non_goals:
-  - No full transform gizmo/manipulator framework.
-  - No system clipboard interchange format.
-  - No generalized dock/undock layout engine.
+  research_findings:
+    - Established brush editors converge on the same pattern:
+      texture browser + per-face inspector + texture transform controls +
+      texture lock during geometry edits.
+    - Hammer exposes a face edit workflow with per-face apply, shift/scale/rotate,
+      fit/justify actions, and texture lock.
+    - TrenchBroom exposes a material browser, face attribute editing, UV tools,
+      and precise alignment lock for brush edits.
+    - Radiant-family editors expose a surface inspector with shift/scale/rotate/fit
+      controls and texture lock.
+    - Godot CSG is a useful counterexample: it supports blockout well but explicitly
+      lacks built-in UV mapping and polygon editing, reinforcing that our editor
+      needs dedicated surface texturing to feel like a real map editor.
+  architectural_choice:
+    - Represent user-editable "faces" as stable logical surfaces per primitive.
+    - Keep `Brush.MaterialName` as the brush-default texture key for backward compatibility.
+    - Add per-surface overrides that only store data when a surface diverges from the brush default.
+    - Use simple surface mapping data: texture key, offset, scale, rotation, and fit basis.
+    - Add texture lock as surface-mapping behavior owned by the App/Core command path, not by the renderer.
+  domain_model:
+    - Introduce a `BrushSurfaceId` concept with stable identifiers per primitive.
+    - Introduce `SurfaceMapping` value data:
+      - texture key
+      - offset (u, v)
+      - scale (u, v)
+      - rotation degrees
+      - lock mode / texture-lock participation
+    - Extend `Brush` with:
+      - existing brush-default `MaterialName`
+      - a dictionary of per-surface overrides keyed by `BrushSurfaceId`
+    - Use logical surfaces instead of raw triangles:
+      - Box: top, bottom, front, back, right, left
+      - Cylinder: top, bottom, side
+      - Cone: base, side
+      - Wedge: each planar side as a named surface
+    - This keeps save data deterministic and keeps UI selection meaningful.
+  data_and_persistence:
+    - Keep `.shmap` backward compatible:
+      - old files with only `material_name` still map to brush-default texture
+      - new files add an optional `surface_mappings` object on each brush
+    - Each mapping entry stores only override data for that logical surface.
+    - Keep DTO parsing tolerant and preserve unknown extension data as today.
+  app_layer:
+    texture_library:
+      - Add a small texture-library service in `MapEditor.App` that scans a
+        project-local texture folder and returns:
+        - stable texture key
+        - display name
+        - source path
+        - preview thumbnail path or generated thumbnail
+      - Keep this service editor-local and read-only.
+    selection_model:
+      - Keep current entity selection for brushes/entities.
+      - Add a secondary surface-selection state scoped to the currently selected brush.
+      - Initial surface picking should focus on the 3D viewport, where face intent is clearest.
+    inspector_ui:
+      - Restructure the right properties area into compact transform and texturing sections.
+      - Add:
+        - current texture summary and preview
+        - apply-to-brush action
+        - apply-to-selected-surface action
+        - face-selection summary and compact face toggles
+        - split U/V offset editors
+        - split U/V scale editors
+        - rotation editor
+        - fit/reset action
+        - texture lock toggle
+      - Commit mapping edits on Enter/lost focus instead of relying on a dedicated apply button.
+      - Keep direct editing centralized in ViewModels, not code-behind.
+    browser_ui:
+      - Move the texture browser out of the right properties column into a bottom-docked collapsible panel.
+      - Use a searchable thumbnail grid instead of a narrow vertical list.
+      - Selecting a texture sets the active texture key; applying remains an explicit action.
+      - Avoid auto-applying on browse to keep undo behavior predictable.
+    help_ui:
+      - Add a Help menu entry for texture workflow help.
+      - Keep the first delivery lightweight by using an editor-owned dialog/message surface rather than external docs.
+      - The help content should list the supported shortcuts and the primary brush-vs-face texturing workflow.
+  commands_and_undo:
+    - Add focused commands instead of broad mutable updates:
+      - `ApplyBrushTextureCommand`
+      - `ApplySurfaceTextureCommand`
+      - `UpdateSurfaceMappingCommand`
+      - optionally `ClearSurfaceOverrideCommand`
+    - Use `CompositeCommand` when one user action touches multiple surfaces.
+    - Keep command payloads value-based so undo restores exact prior mapping state.
+  rendering:
+    mesh_format:
+      - Expand mesh vertices from `[position, normal]` to `[position, normal, uv]`.
+      - Preserve clear ownership: mesh generation computes UVs, buffer uploads vertex format, shader samples texture.
+    uv_generation:
+      - Generate canonical local-space UVs per logical surface.
+      - Apply stored offset/scale/rotation in CPU-side UV generation for the PoC.
+      - Rebuild brush mesh buffers when surface mappings change.
+    texture_binding:
+      - For the PoC, prefer simple per-texture binding and batched-by-brush drawing over atlas complexity.
+      - This is acceptable because current scene sizes are small and correctness matters more than draw-call minimization.
+    orthographic_views:
+      - Keep orthographic views readable first.
+      - Show either a light texture preview/tint overlay or a compact label/indicator for assigned texture.
+      - Do not let orthographic texturing obscure handles, axes, or selection clarity.
+    surface_highlighting:
+      - In the 3D viewport, selected surfaces should render with a subtle overlay or outline distinct from whole-brush selection.
+  interaction_model:
+    - Brush texturing:
+      - select brush
+      - choose texture in browser
+      - apply to brush
+    - Surface texturing:
+      - select brush
+      - use a face-pick gesture in the 3D viewport
+      - select one or more logical surfaces
+      - apply texture or edit mapping in inspector
+    - Shortcut help:
+      - Help menu entry opens an in-app reference for available texture-editing shortcuts.
+    - Direct face selection:
+      - Use `Shift+LMB` in the perspective viewport to select a surface.
+      - Use `Ctrl+Shift+LMB` to toggle additional surfaces on the same brush.
+      - Keep face picking renderer-agnostic by ray-testing against generated mesh surfaces in the App layer.
+    - Texture browser visibility:
+      - Use `T` to toggle the bottom-docked texture browser panel.
+    - Fit/reset actions should follow familiar map-editor behavior, not generic mesh UV editing behavior.
+    - Texture lock should preserve the apparent surface mapping during supported move/resize operations.
+  separation_of_concerns:
+    - Core owns texture/surface data structures and undoable mutations.
+    - Formats owns serialization shape and backward compatibility.
+    - App owns texture library discovery, surface selection state, and inspector/browser orchestration.
+    - Rendering owns UV-capable mesh generation, texture upload/binding, and visual feedback.
+    - Avoid pushing editor UI concerns into Core or serialization concerns into App.
+  phased_delivery_plan:
+    - Phase 1: data model + file format
+      - add logical surface ids and surface mapping data
+      - preserve old `material_name` compatibility
+      - add serializer tests
+    - Phase 2: texture library + browser
+      - add texture discovery service
+      - add preview browser UI and active texture selection
+      - add brush-wide apply flow
+    - Phase 3: UV-capable rendering
+      - expand mesh vertex format to include UV
+      - generate canonical UVs for box and one non-box primitive first
+      - sample textures in perspective renderer
+    - Phase 4: surface workflow
+      - add 3D surface picking
+      - add per-surface apply and mapping inspector
+      - add selected-surface highlight
+    - Phase 5: texture lock + polish
+      - preserve mapping during move/resize
+      - add fit/reset polish and orthographic indicators
+      - extend tests and runtime smoke checks
+    - Phase 6: UX restructuring
+      - move texture browser into a bottom-docked panel with search
+      - compact the properties panel and replace the surface list with face toggles
+      - add in-app texture shortcut help
+      - add perspective `Shift+LMB` face picking and `T` browser toggle
+  clean_code_constraints:
+    - Do not replace the command system with ad-hoc mutation for texture edits.
+    - Keep surface id generation deterministic and centralized.
+    - Keep UV generation in one place; do not duplicate mapping math across renderers.
+    - Keep texture library discovery separate from map serialization.
+    - Keep viewport hit testing in the App layer; do not leak input handling into the renderer.
+    - Keep help content centralized so menu text and shortcut handling do not drift apart.
+    - Avoid triangle-level editing abstractions until there is a real need.
+  performance:
+    - CPU cost rises because mapped UVs may require mesh regeneration after surface edits,
+      but current PoC scene sizes make this acceptable and far simpler than live shader-space UV assembly.
+    - Memory cost rises modestly from storing UVs and per-surface mapping overrides.
+    - Draw calls may increase if different brushes use different textures, but this is acceptable for the current PoC scale.
+    - Thumbnail generation should be cached to avoid repeated image decoding in the browser UI.
+    - Perspective face picking adds CPU ray/triangle work on `Shift+LMB`, but that work stays event-driven and small relative to current PoC scene sizes.
+  non_goals:
+    - No full material graph or multi-map PBR pipeline in this feature.
+    - No freeform UV unwrapping/editor gizmo equivalent to DCC tools.
+    - No texture painting or sculpting workflow.
+    - No attempt to match every advanced Hammer/TrenchBroom texturing shortcut in the first delivery.
+    - No docking framework or fully customizable editor layout in this iteration.

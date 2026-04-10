@@ -2,10 +2,13 @@
 
 in vec3 vFragPos;
 in vec3 vNormal;
+in vec2 vTexCoord;
 
 uniform vec3 uAmbientColor;
 uniform vec4 uObjectColor;
 uniform bool uIsSubtractive;
+uniform bool uUseTexture;
+uniform sampler2D uTexture0;
 
 struct Light {
     vec3  position;
@@ -22,7 +25,8 @@ out vec4 FragColor;
 void main()
 {
     vec3 norm = normalize(vNormal);
-    vec3 baseTint = uObjectColor.rgb;
+    vec3 textureColor = uUseTexture ? texture(uTexture0, vTexCoord).rgb : vec3(1.0);
+    vec3 baseTint = textureColor * uObjectColor.rgb;
     vec3 litResult = uAmbientColor * baseTint;
 
     for (int i = 0; i < uLightCount && i < 8; i++)

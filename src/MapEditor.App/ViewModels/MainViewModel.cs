@@ -21,7 +21,9 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
     private readonly MapFileService _mapFileService;
     private readonly ActiveToolService _activeToolService;
     private readonly SelectionService _selectionService;
+    private readonly SurfaceSelectionService _surfaceSelectionService;
     private readonly BrushClipboardService _brushClipboardService;
+    private readonly TextureLibraryService _textureLibraryService;
     private readonly SessionLogService _sessionLogService;
     private readonly SceneOutlinerViewModel _outlinerVm;
     private readonly PropertiesViewModel _propertiesVm;
@@ -34,6 +36,9 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
     [ObservableProperty] private string _windowTitle = "MapEditor — Untitled";
     [ObservableProperty] private string _activeToolName = "Select";
     [ObservableProperty] private BrushPrimitive _newBrushPrimitive = BrushPrimitive.Box;
+    [ObservableProperty] private string? _selectedTextureKey;
+    [ObservableProperty] private string _textureSearchText = string.Empty;
+    [ObservableProperty] private bool _isTextureBrowserVisible = true;
 
     public SceneService SceneService => _sceneService;
     public ActiveToolService ActiveToolService => _activeToolService;
@@ -41,6 +46,19 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
     public SceneOutlinerViewModel Outliner => _outlinerVm;
     public PropertiesViewModel Properties => _propertiesVm;
     public StatusBarViewModel StatusBar => _statusBarVm;
+    public SurfaceSelectionService SurfaceSelectionService => _surfaceSelectionService;
+    public TextureLibraryService TextureLibrary => _textureLibraryService;
+    public IReadOnlyList<TextureLibraryEntry> AvailableTextures => _textureLibraryService.Entries;
+    public IReadOnlyList<TextureLibraryEntry> FilteredTextures =>
+        string.IsNullOrWhiteSpace(TextureSearchText)
+            ? AvailableTextures
+            : AvailableTextures
+                .Where(entry =>
+                    entry.DisplayName.Contains(TextureSearchText, StringComparison.OrdinalIgnoreCase) ||
+                    entry.Key.Contains(TextureSearchText, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+    public TextureLibraryEntry? SelectedTextureEntry =>
+        AvailableTextures.FirstOrDefault(entry => string.Equals(entry.Key, SelectedTextureKey, StringComparison.OrdinalIgnoreCase));
     public bool IsSelectToolActive => _activeToolService.CurrentToolKind == EditorToolKind.Select;
     public bool IsCreateBrushToolActive => _activeToolService.CurrentToolKind == EditorToolKind.CreateBrush;
     public bool IsBoxBrushToolActive => IsBrushPrimitiveToolActive(BrushPrimitive.Box);
@@ -53,7 +71,9 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         MapFileService mapFileService,
         ActiveToolService activeToolService,
         SelectionService selectionService,
+        SurfaceSelectionService surfaceSelectionService,
         BrushClipboardService brushClipboardService,
+        TextureLibraryService textureLibraryService,
         SessionLogService sessionLogService,
         SceneOutlinerViewModel outlinerVm,
         PropertiesViewModel propertiesVm,
@@ -63,7 +83,9 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         _mapFileService = mapFileService;
         _activeToolService = activeToolService;
         _selectionService = selectionService;
+        _surfaceSelectionService = surfaceSelectionService;
         _brushClipboardService = brushClipboardService;
+        _textureLibraryService = textureLibraryService;
         _sessionLogService = sessionLogService;
         _outlinerVm = outlinerVm;
         _propertiesVm = propertiesVm;
@@ -71,10 +93,12 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
 
         _sceneService.SceneChanged += OnSceneChanged;
         _selectionService.SelectionChanged += OnSelectionChanged;
+        _surfaceSelectionService.SelectionChanged += OnSurfaceSelectionChanged;
         _activeToolService.ToolChanged += OnToolChanged;
 
         _outlinerVm.Refresh(_sceneService.Scene);
         _statusBarVm.BrushCount = _sceneService.Scene.Brushes.Count;
+        SelectedTextureKey = AvailableTextures.FirstOrDefault()?.Key;
         RefreshSelectionDetails();
         OnToolChanged(this, _activeToolService.CurrentToolKind);
     }
@@ -84,6 +108,7 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         _isDirty = true;
         UpdateTitle();
         _selectionService.RemoveMissing(_sceneService.Scene);
+        RemoveMissingSurfaceSelection();
         _outlinerVm.Refresh(_sceneService.Scene);
         _statusBarVm.BrushCount = _sceneService.Scene.Brushes.Count;
         UndoCommand.NotifyCanExecuteChanged();
@@ -92,8 +117,23 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
 
     private void OnSelectionChanged(object? sender, EventArgs e)
     {
+        SyncSurfaceSelectionToEntitySelection();
         RefreshSelectionDetails();
         CopySelectedBrushCommand.NotifyCanExecuteChanged();
+        ApplySelectedTextureToBrushCommand.NotifyCanExecuteChanged();
+        ApplySelectedTextureToSelectedSurfacesCommand.NotifyCanExecuteChanged();
+        CommitSurfaceMappingEditsCommand.NotifyCanExecuteChanged();
+        FitSelectedSurfaceMappingsCommand.NotifyCanExecuteChanged();
+        ResetSelectedSurfaceMappingsCommand.NotifyCanExecuteChanged();
+    }
+
+    private void OnSurfaceSelectionChanged(object? sender, EventArgs e)
+    {
+        RefreshSelectionDetails();
+        ApplySelectedTextureToSelectedSurfacesCommand.NotifyCanExecuteChanged();
+        CommitSurfaceMappingEditsCommand.NotifyCanExecuteChanged();
+        FitSelectedSurfaceMappingsCommand.NotifyCanExecuteChanged();
+        ResetSelectedSurfaceMappingsCommand.NotifyCanExecuteChanged();
     }
 
     private void OnToolChanged(object? sender, EditorToolKind toolKind)
@@ -122,6 +162,7 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         if (!ConfirmDiscard()) return;
         _sceneService.ReplaceScene(new Scene());
         _selectionService.Clear();
+        _surfaceSelectionService.Clear();
         _activeToolService.SetTool(EditorToolKind.Select);
         _filePath = null;
         _isDirty  = false;
@@ -140,6 +181,7 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
             var scene = await _mapFileService.LoadAsync(dlg.FileName);
             _sceneService.ReplaceScene(scene);
             _selectionService.Clear();
+            _surfaceSelectionService.Clear();
             _activeToolService.SetTool(EditorToolKind.Select);
             _filePath = dlg.FileName;
             _isDirty  = false;
@@ -175,6 +217,7 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
     {
         try
         {
+            _statusBarVm.Message = $"Saving {System.IO.Path.GetFileName(path)}...";
             await _mapFileService.SaveAsync(_sceneService.Scene, path);
             _isDirty = false;
             UpdateTitle();
@@ -242,6 +285,7 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         {
             _sceneService.Execute(new DeleteBrushCommand(_sceneService.Scene, brush));
             _selectionService.Clear();
+            _surfaceSelectionService.Clear();
         }
     }
 
@@ -320,11 +364,192 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         _statusBarVm.Message = "Brush properties updated.";
     }
 
+    [RelayCommand(CanExecute = nameof(CanApplySelectedTextureToBrush))]
+    private void ApplySelectedTextureToBrush()
+    {
+        var brush = GetSelectedBrush();
+        if (brush is null || string.IsNullOrWhiteSpace(SelectedTextureKey))
+        {
+            return;
+        }
+
+        _sceneService.Execute(new ApplyBrushTextureCommand(_sceneService.Scene, brush, SelectedTextureKey));
+        RefreshSelectionDetails();
+        _statusBarVm.Message = $"Applied texture '{SelectedTextureKey}' to brush.";
+    }
+
+    private bool CanApplySelectedTextureToBrush() =>
+        GetSelectedBrush() is not null && !string.IsNullOrWhiteSpace(SelectedTextureKey);
+
+    [RelayCommand(CanExecute = nameof(CanApplySelectedTextureToSelectedSurfaces))]
+    private void ApplySelectedTextureToSelectedSurfaces()
+    {
+        var brush = GetSelectedBrush();
+        if (brush is null || string.IsNullOrWhiteSpace(SelectedTextureKey) || !_surfaceSelectionService.HasSelection)
+        {
+            return;
+        }
+
+        var updatedMappings = _surfaceSelectionService.SelectedSurfaceIds.ToDictionary(
+            surfaceId => surfaceId,
+            surfaceId =>
+            {
+                var current = brush.GetEffectiveSurfaceMapping(surfaceId);
+                return current with { TextureKey = SelectedTextureKey! };
+            },
+            StringComparer.Ordinal);
+
+        _sceneService.Execute(new UpdateSurfaceMappingCommand(_sceneService.Scene, brush, updatedMappings));
+        RefreshSelectionDetails();
+        _statusBarVm.Message = $"Applied texture '{SelectedTextureKey}' to selected surfaces.";
+    }
+
+    private bool CanApplySelectedTextureToSelectedSurfaces() =>
+        GetSelectedBrush() is not null &&
+        !string.IsNullOrWhiteSpace(SelectedTextureKey) &&
+        _surfaceSelectionService.HasSelection;
+
+    [RelayCommand(CanExecute = nameof(CanEditSelectedSurfaceMappings))]
+    private void CommitSurfaceMappingEdits()
+    {
+        var brush = GetSelectedBrush();
+        if (brush is null || !_surfaceSelectionService.HasSelection)
+        {
+            return;
+        }
+
+        if (!TryParseSurfaceMappingInputs(out var offset, out var scale, out var rotation))
+        {
+            _statusBarVm.Message = "Invalid surface mapping format.";
+            RefreshSelectionDetails();
+            return;
+        }
+
+        var updatedMappings = _surfaceSelectionService.SelectedSurfaceIds.ToDictionary(
+            surfaceId => surfaceId,
+            surfaceId =>
+            {
+                var current = brush.GetEffectiveSurfaceMapping(surfaceId);
+                return current with
+                {
+                    Offset = offset,
+                    Scale = scale,
+                    RotationDegrees = rotation,
+                    TextureLocked = _propertiesVm.TextureLockEnabled
+                };
+            },
+            StringComparer.Ordinal);
+
+        _sceneService.Execute(new UpdateSurfaceMappingCommand(_sceneService.Scene, brush, updatedMappings));
+        RefreshSelectionDetails();
+        _statusBarVm.Message = "Surface mapping updated.";
+    }
+
+    [RelayCommand(CanExecute = nameof(CanEditSelectedSurfaceMappings))]
+    private void FitSelectedSurfaceMappings()
+    {
+        var brush = GetSelectedBrush();
+        if (brush is null || !_surfaceSelectionService.HasSelection)
+        {
+            return;
+        }
+
+        var updatedMappings = _surfaceSelectionService.SelectedSurfaceIds.ToDictionary(
+            surfaceId => surfaceId,
+            surfaceId =>
+            {
+                var current = brush.GetEffectiveSurfaceMapping(surfaceId);
+                var fitScale = GetFitScale(brush, surfaceId);
+                return current with
+                {
+                    Offset = Vector2.Zero,
+                    Scale = fitScale,
+                    RotationDegrees = 0f
+                };
+            },
+            StringComparer.Ordinal);
+
+        _sceneService.Execute(new UpdateSurfaceMappingCommand(_sceneService.Scene, brush, updatedMappings));
+        RefreshSelectionDetails();
+        _statusBarVm.Message = "Surface mapping fit to selected faces.";
+    }
+
+    [RelayCommand(CanExecute = nameof(CanEditSelectedSurfaceMappings))]
+    private void ResetSelectedSurfaceMappings()
+    {
+        var brush = GetSelectedBrush();
+        if (brush is null || !_surfaceSelectionService.HasSelection)
+        {
+            return;
+        }
+
+        var updatedMappings = _surfaceSelectionService.SelectedSurfaceIds.ToDictionary(
+            surfaceId => surfaceId,
+            surfaceId => SurfaceMapping.Default(brush.GetEffectiveSurfaceMapping(surfaceId).TextureKey),
+            StringComparer.Ordinal);
+
+        _sceneService.Execute(new UpdateSurfaceMappingCommand(_sceneService.Scene, brush, updatedMappings));
+        RefreshSelectionDetails();
+        _statusBarVm.Message = "Surface mapping reset.";
+    }
+
+    private bool CanEditSelectedSurfaceMappings() =>
+        GetSelectedBrush() is not null && _surfaceSelectionService.HasSelection;
+
     partial void OnNewBrushPrimitiveChanged(BrushPrimitive value) =>
         UpdateBrushPrimitive(value);
 
+    partial void OnSelectedTextureKeyChanged(string? value)
+    {
+        ApplySelectedTextureToBrushCommand.NotifyCanExecuteChanged();
+        ApplySelectedTextureToSelectedSurfacesCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(SelectedTextureEntry));
+        OnPropertyChanged(nameof(FilteredTextures));
+    }
+
+    partial void OnTextureSearchTextChanged(string value) =>
+        OnPropertyChanged(nameof(FilteredTextures));
+
+    [RelayCommand]
+    private void ToggleTextureBrowser()
+    {
+        IsTextureBrowserVisible = !IsTextureBrowserVisible;
+        _statusBarVm.Message = IsTextureBrowserVisible ? "Texture browser shown." : "Texture browser hidden.";
+    }
+
+    [RelayCommand]
+    private void ToggleSurfaceSelection(string surfaceId)
+    {
+        var brush = GetSelectedBrush();
+        if (brush is null || !BrushSurfaceIds.IsValid(brush.Primitive, surfaceId))
+        {
+            return;
+        }
+
+        var selected = _surfaceSelectionService.BrushId == brush.Id
+            ? _surfaceSelectionService.SelectedSurfaceIds.ToHashSet(StringComparer.Ordinal)
+            : new HashSet<string>(StringComparer.Ordinal);
+
+        if (!selected.Add(surfaceId))
+        {
+            selected.Remove(surfaceId);
+        }
+
+        _surfaceSelectionService.Replace(brush.Id, selected);
+        _statusBarVm.Message = _surfaceSelectionService.HasSelection
+            ? $"Face selection: {_propertiesVm.SelectedSurfaceSummary}."
+            : "Face selection cleared.";
+    }
+
     bool IEditorShortcutTarget.TryExecuteShortcut(EditorShortcutAction action, object? parameter)
     {
+        if (action == EditorShortcutAction.SelectTool &&
+            parameter is string toolName &&
+            string.Equals(toolName, nameof(EditorToolKind.Select), StringComparison.OrdinalIgnoreCase))
+        {
+            _surfaceSelectionService.Clear();
+        }
+
         return action switch
         {
             EditorShortcutAction.NewFile => ExecuteCommand(NewFileCommand),
@@ -336,6 +561,7 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
             EditorShortcutAction.Paste => ExecuteCommand(PasteBrushCommand),
             EditorShortcutAction.Delete => ExecuteCommand(DeleteSelectedCommand),
             EditorShortcutAction.CreateBrush => ExecuteCommand(CreateBrushCommand),
+            EditorShortcutAction.ToggleTextureBrowser => ExecuteCommand(ToggleTextureBrowserCommand),
             EditorShortcutAction.SelectTool => ExecuteCommand(SelectToolCommand, parameter),
             _ => false
         };
@@ -355,6 +581,9 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         if (brush is not null)
         {
             _propertiesVm.PopulateFromBrush(brush);
+            _propertiesVm.PopulateSurfaceMapping(brush, _surfaceSelectionService.BrushId == brush.Id
+                ? _surfaceSelectionService.SelectedSurfaceIds
+                : Array.Empty<string>());
             return;
         }
 
@@ -375,6 +604,20 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         _propertiesVm.Clear();
     }
 
+    public void UpdateSelectedSurfaces(IEnumerable<string> surfaceIds)
+    {
+        var brush = GetSelectedBrush();
+        if (brush is null)
+        {
+            _surfaceSelectionService.Clear();
+            return;
+        }
+
+        _surfaceSelectionService.Replace(
+            brush.Id,
+            surfaceIds.Where(surfaceId => BrushSurfaceIds.IsValid(brush.Primitive, surfaceId)));
+    }
+
     private Brush? GetSelectedBrush()
     {
         var selectedId = _selectionService.PrimarySelectionId;
@@ -384,6 +627,78 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         }
 
         return _sceneService.Scene.Brushes.FirstOrDefault(b => b.Id == selectedId.Value);
+    }
+
+    private void SyncSurfaceSelectionToEntitySelection()
+    {
+        var brush = GetSelectedBrush();
+        if (brush is null)
+        {
+            _surfaceSelectionService.Clear();
+            return;
+        }
+
+        if (_surfaceSelectionService.BrushId == brush.Id)
+        {
+            return;
+        }
+
+        _surfaceSelectionService.Clear();
+    }
+
+    private void RemoveMissingSurfaceSelection()
+    {
+        if (_surfaceSelectionService.BrushId is null)
+        {
+            return;
+        }
+
+        var brush = _sceneService.Scene.Brushes.FirstOrDefault(candidate => candidate.Id == _surfaceSelectionService.BrushId.Value);
+        if (brush is null)
+        {
+            _surfaceSelectionService.Clear();
+            return;
+        }
+
+        var validSurfaceIds = _surfaceSelectionService.SelectedSurfaceIds
+            .Where(surfaceId => BrushSurfaceIds.IsValid(brush.Primitive, surfaceId))
+            .ToArray();
+        _surfaceSelectionService.Replace(brush.Id, validSurfaceIds);
+    }
+
+    private static Vector2 GetFitScale(Brush brush, string surfaceId)
+    {
+        static float FitFor(float dimension) => dimension <= 0.001f ? 1f : 64f / dimension;
+
+        var scale = brush.Transform.Scale;
+        return surfaceId switch
+        {
+            BrushSurfaceIds.Top or BrushSurfaceIds.Bottom => new Vector2(FitFor(scale.X), FitFor(scale.Z)),
+            BrushSurfaceIds.Front or BrushSurfaceIds.Back => new Vector2(FitFor(scale.X), FitFor(scale.Y)),
+            BrushSurfaceIds.Left or BrushSurfaceIds.Right => new Vector2(FitFor(scale.Z), FitFor(scale.Y)),
+            BrushSurfaceIds.Side => new Vector2(FitFor(MathF.PI * MathF.Max(scale.X, scale.Z)), FitFor(scale.Y)),
+            BrushSurfaceIds.Base => new Vector2(FitFor(scale.X), FitFor(scale.Z)),
+            _ => new Vector2(FitFor(scale.X), FitFor(scale.Y))
+        };
+    }
+
+    private bool TryParseSurfaceMappingInputs(out Vector2 offset, out Vector2 scale, out float rotation)
+    {
+        rotation = 0f;
+        if (!PropertiesViewModel.TryParseFloat(_propertiesVm.SurfaceOffsetUText, out var offsetU) ||
+            !PropertiesViewModel.TryParseFloat(_propertiesVm.SurfaceOffsetVText, out var offsetV) ||
+            !PropertiesViewModel.TryParseFloat(_propertiesVm.SurfaceScaleUText, out var scaleU) ||
+            !PropertiesViewModel.TryParseFloat(_propertiesVm.SurfaceScaleVText, out var scaleV) ||
+            !float.TryParse(_propertiesVm.SurfaceRotationText, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out rotation))
+        {
+            offset = default;
+            scale = default;
+            return false;
+        }
+
+        offset = new Vector2(offsetU, offsetV);
+        scale = new Vector2(scaleU, scaleV);
+        return true;
     }
 
     // ── Window close guard ─────────────────────────────────────────────────────

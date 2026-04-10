@@ -11,7 +11,7 @@ public static class MeshEdgeIndexBuilder
 {
     public static uint[] BuildFeatureEdges(Mesh mesh, float coplanarDotThreshold = 0.999f)
     {
-        if (mesh.Indices.Length < 3 || mesh.Vertices.Length < 6)
+        if (mesh.Indices.Length < 3 || mesh.Vertices.Length < Mesh.FloatsPerVertex)
         {
             return [];
         }
@@ -77,7 +77,7 @@ public static class MeshEdgeIndexBuilder
 
     private static Vector3 GetPosition(Mesh mesh, uint index)
     {
-        int offset = checked((int)index) * 6;
+        int offset = checked((int)index) * Mesh.FloatsPerVertex;
         return new Vector3(
             mesh.Vertices[offset],
             mesh.Vertices[offset + 1],

@@ -11,6 +11,7 @@ internal enum EditorShortcutAction
     Paste,
     Delete,
     CreateBrush,
+    ToggleTextureBrowser,
     SelectTool
 }
 

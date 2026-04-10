@@ -4,6 +4,7 @@ using MapEditor.Rendering.Cameras;
 using MapEditor.Rendering.Infrastructure;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
 namespace MapEditor.App;
@@ -27,10 +28,11 @@ public partial class MainWindow : Window
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        ViewportTop.AttachOrthographic(_vm.SceneService, _vm.ActiveToolService, _vm.SelectionService, _vm.StatusBar, () => _vm.NewBrushPrimitive, ViewAxis.Top);
-        ViewportFront.AttachOrthographic(_vm.SceneService, _vm.ActiveToolService, _vm.SelectionService, _vm.StatusBar, () => _vm.NewBrushPrimitive, ViewAxis.Front);
-        ViewportSide.AttachOrthographic(_vm.SceneService, _vm.ActiveToolService, _vm.SelectionService, _vm.StatusBar, () => _vm.NewBrushPrimitive, ViewAxis.Side);
-        ViewportPersp.AttachPerspective(_vm.SceneService, _vm.ActiveToolService, _vm.SelectionService, _vm.StatusBar, () => _vm.NewBrushPrimitive);
+        var textureCatalog = _vm.TextureLibrary;
+        ViewportTop.AttachOrthographic(_vm.SceneService, _vm.ActiveToolService, _vm.SelectionService, _vm.SurfaceSelectionService, _vm.StatusBar, textureCatalog, () => _vm.NewBrushPrimitive, ViewAxis.Top);
+        ViewportFront.AttachOrthographic(_vm.SceneService, _vm.ActiveToolService, _vm.SelectionService, _vm.SurfaceSelectionService, _vm.StatusBar, textureCatalog, () => _vm.NewBrushPrimitive, ViewAxis.Front);
+        ViewportSide.AttachOrthographic(_vm.SceneService, _vm.ActiveToolService, _vm.SelectionService, _vm.SurfaceSelectionService, _vm.StatusBar, textureCatalog, () => _vm.NewBrushPrimitive, ViewAxis.Side);
+        ViewportPersp.AttachPerspective(_vm.SceneService, _vm.ActiveToolService, _vm.SelectionService, _vm.SurfaceSelectionService, _vm.StatusBar, textureCatalog, () => _vm.NewBrushPrimitive);
 
         ViewportTop.LayoutToggleRequested += OnViewportLayoutToggleRequested;
         ViewportFront.LayoutToggleRequested += OnViewportLayoutToggleRequested;
@@ -80,12 +82,59 @@ public partial class MainWindow : Window
         CommitPropertyEdits();
     }
 
+    private void OnSurfaceMappingEditorKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter)
+        {
+            return;
+        }
+
+        CommitSurfaceMappingEdits();
+        e.Handled = true;
+    }
+
+    private void OnSurfaceMappingEditorLostFocus(object sender, RoutedEventArgs e)
+    {
+        CommitSurfaceMappingEdits();
+    }
+
+    private void OnTextureLockChanged(object sender, RoutedEventArgs e)
+    {
+        CommitSurfaceMappingEdits();
+    }
+
     private void CommitPropertyEdits()
     {
         if (_vm.CommitPropertyEditsCommand.CanExecute(null))
         {
             _vm.CommitPropertyEditsCommand.Execute(null);
         }
+    }
+
+    private void CommitSurfaceMappingEdits()
+    {
+        if (_vm.CommitSurfaceMappingEditsCommand.CanExecute(null))
+        {
+            _vm.CommitSurfaceMappingEditsCommand.Execute(null);
+        }
+    }
+
+    private void OnSurfaceChipClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not ToggleButton { Tag: string surfaceId })
+        {
+            return;
+        }
+
+        if (_vm.ToggleSurfaceSelectionCommand.CanExecute(surfaceId))
+        {
+            _vm.ToggleSurfaceSelectionCommand.Execute(surfaceId);
+        }
+    }
+
+    private void OnTextureWorkflowHelpClick(object sender, RoutedEventArgs e)
+    {
+        MessageBox.Show(this, TextureWorkflowHelp.Message, TextureWorkflowHelp.Title, MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private void OnViewportLayoutToggleRequested(object? sender, EventArgs e)

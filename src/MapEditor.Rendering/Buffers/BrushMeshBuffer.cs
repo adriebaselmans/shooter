@@ -1,6 +1,7 @@
 using Silk.NET.OpenGL;
 using System.Numerics;
 using MapEditor.Core.Entities;
+using MapEditor.Core.Geometry;
 
 namespace MapEditor.Rendering.Buffers;
 
@@ -18,6 +19,7 @@ public sealed class BrushMeshBuffer : IDisposable
 
     public bool IsDirty { get; set; } = true;
     public Core.Geometry.Mesh? Mesh { get; private set; }
+    public string? MeshSignature { get; set; }
 
     public BrushMeshBuffer(GL gl)
     {
@@ -56,13 +58,19 @@ public sealed class BrushMeshBuffer : IDisposable
             _gl.BufferData(BufferTargetARB.ElementArrayBuffer,
                 (nuint)(lineIndices.Length * sizeof(uint)), ptr, BufferUsageARB.StaticDraw);
 
+        int stride = Core.Geometry.Mesh.FloatsPerVertex * sizeof(float);
+
         // Position: location 0, vec3
-        _gl.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), 0);
+        _gl.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, (uint)stride, 0);
         _gl.EnableVertexAttribArray(0);
 
         // Normal: location 1, vec3 (offset 3 floats)
-        _gl.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+        _gl.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, (uint)stride, (void*)(3 * sizeof(float)));
         _gl.EnableVertexAttribArray(1);
+
+        // UV: location 2, vec2 (offset 6 floats)
+        _gl.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, (uint)stride, (void*)(6 * sizeof(float)));
+        _gl.EnableVertexAttribArray(2);
 
         _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _ebo);
         _gl.BindVertexArray(0);
@@ -79,6 +87,24 @@ public sealed class BrushMeshBuffer : IDisposable
         _gl.BindVertexArray(_vao);
         _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _ebo);
         _gl.DrawElements(PrimitiveType.Triangles, (uint)_indexCount, DrawElementsType.UnsignedInt, (void*)0);
+        _gl.BindVertexArray(0);
+    }
+
+    public unsafe void DrawSurface(MeshSurfaceRange surface)
+    {
+        UploadIfDirty();
+        if (surface.IndexCount <= 0)
+        {
+            return;
+        }
+
+        _gl.BindVertexArray(_vao);
+        _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _ebo);
+        _gl.DrawElements(
+            PrimitiveType.Triangles,
+            (uint)surface.IndexCount,
+            DrawElementsType.UnsignedInt,
+            (void*)(surface.IndexStart * sizeof(uint)));
         _gl.BindVertexArray(0);
     }
 

@@ -1,131 +1,127 @@
-feature: poc-editor-shell-interactions-and-file-flow
+feature: poc-brush-texturing-workflow
 status: ready
 summary: >
-  Tighten the editor shell and core interactions so the window behaves like a
-  normal desktop app, property editing and file commands work, the viewport
-  workflow matches common editor expectations more closely, the orthographic
-  and perspective axis conventions follow a single explicit coordinate system,
-  and the 3D viewport uses readable brush visuals.
+  Add a professional-feeling texture assignment workflow for brush-based level
+  editing so users can assign a texture to an entire brush or to individual
+  brush surfaces, inspect and tweak basic surface mapping, and save/load that
+  data without breaking the current fast PoC editor flow.
 user_need: >
-  The editor should have normal window chrome and standard desktop shortcuts,
-  the properties panel and open/save flow must actually work, the primitive
-  picker styling must be readable, viewport layout should be easy to maximize
-  and restore, redundant toolbar actions should be removed in favor of more
-  natural editor interactions, and the 3D viewport should render brushes with
-  the same transparent color family used in orthographic views.
+  The editor already lets the user create and edit brushes, but the next major
+  usability gap is texturing. The user wants a workflow comparable to established
+  3D map editors, where textures can be applied quickly to a whole brush or to
+  selected faces, adjusted with simple controls, and shown clearly in the 3D
+  viewport.
 in_scope:
-  - Restore standard window movement and normal maximize/close behavior.
-  - Make the properties panel edit the selected entity values in the scene.
-  - Replace the primitive picker dropdown with explicit primitive creation buttons.
-  - Add standard desktop shortcuts for undo/redo/copy/paste and save/open behavior.
-  - Make open/save functional from the menu, toolbar, and keyboard shortcuts.
-  - Add an easy maximize/restore flow for viewports.
-  - Remove or reduce low-value toolbar actions that duplicate direct editor interaction.
-  - Shift object movement toward direct manipulation rather than requiring a dedicated Move button.
-  - Align orthographic and 3D axis guides to the explicit left-handed Y-up convention: +X right, +Y up, +Z forward.
-  - Make the 3D viewport render brushes with readable translucent color treatment aligned with orthographic visuals.
+  - Assign a texture to the currently selected brush as its default texture.
+  - Assign a texture to one or more selected brush surfaces.
+  - Add a texture browser with previews and a current texture selection.
+  - Add a surface inspector for core mapping controls: offset, scale, rotation,
+    and fit/reset actions.
+  - Add an in-app help entry that explains the texture-editing shortcuts and core workflow.
+  - Preserve texture placement when brush transforms change through a texture-lock workflow.
+  - Render textures in the 3D viewport and expose a readable editor fallback in orthographic views.
+  - Persist texture assignments and mapping data in the `.shmap` format.
+  - Keep all texture edits undoable and redoable through the existing command flow.
 out_of_scope:
-  - A full command/gizmo system redesign.
-  - Multi-window docking or detachable viewport panels.
-  - Full material editing or per-surface texture workflows.
-  - Clipboard interoperability with external apps beyond editor-local copy/paste of scene objects.
+  - Full PBR material authoring or shader-graph editing.
+  - Texture painting, decals, terrain splatting, or sculpt workflows.
+  - Imported static-mesh material editing.
+  - Advanced UV unwrapping tools beyond brush/surface mapping controls.
+  - Runtime asset packaging, streaming, or compression pipelines.
 functional_requirements:
   - id: FR-1
     requirement: >
-      The main window shall expose normal desktop window chrome so the user can
-      move the window and use default minimize, maximize, and close affordances.
+      The editor shall expose a browsable texture library sourced from project-local
+      image assets so the user can choose a texture visually instead of typing names manually.
   - id: FR-2
     requirement: >
-      Editing transform values in the properties panel for the selected brush
-      shall update the scene and remain consistent with selection and undo history.
+      With a brush selected, the user shall be able to apply the current texture
+      to the whole brush in one action.
   - id: FR-3
     requirement: >
-      The toolbar shall expose separate primitive creation buttons with
-      recognizable icons for box, cylinder, cone, and wedge rather than a dropdown selector.
+      The editor shall support selecting one or more logical brush surfaces and
+      applying the current texture only to those selected surfaces.
   - id: FR-4
     requirement: >
-      The editor shall support standard keyboard shortcuts for undo, redo, copy,
-      paste, open, and save using common Ctrl-based bindings.
+      For each textured surface, the editor shall support editable offset, scale,
+      and rotation controls, plus a fit/reset action suitable for brush-based level editing.
   - id: FR-5
     requirement: >
-      Copy and paste shall duplicate the current selected brush inside the
-      editor, preserving the source brush shape and creating a new selectable instance.
+      The editor shall preserve texture mapping during supported brush transform
+      operations when texture lock is enabled.
   - id: FR-6
     requirement: >
-      Open and save actions shall work from menu, toolbar, and keyboard
-      shortcuts without silently failing.
+      The 3D viewport shall render applied textures on brushes and shall make
+      the currently selected textured surface visually obvious.
   - id: FR-7
     requirement: >
-      The user shall be able to maximize a single viewport and restore the
-      default 4-viewport layout through an easy editor action.
+      Orthographic views shall provide a readable indication of the applied brush
+      or surface texture without sacrificing editing clarity.
   - id: FR-8
     requirement: >
-      The toolbar shall prioritize useful mode/action buttons for the current
-      interaction model and shall not keep select/move buttons whose behavior is redundant with direct manipulation.
+      Texture assignment and mapping changes shall participate in undo and redo
+      through the existing scene command system.
   - id: FR-9
     requirement: >
-      Primitive creation buttons shall behave as single-use toggles: activating one enables create-brush mode for that primitive, clicking the same active button again returns the editor to the default select mode, and creating a brush successfully returns the editor to select mode automatically.
+      Saving and reopening a scene shall preserve brush default textures,
+      per-surface overrides, and surface mapping values.
   - id: FR-10
     requirement: >
-      With a brush selected in an orthographic viewport, dragging with the
-      expected direct-manipulation mouse gesture shall move the brush without requiring a dedicated Move mode button.
+      The data model shall support both brush-wide default texture assignment and
+      per-surface overrides without requiring raw triangle-level editing in the UI.
   - id: FR-11
     requirement: >
-      The orthographic viewports shall follow a consistent world-axis mapping
-      under a left-handed Y-up convention, with Top using X-right/Z-up on screen,
-      Front using X-right/Y-up on screen, and Side using Z-right/Y-up on screen.
+      The feature shall use stable logical surface identifiers for each supported
+      brush primitive so saved texture data remains deterministic across sessions.
   - id: FR-12
     requirement: >
-      The 3D viewport shall render brushes with visible translucent color that
-      matches the editor's orthographic color language closely enough for the
-      same brush state/operation to be recognizable.
-  - id: FR-13
-    requirement: >
-      The 3D viewport guide shall visualize the same world-axis definition with
-      red X, green Y, and blue Z axis cues that correspond to the orthographic views.
+      The editor shall provide a discoverable in-app help entry that lists the
+      texture-editing shortcuts and briefly explains the primary interaction flow
+      for selecting faces, browsing textures, and applying or picking textures.
 acceptance_criteria:
   - id: AC-1
     criterion: >
-      The window can be moved normally and shows working standard maximize and close controls.
+      The user can open a texture browser, pick a texture preview, and see the
+      selected texture become the active texture for subsequent apply actions.
   - id: AC-2
     criterion: >
-      Changing a selected brush transform value in the properties panel updates
-      the selected brush and remains undoable.
+      Applying a texture to a selected brush updates the 3D viewport immediately
+      and can be undone and redone.
   - id: AC-3
     criterion: >
-      The toolbar shows separate box, cylinder, cone, and wedge creation buttons with recognizable icons and only the active primitive button appears selected.
+      Applying a texture to a selected brush surface updates only that surface
+      while other surfaces keep their previous texture assignment.
   - id: AC-4
     criterion: >
-      Ctrl+O, Ctrl+S, Ctrl+Z, Ctrl+Y, Ctrl+C, and Ctrl+V trigger the expected editor actions.
+      Editing offset, scale, or rotation in the surface inspector changes the
+      visible mapping in the 3D viewport and persists after save/reopen.
   - id: AC-5
     criterion: >
-      Saving a scene and reopening it through the editor works from the active build.
+      Using fit or reset on a selected surface produces a stable, readable texture
+      layout suited to brush editing.
   - id: AC-6
     criterion: >
-      A viewport can be maximized and restored without restarting the editor.
+      With texture lock enabled, moving or resizing a brush preserves surface texture
+      placement according to the chosen mapping rules.
   - id: AC-7
     criterion: >
-      Clicking an active primitive creation button returns the editor to select mode, and completing one brush creation also returns the editor to select mode automatically.
+      A box brush and at least one non-box primitive can be textured, saved, reopened,
+      and rendered with the same assignments and mapping values.
   - id: AC-8
     criterion: >
-      A selected brush can be moved with the direct-manipulation mouse gesture
-      chosen for this loop without first switching to a Move tool.
+      Existing map files that only contain the old brush-wide `material_name`
+      continue to load successfully with sensible defaults.
   - id: AC-9
     criterion: >
-      Top, Front, and Side orthographic views all use a stable world-axis definition that matches the left-handed Y-up convention and does not feel mirrored or inverted during brush creation/editing.
-  - id: AC-10
-    criterion: >
-      The perspective viewport shows brushes with visible translucent color rather than uncolored opaque geometry.
-  - id: AC-11
-    criterion: >
-      The perspective viewport guide shows red, green, and blue axis cues that correspond to X, Y, and Z respectively.
+      A user can open a help entry from the editor UI and see the supported
+      texture-editing shortcuts and their meaning without needing external documentation.
 constraints:
-  - Remain within the current WPF/.NET 10 PoC stack.
-  - Keep the loop fast and lightweight; acceptance-test automation and DoD remain skipped per user preference.
-  - Reuse the existing command-based scene mutation flow where practical so undo/redo stays coherent.
+  - Remain within the current WPF/.NET 10 PoC stack and existing project structure.
+  - Reuse the current command-based scene mutation flow so undo/redo remains coherent.
+  - Keep the user workflow fast and editor-first; acceptance automation and DoD remain skipped per user preference.
+  - Keep the current left-handed, Y-up world convention intact.
 assumptions:
-  - Copy/paste scope for this loop is selected-brush duplication inside the editor rather than system-wide data interchange.
-  - Viewport maximize/restore may be implemented as a toggle action or double-click workflow as long as it is easy and discoverable.
-  - Direct-manipulation movement only needs to cover the current orthographic editing workflow in this iteration.
-  - The coordinate system contract for editor visuals and interaction is left-handed with Y-up, +X right, and +Z forward.
+  - The first delivery can treat a "texture" as a project-local image asset referenced by a stable key.
+  - Logical surfaces are the user-facing editing unit, even when a primitive is internally rendered by multiple triangles.
+  - Initial surface editing can focus on the 3D viewport rather than requiring full per-surface picking in orthographic views.
 open_questions: []

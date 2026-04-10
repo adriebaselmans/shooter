@@ -1,5 +1,6 @@
 ﻿using MapEditor.Core;
 using MapEditor.Core.Entities;
+using System.Numerics;
 
 namespace MapEditor.Core.Commands;
 
@@ -100,6 +101,90 @@ public sealed class RenameEntityCommand : ISceneCommand
     public void Undo()
     {
         _entity.Name = _oldName;
+        _scene.RaiseChanged();
+    }
+}
+
+/// <summary>Applies a default texture to a brush and optionally clears per-surface overrides.</summary>
+public sealed class ApplyBrushTextureCommand : ISceneCommand
+{
+    private readonly Scene _scene;
+    private readonly Brush _brush;
+    private readonly string _newTextureKey;
+    private readonly string _oldTextureKey;
+    private readonly Dictionary<string, SurfaceMapping> _oldSurfaceMappings;
+    private readonly bool _clearSurfaceOverrides;
+
+    public ApplyBrushTextureCommand(Scene scene, Brush brush, string textureKey, bool clearSurfaceOverrides = true)
+    {
+        _scene = scene;
+        _brush = brush;
+        _newTextureKey = string.IsNullOrWhiteSpace(textureKey) ? "default" : textureKey;
+        _oldTextureKey = brush.MaterialName;
+        _oldSurfaceMappings = brush.SurfaceMappings.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+        _clearSurfaceOverrides = clearSurfaceOverrides;
+    }
+
+    public void Execute()
+    {
+        _brush.SetBrushTexture(_newTextureKey, _clearSurfaceOverrides);
+        _scene.RaiseChanged();
+    }
+
+    public void Undo()
+    {
+        _brush.SetBrushTexture(_oldTextureKey, clearSurfaceOverrides: true);
+        _brush.ReplaceSurfaceMappings(_oldSurfaceMappings);
+        _scene.RaiseChanged();
+    }
+}
+
+/// <summary>Updates the full mapping for one or more logical brush surfaces.</summary>
+public sealed class UpdateSurfaceMappingCommand : ISceneCommand
+{
+    private readonly Scene _scene;
+    private readonly Brush _brush;
+    private readonly IReadOnlyDictionary<string, SurfaceMapping?> _oldMappings;
+    private readonly IReadOnlyDictionary<string, SurfaceMapping> _newMappings;
+
+    public UpdateSurfaceMappingCommand(Scene scene, Brush brush, IReadOnlyDictionary<string, SurfaceMapping> newMappings)
+    {
+        _scene = scene;
+        _brush = brush;
+        _newMappings = new Dictionary<string, SurfaceMapping>(newMappings, StringComparer.Ordinal);
+        var oldMappings = new Dictionary<string, SurfaceMapping?>(StringComparer.Ordinal);
+        foreach (var key in newMappings.Keys)
+        {
+            oldMappings[key] = brush.SurfaceMappings.TryGetValue(key, out var mapping) ? mapping : null;
+        }
+
+        _oldMappings = oldMappings;
+    }
+
+    public void Execute()
+    {
+        foreach (var (surfaceId, mapping) in _newMappings)
+        {
+            _brush.SetSurfaceMapping(surfaceId, mapping);
+        }
+
+        _scene.RaiseChanged();
+    }
+
+    public void Undo()
+    {
+        foreach (var (surfaceId, mapping) in _oldMappings)
+        {
+            if (mapping.HasValue)
+            {
+                _brush.SetSurfaceMapping(surfaceId, mapping.Value);
+            }
+            else
+            {
+                _brush.ClearSurfaceMapping(surfaceId);
+            }
+        }
+
         _scene.RaiseChanged();
     }
 }

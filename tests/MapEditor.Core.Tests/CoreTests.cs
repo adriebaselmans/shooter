@@ -106,6 +106,45 @@ public sealed class CommandHistoryTests
         svc.Undo();
         svc.Scene.Brushes[0].Name.Should().Be("B1");
     }
+
+    [Fact]
+    public void ApplyBrushTextureCommand_UndoRestoresPreviousBrushTextureAndSurfaceOverrides()
+    {
+        var svc = new SceneService();
+        var brush = new Brush { MaterialName = "stone.png" };
+        brush.SetSurfaceMapping(BrushSurfaceIds.Top, SurfaceMapping.Default("metal.png"));
+        svc.Execute(new CreateBrushCommand(svc.Scene, brush));
+
+        svc.Execute(new ApplyBrushTextureCommand(svc.Scene, brush, "brick.png"));
+
+        brush.MaterialName.Should().Be("brick.png");
+        brush.SurfaceMappings.Should().BeEmpty();
+
+        svc.Undo();
+
+        brush.MaterialName.Should().Be("stone.png");
+        brush.GetEffectiveSurfaceMapping(BrushSurfaceIds.Top).TextureKey.Should().Be("metal.png");
+    }
+
+    [Fact]
+    public void UpdateSurfaceMappingCommand_UndoRestoresPreviousSurfaceValues()
+    {
+        var svc = new SceneService();
+        var brush = new Brush();
+        svc.Execute(new CreateBrushCommand(svc.Scene, brush));
+
+        var updatedMapping = new Dictionary<string, SurfaceMapping>
+        {
+            [BrushSurfaceIds.Top] = new("brick.png", new Vector2(2f, 4f), new Vector2(0.5f, 0.5f), 90f, true)
+        };
+
+        svc.Execute(new UpdateSurfaceMappingCommand(svc.Scene, brush, updatedMapping));
+        brush.GetEffectiveSurfaceMapping(BrushSurfaceIds.Top).TextureKey.Should().Be("brick.png");
+
+        svc.Undo();
+        brush.SurfaceMappings.Should().BeEmpty();
+        brush.GetEffectiveSurfaceMapping(BrushSurfaceIds.Top).TextureKey.Should().Be(brush.MaterialName);
+    }
 }
 
 public sealed class MeshGeneratorTests
@@ -152,13 +191,23 @@ public sealed class MeshGeneratorTests
     }
 
     [Fact]
-    public void VertexDataStride_IsMultipleOf6()
+    public void VertexDataStride_IsMultipleOf8()
     {
         foreach (BrushPrimitive p in Enum.GetValues<BrushPrimitive>())
         {
             var mesh = MeshGenerator.GenerateMesh(p);
-            (mesh.Vertices.Length % 6).Should().Be(0, $"{p} vertex array length must be multiple of 6");
+            (mesh.Vertices.Length % Mesh.FloatsPerVertex).Should().Be(0, $"{p} vertex array length must be multiple of {Mesh.FloatsPerVertex}");
         }
+    }
+
+    [Fact]
+    public void BoxMesh_ExposesSixLogicalSurfaces()
+    {
+        var mesh = MeshGenerator.GenerateMesh(BrushPrimitive.Box);
+
+        mesh.Surfaces.Select(surface => surface.SurfaceId)
+            .Should()
+            .ContainInOrder(BrushSurfaceIds.Top, BrushSurfaceIds.Bottom, BrushSurfaceIds.Front, BrushSurfaceIds.Back, BrushSurfaceIds.Right, BrushSurfaceIds.Left);
     }
 }
 

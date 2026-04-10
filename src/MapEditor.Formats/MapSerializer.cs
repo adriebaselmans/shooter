@@ -32,6 +32,15 @@ public static class MapSerializer
                 Transform    = ToTransform(b.Transform),
                 MaterialName = b.MaterialName
             };
+
+            if (b.SurfaceMappings is not null)
+            {
+                brush.ReplaceSurfaceMappings(
+                    b.SurfaceMappings
+                        .Where(pair => BrushSurfaceIds.IsValid(brush.Primitive, pair.Key))
+                        .Select(pair => new KeyValuePair<string, SurfaceMapping>(pair.Key, ToSurfaceMapping(pair.Value, brush.MaterialName))));
+            }
+
             scene.AddBrush(brush);
         }
 
@@ -84,7 +93,13 @@ public static class MapSerializer
                 Operation    = b.Operation == BrushOperation.Additive ? "additive" : "subtractive",
                 PrimitiveType = b.Primitive.ToString().ToLowerInvariant(),
                 Transform    = FromTransform(b.Transform),
-                MaterialName = b.MaterialName
+                MaterialName = b.MaterialName,
+                SurfaceMappings = b.SurfaceMappings.Count == 0
+                    ? null
+                    : b.SurfaceMappings.ToDictionary(
+                        pair => pair.Key,
+                        pair => FromSurfaceMapping(pair.Value),
+                        StringComparer.Ordinal)
             });
         }
 
@@ -141,6 +156,29 @@ public static class MapSerializer
             : fallback;
 
     private static float[] FromVec3(Vector3 v) => [v.X, v.Y, v.Z];
+
+    private static SurfaceMapping ToSurfaceMapping(SurfaceMappingDto dto, string fallbackTexture) => new(
+        string.IsNullOrWhiteSpace(dto.TextureKey) ? fallbackTexture : dto.TextureKey,
+        ToVec2(dto.Offset, Vector2.Zero),
+        ToVec2(dto.Scale, Vector2.One),
+        dto.RotationDegrees,
+        dto.TextureLocked);
+
+    private static SurfaceMappingDto FromSurfaceMapping(SurfaceMapping mapping) => new()
+    {
+        TextureKey = mapping.TextureKey,
+        Offset = FromVec2(mapping.Offset),
+        Scale = FromVec2(mapping.Scale),
+        RotationDegrees = mapping.RotationDegrees,
+        TextureLocked = mapping.TextureLocked
+    };
+
+    private static Vector2 ToVec2(float[]? arr, Vector2 fallback) =>
+        arr is { Length: >= 2 }
+            ? new Vector2(arr[0], arr[1])
+            : fallback;
+
+    private static float[] FromVec2(Vector2 v) => [v.X, v.Y];
 
     private static Dictionary<string, System.Text.Json.JsonElement>? CloneExtensionData(
         Dictionary<string, System.Text.Json.JsonElement>? source)

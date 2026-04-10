@@ -45,14 +45,17 @@ public sealed class MapFileService
     /// <summary>Saves a scene to the file at <paramref name="path"/>.</summary>
     public async Task SaveAsync(Scene scene, string path, CancellationToken ct = default)
     {
-        var dto  = MapSerializer.FromScene(scene);
-        var json = JsonSerializer.Serialize(dto, SerializerOptions);
+        var dto = await Task.Run(() => MapSerializer.FromScene(scene), ct);
 
         var dir = Path.GetDirectoryName(path);
         if (!string.IsNullOrEmpty(dir))
+        {
             Directory.CreateDirectory(dir);
+        }
 
-        await File.WriteAllTextAsync(path, json, System.Text.Encoding.UTF8, ct);
+        await using var stream = File.Create(path);
+        await JsonSerializer.SerializeAsync(stream, dto, SerializerOptions, ct);
+        await stream.FlushAsync(ct);
     }
 
     private static void ValidateVersion(string? versionString)

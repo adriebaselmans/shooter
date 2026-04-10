@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Windows;
 using System.Windows.Controls;
+using MapEditor.App.Infrastructure;
 using MapEditor.App.Services;
 using MapEditor.App.Tools;
 using MapEditor.App.ViewModels;
@@ -55,7 +56,9 @@ public partial class ViewportPanel : UserControl
     private SceneService? _sceneService;
     private ActiveToolService? _activeToolService;
     private SelectionService? _selectionService;
+    private SurfaceSelectionService? _surfaceSelectionService;
     private StatusBarViewModel? _statusBarViewModel;
+    private ITextureCatalog? _textureCatalog;
     private Func<BrushPrimitive>? _brushPrimitiveProvider;
     private EditorViewportKind _viewportKind;
     private ViewAxis? _viewAxis;
@@ -75,22 +78,27 @@ public partial class ViewportPanel : UserControl
         SceneService sceneService,
         ActiveToolService activeToolService,
         SelectionService selectionService,
+        SurfaceSelectionService surfaceSelectionService,
         StatusBarViewModel statusBarViewModel,
+        ITextureCatalog textureCatalog,
         Func<BrushPrimitive> brushPrimitiveProvider)
     {
         _sceneService = sceneService;
         _activeToolService = activeToolService;
         _selectionService = selectionService;
+        _surfaceSelectionService = surfaceSelectionService;
         _statusBarViewModel = statusBarViewModel;
+        _textureCatalog = textureCatalog;
         _brushPrimitiveProvider = brushPrimitiveProvider;
         _viewportKind = EditorViewportKind.Perspective;
         _viewAxis = null;
         _selectionService.SelectionChanged += OnSelectionChanged;
+        _surfaceSelectionService.SelectionChanged += OnSelectionChanged;
 
         GlHost.RenderFrame -= OnRenderFrame;
         GlHost.RenderFrame += (_, gl) =>
         {
-            _perspRenderer ??= new PerspectiveViewportRenderer(gl);
+            _perspRenderer ??= new PerspectiveViewportRenderer(gl, _textureCatalog);
             SyncSelectionVisuals();
             _perspRenderer.Render(_sceneService.Scene, GlHost.PixelWidth, GlHost.PixelHeight);
         };
@@ -101,14 +109,18 @@ public partial class ViewportPanel : UserControl
         SceneService sceneService,
         ActiveToolService activeToolService,
         SelectionService selectionService,
+        SurfaceSelectionService surfaceSelectionService,
         StatusBarViewModel statusBarViewModel,
+        ITextureCatalog textureCatalog,
         Func<BrushPrimitive> brushPrimitiveProvider,
         ViewAxis axis)
     {
         _sceneService = sceneService;
         _activeToolService = activeToolService;
         _selectionService = selectionService;
+        _surfaceSelectionService = surfaceSelectionService;
         _statusBarViewModel = statusBarViewModel;
+        _textureCatalog = textureCatalog;
         _brushPrimitiveProvider = brushPrimitiveProvider;
         _viewportKind = axis switch
         {
@@ -118,11 +130,12 @@ public partial class ViewportPanel : UserControl
         };
         _viewAxis = axis;
         _selectionService.SelectionChanged += OnSelectionChanged;
+        _surfaceSelectionService.SelectionChanged += OnSelectionChanged;
 
         GlHost.RenderFrame -= OnRenderFrame;
         GlHost.RenderFrame += (_, gl) =>
         {
-            _orthoRenderer ??= new OrthographicViewportRenderer(gl, axis);
+            _orthoRenderer ??= new OrthographicViewportRenderer(gl, axis, _textureCatalog);
             SyncSelectionVisuals();
             _orthoRenderer.Render(_sceneService.Scene, GlHost.PixelWidth, GlHost.PixelHeight);
         };
@@ -160,6 +173,16 @@ public partial class ViewportPanel : UserControl
             {
                 _perspRenderer.SelectedEntityIds.Add(id);
             }
+
+            _perspRenderer.SelectedSurfaceBrushId = _surfaceSelectionService?.BrushId;
+            _perspRenderer.SelectedSurfaceIds.Clear();
+            if (_surfaceSelectionService is not null)
+            {
+                foreach (var surfaceId in _surfaceSelectionService.SelectedSurfaceIds)
+                {
+                    _perspRenderer.SelectedSurfaceIds.Add(surfaceId);
+                }
+            }
         }
 
         if (_orthoRenderer is not null)
@@ -182,6 +205,12 @@ public partial class ViewportPanel : UserControl
         }
 
         var context = BuildToolContext();
+        if (HandlePerspectiveSurfaceSelection(pointerEvent))
+        {
+            _lastPointerPosition = pointerEvent.Position;
+            return;
+        }
+
         if (HandleCameraNavigation(context, pointerEvent))
         {
             if (pointerEvent.Action != ViewportPointerAction.Wheel)
@@ -211,6 +240,56 @@ public partial class ViewportPanel : UserControl
         }
 
         _lastPointerPosition = pointerEvent.Position;
+    }
+
+    private bool HandlePerspectiveSurfaceSelection(ViewportPointerEvent pointerEvent)
+    {
+        if (_viewportKind != EditorViewportKind.Perspective ||
+            _sceneService is null ||
+            _activeToolService?.CurrentToolKind != EditorToolKind.Select ||
+            _selectionService is null ||
+            _surfaceSelectionService is null ||
+            _statusBarViewModel is null ||
+            pointerEvent.Action != ViewportPointerAction.Down ||
+            pointerEvent.Button != ViewportPointerButton.Left ||
+            !pointerEvent.IsShiftPressed ||
+            pointerEvent.IsAltPressed)
+        {
+            return false;
+        }
+
+        var ray = CreatePerspectiveRay(pointerEvent.Position);
+        var hit = BrushSurfaceHitTester.HitTest(ray, _sceneService.Scene.Brushes);
+        if (hit is null)
+        {
+            if (!pointerEvent.IsControlPressed)
+            {
+                _surfaceSelectionService.Clear();
+                _statusBarViewModel.Message = "No face under cursor.";
+            }
+
+            return true;
+        }
+
+        _selectionService.SetSingle(hit.Value.BrushId);
+
+        var nextSelection = _surfaceSelectionService.BrushId == hit.Value.BrushId && pointerEvent.IsControlPressed
+            ? _surfaceSelectionService.SelectedSurfaceIds.ToHashSet(StringComparer.Ordinal)
+            : new HashSet<string>(StringComparer.Ordinal);
+
+        if (!nextSelection.Add(hit.Value.SurfaceId))
+        {
+            nextSelection.Remove(hit.Value.SurfaceId);
+        }
+
+        _surfaceSelectionService.Replace(hit.Value.BrushId, nextSelection);
+        _statusBarViewModel.Message = nextSelection.Count switch
+        {
+            0 => "Face selection cleared.",
+            1 => $"Face selected: {hit.Value.SurfaceId}.",
+            _ => $"{nextSelection.Count} faces selected."
+        };
+        return true;
     }
 
     private void OnKeyInput(object? sender, ViewportKeyEvent keyEvent)

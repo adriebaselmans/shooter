@@ -110,6 +110,44 @@ public sealed class MapSerializerTests
         rt.WorldSettings.SkyColor.Z.Should().BeApproximately(1.0f, 0.001f);
     }
 
+    [Fact]
+    public void RoundTrip_PreservesSurfaceMappings()
+    {
+        var scene = new Scene();
+        var brush = new Brush { MaterialName = "stone/base.png" };
+        brush.SetSurfaceMapping(BrushSurfaceIds.Top, new SurfaceMapping("brick/wall.png", new Vector2(2f, 3f), new Vector2(0.5f, 1.5f), 45f, true));
+        scene.AddBrush(brush);
+
+        var roundTripped = MapSerializer.ToScene(MapSerializer.FromScene(scene));
+        var surfaceMapping = roundTripped.Brushes[0].GetEffectiveSurfaceMapping(BrushSurfaceIds.Top);
+
+        surfaceMapping.TextureKey.Should().Be("brick/wall.png");
+        surfaceMapping.Offset.Should().Be(new Vector2(2f, 3f));
+        surfaceMapping.Scale.Should().Be(new Vector2(0.5f, 1.5f));
+        surfaceMapping.RotationDegrees.Should().Be(45f);
+        surfaceMapping.TextureLocked.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ToScene_BackwardCompatibleMaterialOnlyBrush_UsesDefaultSurfaceTexture()
+    {
+        var dto = new MapEditor.Formats.Dto.MapDto
+        {
+            Brushes =
+            [
+                new MapEditor.Formats.Dto.BrushDto
+                {
+                    MaterialName = "legacy/brick.png",
+                    PrimitiveType = "box"
+                }
+            ]
+        };
+
+        var scene = MapSerializer.ToScene(dto);
+
+        scene.Brushes[0].GetEffectiveSurfaceMapping(BrushSurfaceIds.Top).TextureKey.Should().Be("legacy/brick.png");
+    }
+
     private static Scene BuildTestScene()
     {
         var scene = new Scene();

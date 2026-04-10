@@ -25,4 +25,10 @@
     <ProjectReference Include="..\MapEditor.Formats\MapEditor.Formats.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="Assets\Textures\**\*.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

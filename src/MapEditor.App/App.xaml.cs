@@ -30,6 +30,8 @@ public partial class App : Application
         sc.AddSingleton<MapFileService>();
         sc.AddSingleton<BrushClipboardService>();
         sc.AddSingleton<SelectionService>();
+        sc.AddSingleton<SurfaceSelectionService>();
+        sc.AddSingleton<TextureLibraryService>();
         sc.AddSingleton<ResizeTool>();
         sc.AddSingleton<SelectTool>();
         sc.AddSingleton<CreateBrushTool>();

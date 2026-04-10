@@ -12,10 +12,10 @@ public sealed class MeshEdgeIndexBuilderTests
     {
         var mesh = new Mesh(
         [
-            -0.5f, 0f, -0.5f, 0f, 1f, 0f,
-             0.5f, 0f, -0.5f, 0f, 1f, 0f,
-             0.5f, 0f,  0.5f, 0f, 1f, 0f,
-            -0.5f, 0f,  0.5f, 0f, 1f, 0f
+            -0.5f, 0f, -0.5f, 0f, 1f, 0f, 0f, 0f,
+             0.5f, 0f, -0.5f, 0f, 1f, 0f, 1f, 0f,
+             0.5f, 0f,  0.5f, 0f, 1f, 0f, 1f, 1f,
+            -0.5f, 0f,  0.5f, 0f, 1f, 0f, 0f, 1f
         ],
         [
             0u, 1u, 2u,

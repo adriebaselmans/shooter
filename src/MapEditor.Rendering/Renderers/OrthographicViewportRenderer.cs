@@ -16,6 +16,7 @@ namespace MapEditor.Rendering.Renderers;
 public sealed class OrthographicViewportRenderer : IDisposable
 {
     private readonly GL _gl;
+    private readonly ITextureCatalog? _textureCatalog;
     private ShaderProgram? _shader;
     private DynamicLineBuffer? _gridBuffer;
     private readonly Dictionary<Guid, BrushMeshBuffer> _brushBuffers = new();
@@ -30,9 +31,10 @@ public sealed class OrthographicViewportRenderer : IDisposable
     /// <summary>Diagnostics captured during the most recent render.</summary>
     public ViewportRenderDiagnostics LastDiagnostics { get; private set; } = ViewportRenderDiagnostics.Empty;
 
-    public OrthographicViewportRenderer(GL gl, ViewAxis axis)
+    public OrthographicViewportRenderer(GL gl, ViewAxis axis, ITextureCatalog? textureCatalog = null)
     {
         _gl = gl;
+        _textureCatalog = textureCatalog;
         Camera = new OrthographicCamera { Axis = axis };
     }
 
@@ -110,7 +112,7 @@ public sealed class OrthographicViewportRenderer : IDisposable
             _shader.SetUniform("uModel", model);
 
             bool selected = SelectedEntityIds.Contains(brush.Id);
-            var fillColor = BrushColorPalette.GetOrthographicFill(brush.Operation);
+            var fillColor = GetOrthographicFillColor(brush);
             var outlineColor = BrushColorPalette.GetOrthographicOutline(brush.Operation);
             var selectionOutlineColor = BrushColorPalette.GetSelectionOutline();
 
@@ -185,10 +187,38 @@ public sealed class OrthographicViewportRenderer : IDisposable
         if (!_brushBuffers.TryGetValue(brush.Id, out var buf))
         {
             buf = new BrushMeshBuffer(_gl);
-            buf.SetMesh(MeshGenerator.GenerateMesh(brush.Primitive));
             _brushBuffers[brush.Id] = buf;
         }
+
+        string meshSignature = CreateMeshSignature(brush);
+        if (buf.MeshSignature != meshSignature || buf.Mesh is null)
+        {
+            buf.SetMesh(MeshGenerator.GenerateMesh(brush));
+            buf.MeshSignature = meshSignature;
+        }
+
         return buf;
+    }
+
+    private string CreateMeshSignature(Brush brush) =>
+        string.Create(
+            System.Globalization.CultureInfo.InvariantCulture,
+            $"{brush.Primitive}|{brush.Transform.Scale.X:0.####}|{brush.Transform.Scale.Y:0.####}|{brush.Transform.Scale.Z:0.####}|{brush.AppearanceVersion}");
+
+    private Vector4 GetOrthographicFillColor(Brush brush)
+    {
+        var baseFill = BrushColorPalette.GetOrthographicFill(brush.Operation);
+        if (_textureCatalog is null || !_textureCatalog.TryGetTexture(brush.MaterialName, out var texture))
+        {
+            return baseFill;
+        }
+
+        var average = texture.AverageColor;
+        return new Vector4(
+            Math.Clamp((baseFill.X + average.X) * 0.5f, 0f, 1f),
+            Math.Clamp((baseFill.Y + average.Y) * 0.5f, 0f, 1f),
+            Math.Clamp((baseFill.Z + average.Z) * 0.5f, 0f, 1f),
+            baseFill.W);
     }
 
     private unsafe bool DrawWithVisibilityQuery(Action drawAction)
