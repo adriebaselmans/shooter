@@ -95,6 +95,9 @@ public sealed class BspBrushBooleanKernel : IBrushBooleanKernel
     /// partition space into inside/outside regions. Some primitive generators produce
     /// faces with inconsistent winding, which creates degenerate BSP trees that fail
     /// to clip geometry extending beyond the solid's bounds.
+    /// This normalization assumes convex primitive input geometry built by
+    /// <see cref="BuildSolid"/>; it is not suitable for arbitrary non-convex geometry
+    /// where the centroid-based outward test may flip faces incorrectly.
     /// </summary>
     private static void EnsureOutwardNormals(List<CsgPolygon> polygons)
     {
@@ -115,6 +118,8 @@ public sealed class BspBrushBooleanKernel : IBrushBooleanKernel
 
         foreach (var polygon in polygons)
         {
+            if (polygon.Vertices.Count == 0) continue;
+
             var faceCenter = Vector3.Zero;
             foreach (var vertex in polygon.Vertices)
             {
