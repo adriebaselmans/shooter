@@ -1,208 +1,167 @@
-feature: poc-brush-texturing-workflow
+feature: poc-freeform-boolean-brushes-and-compact-toolbar
 status: approved
 summary: >
-  Add a classic brush-editor texturing workflow inspired by Hammer,
-  TrenchBroom, and Radiant: a texture browser, brush-default assignment,
-  per-surface overrides, a compact surface inspector, in-app shortcut help,
-  and texture lock during supported brush edits. Keep the design simple by
-  introducing stable logical surfaces per primitive rather than exposing raw
-  triangle UV editing.
+  Replace the rejected box-first CSG slice with a freeform boolean brush design
+  built on explicit persisted brush geometry, destructive boolean commands, and
+  a compact grouped toolbar. Primitive buttons remain the creation entry point,
+  but subtract and merge become explicit actions rather than persistent
+  additive/subtractive modes.
 affected_modules:
   - src/MapEditor.Core/Entities/Brush.cs
+  - src/MapEditor.Core/Entities/*
   - src/MapEditor.Core/Commands/SceneCommands.cs
-  - src/MapEditor.Core/Geometry/Mesh.cs
-  - src/MapEditor.Core/Geometry/MeshGenerator.cs
-  - src/MapEditor.Core/Scene/Scene.cs
+  - src/MapEditor.Core/Geometry/*
   - src/MapEditor.Formats/Dto/MapDtos.cs
   - src/MapEditor.Formats/MapSerializer.cs
-  - src/MapEditor.Formats/MapFileService.cs
+  - src/MapEditor.App/MainWindow.xaml
+  - src/MapEditor.App/MainWindow.xaml.cs
   - src/MapEditor.App/ViewModels/MainViewModel.cs
   - src/MapEditor.App/ViewModels/PropertiesViewModel.cs
-  - src/MapEditor.App/Views/ViewportPanel.xaml
   - src/MapEditor.App/Views/ViewportPanel.xaml.cs
-  - src/MapEditor.Rendering/Buffers/BrushMeshBuffer.cs
-  - src/MapEditor.Rendering/Renderers/PerspectiveViewportRenderer.cs
-  - src/MapEditor.Rendering/Renderers/OrthographicViewportRenderer.cs
-  - src/MapEditor.Rendering/Shaders/brush_solid.vert.glsl
-  - src/MapEditor.Rendering/Shaders/brush_solid.frag.glsl
+  - src/MapEditor.Rendering/*
   - tests/MapEditor.Core.Tests/*
-  - tests/MapEditor.Formats.Tests/*
   - tests/MapEditor.App.Tests/*
-  - tests/MapEditor.Rendering.Tests/*
 design:
   research_findings:
-    - Established brush editors converge on the same pattern:
-      texture browser + per-face inspector + texture transform controls +
-      texture lock during geometry edits.
-    - Hammer exposes a face edit workflow with per-face apply, shift/scale/rotate,
-      fit/justify actions, and texture lock.
-    - TrenchBroom exposes a material browser, face attribute editing, UV tools,
-      and precise alignment lock for brush edits.
-    - Radiant-family editors expose a surface inspector with shift/scale/rotate/fit
-      controls and texture lock.
-    - Godot CSG is a useful counterexample: it supports blockout well but explicitly
-      lacks built-in UV mapping and polygon editing, reinforcing that our editor
-      needs dedicated surface texturing to feel like a real map editor.
+    - TrenchBroom exposes merge, subtract, and hollow as explicit brush-editing actions rather than permanent brush-creation modes.
+    - Blender's Boolean modifier shows that exact union and difference require a solid-aware geometry model and careful handling of overlapping geometry.
+    - Godot's CSG tools support union, subtract, and intersect on freely transformed primitives and custom manifold meshes instead of axis-aligned-only inputs.
+    - Across established tools, boolean actions are easier to understand when grouped separately from primitive creation and backed by strong undo.
   architectural_choice:
-    - Represent user-editable "faces" as stable logical surfaces per primitive.
-    - Keep `Brush.MaterialName` as the brush-default texture key for backward compatibility.
-    - Add per-surface overrides that only store data when a surface diverges from the brush default.
-    - Use simple surface mapping data: texture key, offset, scale, rotation, and fit basis.
-    - Add texture lock as surface-mapping behavior owned by the App/Core command path, not by the renderer.
+    - Drop the box-only boolean design as the implementation baseline.
+    - Move `Brush` from primitive-plus-transform-only semantics to a persisted solid-geometry source of truth.
+    - Keep primitive creation as a brush generator workflow, but normalize brushes to explicit geometry before any boolean operation.
+    - Keep subtract and merge destructive and command-driven; do not introduce a live non-destructive CSG tree in this slice.
+    - Support free rotation and arbitrary placement by operating on full brush geometry rather than axis-aligned bounds.
   domain_model:
-    - Introduce a `BrushSurfaceId` concept with stable identifiers per primitive.
-    - Introduce `SurfaceMapping` value data:
-      - texture key
-      - offset (u, v)
-      - scale (u, v)
-      - rotation degrees
-      - lock mode / texture-lock participation
-    - Extend `Brush` with:
-      - existing brush-default `MaterialName`
-      - a dictionary of per-surface overrides keyed by `BrushSurfaceId`
-    - Use logical surfaces instead of raw triangles:
-      - Box: top, bottom, front, back, right, left
-      - Cylinder: top, bottom, side
-      - Cone: base, side
-      - Wedge: each planar side as a named surface
-    - This keeps save data deterministic and keeps UI selection meaningful.
+    brush_entity:
+      - `Brush` remains the editor-facing scene entity and identity used by selection, undo, outliner, and persistence.
+      - `Brush` gains a `Geometry` payload that represents the actual solid instead of relying only on `Primitive` and `Transform`.
+      - `Primitive` becomes creation provenance and a generator hint for untouched brushes, not the sole definition of the brush after boolean edits.
+    brush_geometry:
+      - Introduce `BrushGeometry` as a local-space manifold solid representation.
+      - Model geometry as one or more closed shells, each shell made of explicit polygonal faces.
+      - Each face stores ordered vertices or indices plus face-level material and mapping data so texturing survives boolean edits.
+      - Keep object-level transform for move, rotate, and scale operations on the resulting brush entity.
+    face_texturing:
+      - Existing brush-wide texture and per-face mappings stay conceptually valid.
+      - New faces created by boolean operations inherit the target brush baseline on subtract and the first-selected brush baseline on merge.
+      - Face identifiers must be regenerated deterministically enough for immediate post-boolean texturing to be usable, but exact long-term stable IDs across topology changes are not required in this slice.
+  boolean_strategy:
+    command_shape:
+      - Add `SubtractIntersectingBrushesCommand`.
+      - Add `MergeSelectedBrushesCommand`.
+      - Each command performs one atomic scene mutation and captures exact before and after geometry for undo.
+    selection_rules:
+      - Subtract uses the primary selected brush as the cutter.
+      - Subtract targets are discovered automatically by intersection against all other brushes in the scene.
+      - Merge operates on the currently selected brush set, minimum two brushes.
+      - Merge succeeds only when the boolean union produces one valid resulting brush solid.
+    geometry_kernel:
+      - Define a narrow Core-side boolean abstraction such as `IBrushBooleanKernel`.
+      - The abstraction accepts brush geometry plus transforms and returns a validated resulting solid.
+      - The implementation should use a robust solid boolean kernel rather than extending ad hoc AABB math.
+      - If a native-backed kernel is required for robustness, isolate it behind the abstraction so App, Formats, and command code remain ignorant of interop details.
+    result_rules:
+      - Subtract consumes the cutter brush.
+      - Subtract replaces every intersecting target with a single resulting brush entity that may contain more complex shell topology than the original primitive.
+      - Merge replaces all selected input brushes with one resulting brush entity.
+      - Invalid or non-manifold results are rejected explicitly with no scene mutation.
   data_and_persistence:
-    - Keep `.shmap` backward compatible:
-      - old files with only `material_name` still map to brush-default texture
-      - new files add an optional `surface_mappings` object on each brush
-    - Each mapping entry stores only override data for that logical surface.
-    - Keep DTO parsing tolerant and preserve unknown extension data as today.
+    format_strategy:
+      - Bump `.shmap` `format_version` from `1.0.0` to `1.1.0`.
+      - Extend `BrushDto` with an optional `geometry` object that stores explicit brush solids.
+      - Keep existing `primitive_type`, `transform`, `material_name`, and `surface_mappings` fields for backward compatibility and primitive provenance.
+    load_behavior:
+      - When `geometry` is absent, load legacy primitive brushes exactly as today and synthesize runtime geometry from the primitive generator.
+      - When `geometry` is present, treat it as the authoritative solid and use primitive fields only as provenance or compatibility metadata.
+    save_behavior:
+      - Save boolean-edited brushes with explicit geometry.
+      - Preserve legacy unknown fields through existing extension-data patterns.
+      - Keep existing primitive-only maps loadable without manual migration.
+  rendering_and_runtime:
+    rendering:
+      - Rendering should consume triangulated output derived from `BrushGeometry`, not from `Primitive` alone.
+      - Cache triangulation per geometry and appearance version so normal viewport rendering stays cheap after explicit edit commands.
+      - Keep the current editor tinting and texture preview direction established in the previous texture workflow pass.
+    hit_testing:
+      - Face picking and surface selection must move from primitive-surface assumptions to geometry-derived face hits.
+      - Boolean-created faces must become immediately selectable for texturing in the perspective workflow.
   app_layer:
-    texture_library:
-      - Add a small texture-library service in `MapEditor.App` that scans a
-        project-local texture folder and returns:
-        - stable texture key
-        - display name
-        - source path
-        - preview thumbnail path or generated thumbnail
-      - Keep this service editor-local and read-only.
-    selection_model:
-      - Keep current entity selection for brushes/entities.
-      - Add a secondary surface-selection state scoped to the currently selected brush.
-      - Initial surface picking should focus on the 3D viewport, where face intent is clearest.
-    inspector_ui:
-      - Restructure the right properties area into compact transform and texturing sections.
-      - Add:
-        - current texture summary and preview
-        - apply-to-brush action
-        - apply-to-selected-surface action
-        - face-selection summary and compact face toggles
-        - split U/V offset editors
-        - split U/V scale editors
-        - rotation editor
-        - fit/reset action
-        - texture lock toggle
-      - Commit mapping edits on Enter/lost focus instead of relying on a dedicated apply button.
-      - Keep direct editing centralized in ViewModels, not code-behind.
-    browser_ui:
-      - Move the texture browser out of the right properties column into a bottom-docked collapsible panel.
-      - Use a searchable thumbnail grid instead of a narrow vertical list.
-      - Selecting a texture sets the active texture key; applying remains an explicit action.
-      - Avoid auto-applying on browse to keep undo behavior predictable.
-    help_ui:
-      - Add a Help menu entry for texture workflow help.
-      - Keep the first delivery lightweight by using an editor-owned dialog/message surface rather than external docs.
-      - The help content should list the supported shortcuts and the primary brush-vs-face texturing workflow.
-  commands_and_undo:
-    - Add focused commands instead of broad mutable updates:
-      - `ApplyBrushTextureCommand`
-      - `ApplySurfaceTextureCommand`
-      - `UpdateSurfaceMappingCommand`
-      - optionally `ClearSurfaceOverrideCommand`
-    - Use `CompositeCommand` when one user action touches multiple surfaces.
-    - Keep command payloads value-based so undo restores exact prior mapping state.
-  rendering:
-    mesh_format:
-      - Expand mesh vertices from `[position, normal]` to `[position, normal, uv]`.
-      - Preserve clear ownership: mesh generation computes UVs, buffer uploads vertex format, shader samples texture.
-    uv_generation:
-      - Generate canonical local-space UVs per logical surface.
-      - Apply stored offset/scale/rotation in CPU-side UV generation for the PoC.
-      - Rebuild brush mesh buffers when surface mappings change.
-    texture_binding:
-      - For the PoC, prefer simple per-texture binding and batched-by-brush drawing over atlas complexity.
-      - This is acceptable because current scene sizes are small and correctness matters more than draw-call minimization.
-    orthographic_views:
-      - Keep orthographic views readable first.
-      - Show either a light texture preview/tint overlay or a compact label/indicator for assigned texture.
-      - Do not let orthographic texturing obscure handles, axes, or selection clarity.
-    surface_highlighting:
-      - In the 3D viewport, selected surfaces should render with a subtle overlay or outline distinct from whole-brush selection.
-  interaction_model:
-    - Brush texturing:
-      - select brush
-      - choose texture in browser
-      - apply to brush
-    - Surface texturing:
-      - select brush
-      - use a face-pick gesture in the 3D viewport
-      - select one or more logical surfaces
-      - apply texture or edit mapping in inspector
-    - Shortcut help:
-      - Help menu entry opens an in-app reference for available texture-editing shortcuts.
-    - Direct face selection:
-      - Use `Shift+LMB` in the perspective viewport to select a surface.
-      - Use `Ctrl+Shift+LMB` to toggle additional surfaces on the same brush.
-      - Keep face picking renderer-agnostic by ray-testing against generated mesh surfaces in the App layer.
-    - Texture browser visibility:
-      - Use `T` to toggle the bottom-docked texture browser panel.
-    - Fit/reset actions should follow familiar map-editor behavior, not generic mesh UV editing behavior.
-    - Texture lock should preserve the apparent surface mapping during supported move/resize operations.
-  separation_of_concerns:
-    - Core owns texture/surface data structures and undoable mutations.
-    - Formats owns serialization shape and backward compatibility.
-    - App owns texture library discovery, surface selection state, and inspector/browser orchestration.
-    - Rendering owns UV-capable mesh generation, texture upload/binding, and visual feedback.
-    - Avoid pushing editor UI concerns into Core or serialization concerns into App.
-  phased_delivery_plan:
-    - Phase 1: data model + file format
-      - add logical surface ids and surface mapping data
-      - preserve old `material_name` compatibility
-      - add serializer tests
-    - Phase 2: texture library + browser
-      - add texture discovery service
-      - add preview browser UI and active texture selection
-      - add brush-wide apply flow
-    - Phase 3: UV-capable rendering
-      - expand mesh vertex format to include UV
-      - generate canonical UVs for box and one non-box primitive first
-      - sample textures in perspective renderer
-    - Phase 4: surface workflow
-      - add 3D surface picking
-      - add per-surface apply and mapping inspector
-      - add selected-surface highlight
-    - Phase 5: texture lock + polish
-      - preserve mapping during move/resize
-      - add fit/reset polish and orthographic indicators
-      - extend tests and runtime smoke checks
-    - Phase 6: UX restructuring
-      - move texture browser into a bottom-docked panel with search
-      - compact the properties panel and replace the surface list with face toggles
-      - add in-app texture shortcut help
-      - add perspective `Shift+LMB` face picking and `T` browser toggle
+    toolbar_layout:
+      - Keep file and edit actions in the leading toolbar group.
+      - Replace the oversized labeled primitive buttons with a compact segmented icon group using roughly 28 to 32 pixel square targets.
+      - Keep primitive labels in tooltips, status text, and optional overflow text, not as always-visible button content.
+      - Place subtract and merge in their own compact boolean group separated by a visual divider.
+      - Boolean buttons are actions, not toggle modes.
+      - Toolbar buttons that use the shared dark editor style must define an explicit
+        control template so ToolBar-hosted visual states do not fall back to the default
+        white WPF button appearance.
+    menu_layout:
+      - Keep a top-level `Brush` or `Boolean` menu for discoverability and keyboard access.
+      - Mirror the toolbar actions there with clear wording: `Subtract From Intersections` and `Merge Selected`.
+    properties_panel:
+      - Remove subtract and merge from the primary properties workflow.
+      - Use properties to show brush type, geometry state, face count, material summary, and selection-sensitive texturing controls.
+      - Show why boolean actions are unavailable through concise status and disabled-state hints, not modal error spam.
+    interaction_flow:
+      subtract:
+        - User draws a brush normally.
+        - User selects the brush intended as the cutter.
+        - Editor previews or at least precomputes how many scene brushes intersect the cutter.
+        - Pressing subtract consumes the cutter and updates every intersecting target in one undoable action.
+        - Status feedback reports the number of affected brushes and points to undo if needed.
+        - The resulting brush or brushes remain selected or reselectable immediately after the command.
+      merge:
+        - User selects two or more brushes.
+        - Merge is enabled only when the selection can produce one valid resulting brush.
+        - Pressing merge replaces the selected set with one resulting brush and keeps that new brush selected.
+    interaction_regression_fix:
+      - Any selection, move, and resize hit testing that still relies on primitive
+        `Transform.Scale` AABBs must be upgraded to use explicit brush geometry or
+        geometry-derived bounds once a brush has boolean-edited explicit geometry.
+      - Perspective and orthographic hit testing must treat explicit-geometry brushes as
+        first-class selectable objects so boolean results remain editable after the operation.
   clean_code_constraints:
-    - Do not replace the command system with ad-hoc mutation for texture edits.
-    - Keep surface id generation deterministic and centralized.
-    - Keep UV generation in one place; do not duplicate mapping math across renderers.
-    - Keep texture library discovery separate from map serialization.
-    - Keep viewport hit testing in the App layer; do not leak input handling into the renderer.
-    - Keep help content centralized so menu text and shortcut handling do not drift apart.
-    - Avoid triangle-level editing abstractions until there is a real need.
+    - Keep geometry representation, boolean execution, rendering triangulation, and WPF orchestration in separate modules or services.
+    - Do not let `MainViewModel` or XAML own boolean math.
+    - Keep one source of truth for resulting brush geometry.
+    - Reject invalid solids explicitly instead of silently approximating them back to primitive fragments.
+    - Avoid partial compatibility hacks that keep both primitive-only and geometry-first edit paths fighting each other at runtime.
+    - Keep boolean command logic separate from post-command selection orchestration; fix runtime interaction regressions at the hit-test and UI-style seams, not by weakening command semantics.
+  phased_delivery_plan:
+    - Phase 1: requirements and rollback alignment
+      - freeze the rejected box-only boolean direction
+      - remove UI assumptions that imply additive/subtractive creation modes are the target workflow
+    - Phase 2: geometry-first brush foundation
+      - add explicit `BrushGeometry` and face data
+      - add legacy primitive-to-geometry conversion
+      - update render and hit-test seams to consume geometry
+    - Phase 3: subtract-all-intersections
+      - add intersection discovery
+      - add subtract command that consumes the cutter and updates all intersecting targets
+      - preserve face texturing defaults on created faces
+    - Phase 4: exact merge
+      - add merge command for selected brushes
+      - validate that the result is one acceptable brush solid
+      - keep the result selected and undoable
+    - Phase 5: compact toolbar and discoverability polish
+      - ship compact icon-first primitive group
+      - ship separate boolean actions group
+      - align menu wording, tooltips, status messaging, and help text
+    - Phase 6: persistence and validation
+      - write explicit geometry to the map format
+      - keep legacy map loading intact
+      - update tests across Core, Formats, App, and rendering seams
   performance:
-    - CPU cost rises because mapped UVs may require mesh regeneration after surface edits,
-      but current PoC scene sizes make this acceptable and far simpler than live shader-space UV assembly.
-    - Memory cost rises modestly from storing UVs and per-surface mapping overrides.
-    - Draw calls may increase if different brushes use different textures, but this is acceptable for the current PoC scale.
-    - Thumbnail generation should be cached to avoid repeated image decoding in the browser UI.
-    - Perspective face picking adds CPU ray/triangle work on `Shift+LMB`, but that work stays event-driven and small relative to current PoC scene sizes.
+    - Boolean operations are explicit user commands, so higher CPU cost is acceptable there in exchange for correctness.
+    - Viewport rendering must stay cache-driven; triangulation should happen on geometry changes, not every frame.
+    - Persisted explicit geometry increases file size modestly, but avoids lossy reconstruction and is justified by the new editing requirements.
+  risks:
+    - Numerical robustness and manifold validity are the main implementation risks.
+    - UV continuity on newly created faces must be intentionally defined; inherited baseline texturing is acceptable for the first slice but not perfect.
+    - Supporting exact freeform boolean results requires a wider refactor than the rejected box-only slice, especially in serialization and hit testing.
   non_goals:
-    - No full material graph or multi-map PBR pipeline in this feature.
-    - No freeform UV unwrapping/editor gizmo equivalent to DCC tools.
-    - No texture painting or sculpting workflow.
-    - No attempt to match every advanced Hammer/TrenchBroom texturing shortcut in the first delivery.
-    - No docking framework or fully customizable editor layout in this iteration.
+    - No live procedural CSG tree or modifier stack in this slice.
+    - No promise of full vertex, edge, and face editing tools as part of the same milestone.
+    - No continued investment in the earlier axis-aligned box boolean implementation.

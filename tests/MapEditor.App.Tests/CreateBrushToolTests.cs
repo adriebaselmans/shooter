@@ -38,6 +38,7 @@ public sealed class CreateBrushToolTests
                 PixelHeight = 100,
                 GridSize = 32f,
                 SelectedBrushPrimitive = BrushPrimitive.Box,
+                SelectedBrushOperation = BrushOperation.Additive,
                 OrthographicCamera = new OrthographicCamera
                 {
                     Axis = ViewAxis.Side,

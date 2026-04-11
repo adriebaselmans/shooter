@@ -6,7 +6,7 @@ namespace MapEditor.Formats.Dto;
 public sealed class MapDto
 {
     [JsonPropertyName("format_version")]
-    public string FormatVersion { get; set; } = "1.0.0";
+    public string FormatVersion { get; set; } = "1.1.0";
 
     [JsonPropertyName("editor_version")]
     public string EditorVersion { get; set; } = "0.1.0";
@@ -77,6 +77,30 @@ public sealed class BrushDto
 
     [JsonPropertyName("surface_mappings")]
     public Dictionary<string, SurfaceMappingDto>? SurfaceMappings { get; set; }
+
+    [JsonPropertyName("geometry")]
+    public BrushGeometryDto? Geometry { get; set; }
+
+    [JsonExtensionData]
+    public Dictionary<string, System.Text.Json.JsonElement>? AdditionalData { get; set; }
+}
+
+public sealed class BrushGeometryDto
+{
+    [JsonPropertyName("faces")]
+    public List<BrushFaceDto> Faces { get; set; } = [];
+
+    [JsonExtensionData]
+    public Dictionary<string, System.Text.Json.JsonElement>? AdditionalData { get; set; }
+}
+
+public sealed class BrushFaceDto
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [JsonPropertyName("vertices")]
+    public float[][] Vertices { get; set; } = [];
 
     [JsonExtensionData]
     public Dictionary<string, System.Text.Json.JsonElement>? AdditionalData { get; set; }

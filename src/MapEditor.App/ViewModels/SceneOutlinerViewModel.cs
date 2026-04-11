@@ -34,7 +34,7 @@ public sealed partial class SceneOutlinerViewModel : ObservableObject
     {
         Items.Clear();
         foreach (var b in scene.Brushes)
-            Items.Add(new OutlinerItemViewModel { Id = b.Id, Name = b.Name, Kind = $"Brush ({b.Primitive})" });
+            Items.Add(new OutlinerItemViewModel { Id = b.Id, Name = b.Name, Kind = $"Brush ({b.Primitive}, {b.Operation})" });
         foreach (var l in scene.Lights)
             Items.Add(new OutlinerItemViewModel { Id = l.Id, Name = l.Name, Kind = $"Light ({l.LightType})" });
         foreach (var s in scene.SpawnPoints)

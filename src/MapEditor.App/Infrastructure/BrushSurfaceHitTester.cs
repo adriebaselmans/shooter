@@ -16,7 +16,7 @@ internal static class BrushSurfaceHitTester
         foreach (var brush in brushes)
         {
             var mesh = MeshGenerator.GenerateMesh(brush);
-            var model = BuildModelMatrix(brush.Transform);
+            var model = TransformMath.BuildModelMatrix(brush.Transform);
 
             foreach (var surface in mesh.Surfaces)
             {
@@ -40,17 +40,6 @@ internal static class BrushSurfaceHitTester
         }
 
         return bestHit;
-    }
-
-    private static Matrix4x4 BuildModelMatrix(Transform transform)
-    {
-        var scale = Matrix4x4.CreateScale(transform.Scale);
-        var rotation = Matrix4x4.CreateFromYawPitchRoll(
-            float.DegreesToRadians(transform.EulerDegrees.Y),
-            float.DegreesToRadians(transform.EulerDegrees.X),
-            float.DegreesToRadians(transform.EulerDegrees.Z));
-        var translation = Matrix4x4.CreateTranslation(transform.Position);
-        return scale * rotation * translation;
     }
 
     private static Vector3 GetWorldVertex(Mesh mesh, uint index, Matrix4x4 model)

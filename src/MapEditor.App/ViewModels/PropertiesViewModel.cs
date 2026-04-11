@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using MapEditor.Core.Entities;
+using MapEditor.Core.Geometry;
 using System.Globalization;
 using System.Numerics;
 
@@ -20,6 +21,9 @@ public sealed partial class PropertiesViewModel : ObservableObject
     [ObservableProperty] private bool    _canEditTexturing;
     [ObservableProperty] private bool    _canEditSurfaceMapping;
     [ObservableProperty] private string  _brushTextureKey = string.Empty;
+    [ObservableProperty] private string  _geometryState = string.Empty;
+    [ObservableProperty] private string  _faceCountText = string.Empty;
+    [ObservableProperty] private string  _materialSummary = string.Empty;
     [ObservableProperty] private string  _selectedSurfaceSummary = "No surfaces selected";
     [ObservableProperty] private string  _surfaceOffsetUText = string.Empty;
     [ObservableProperty] private string  _surfaceOffsetVText = string.Empty;
@@ -35,12 +39,17 @@ public sealed partial class PropertiesViewModel : ObservableObject
         CanEditTransform = true;
         CanEditTexturing = true;
         EntityName = brush.Name;
-        EntityKind = $"Brush ({brush.Primitive}, {brush.Operation})";
+        EntityKind = $"Brush ({brush.Primitive})";
         PositionText = FormatVector3(brush.Transform.Position);
         RotationText = FormatVector3(brush.Transform.EulerDegrees);
         ScaleText = FormatVector3(brush.Transform.Scale);
         BrushTextureKey = brush.MaterialName;
-        SurfaceChips = BuildSurfaceChips(brush.Primitive, []);
+        GeometryState = brush.HasExplicitGeometry ? "Explicit geometry" : "Primitive-generated geometry";
+        FaceCountText = BrushGeometryFactory.GetGeometry(brush).FaceCount.ToString(CultureInfo.InvariantCulture);
+        MaterialSummary = brush.SurfaceMappings.Count == 0
+            ? brush.MaterialName
+            : $"{brush.MaterialName} + {brush.SurfaceMappings.Count} face override(s)";
+        SurfaceChips = BuildSurfaceChips(brush, []);
         SelectedSurfaceSummary = "No surfaces selected";
         SurfaceOffsetUText = string.Empty;
         SurfaceOffsetVText = string.Empty;
@@ -56,11 +65,17 @@ public sealed partial class PropertiesViewModel : ObservableObject
         HasEntity = true;
         CanEditTransform = false;
         CanEditTexturing = false;
+        CanEditSurfaceMapping = false;
         EntityName = light.Name;
         EntityKind = $"Light ({light.LightType})";
         PositionText = FormatVector3(light.Transform.Position);
         RotationText = FormatVector3(light.Transform.EulerDegrees);
         ScaleText = FormatVector3(light.Transform.Scale);
+        BrushTextureKey = string.Empty;
+        GeometryState = string.Empty;
+        FaceCountText = string.Empty;
+        MaterialSummary = string.Empty;
+        SurfaceChips = Array.Empty<SurfaceSelectionChip>();
     }
 
     public void PopulateFromSpawnPoint(SpawnPoint spawnPoint)
@@ -68,11 +83,17 @@ public sealed partial class PropertiesViewModel : ObservableObject
         HasEntity = true;
         CanEditTransform = false;
         CanEditTexturing = false;
+        CanEditSurfaceMapping = false;
         EntityName = spawnPoint.Name;
         EntityKind = "Spawn Point";
         PositionText = FormatVector3(spawnPoint.Transform.Position);
         RotationText = FormatVector3(spawnPoint.Transform.EulerDegrees);
         ScaleText = FormatVector3(spawnPoint.Transform.Scale);
+        BrushTextureKey = string.Empty;
+        GeometryState = string.Empty;
+        FaceCountText = string.Empty;
+        MaterialSummary = string.Empty;
+        SurfaceChips = Array.Empty<SurfaceSelectionChip>();
     }
 
     public void Clear()
@@ -87,6 +108,9 @@ public sealed partial class PropertiesViewModel : ObservableObject
         RotationText = string.Empty;
         ScaleText = string.Empty;
         BrushTextureKey = string.Empty;
+        GeometryState = string.Empty;
+        FaceCountText = string.Empty;
+        MaterialSummary = string.Empty;
         SelectedSurfaceSummary = "No surfaces selected";
         SurfaceOffsetUText = string.Empty;
         SurfaceOffsetVText = string.Empty;
@@ -100,7 +124,7 @@ public sealed partial class PropertiesViewModel : ObservableObject
     public void PopulateSurfaceMapping(Brush brush, IReadOnlyCollection<string> selectedSurfaceIds)
     {
         BrushTextureKey = brush.MaterialName;
-        SurfaceChips = BuildSurfaceChips(brush.Primitive, selectedSurfaceIds);
+        SurfaceChips = BuildSurfaceChips(brush, selectedSurfaceIds);
         CanEditSurfaceMapping = selectedSurfaceIds.Count > 0;
         SelectedSurfaceSummary = selectedSurfaceIds.Count switch
         {
@@ -181,15 +205,26 @@ public sealed partial class PropertiesViewModel : ObservableObject
         float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value);
 
     private static IReadOnlyList<SurfaceSelectionChip> BuildSurfaceChips(
-        BrushPrimitive primitive,
+        Brush brush,
         IReadOnlyCollection<string> selectedSurfaceIds)
     {
         var selected = selectedSurfaceIds.ToHashSet(StringComparer.Ordinal);
-        return BrushSurfaceIds.GetSurfaceIds(primitive)
+        return brush.GetSurfaceIds()
             .Select(surfaceId => new SurfaceSelectionChip(
                 surfaceId,
-                surfaceId[..1].ToUpperInvariant() + surfaceId[1..],
+                GetSurfaceDisplayName(surfaceId),
                 selected.Contains(surfaceId)))
             .ToArray();
+    }
+
+    private static string GetSurfaceDisplayName(string surfaceId)
+    {
+        if (!surfaceId.Contains('-', StringComparison.Ordinal))
+        {
+            return surfaceId[..1].ToUpperInvariant() + surfaceId[1..];
+        }
+
+        var parts = surfaceId.Split('-', StringSplitOptions.RemoveEmptyEntries);
+        return string.Join(' ', parts.Select(part => part[..1].ToUpperInvariant() + part[1..]));
     }
 }

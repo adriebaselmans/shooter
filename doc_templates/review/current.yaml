@@ -1,15 +1,30 @@
-feature: poc-brush-texturing-ux-pass
+feature: poc-freeform-boolean-brushes-and-compact-toolbar
 decision: approved
+approved: true
 summary: >
-  The implementation matches the updated texture UX scope: the texture browser is
-  moved into a bottom-docked panel, the properties panel is reduced to a compact
-  texturing inspector, perspective face picking is now direct and surface-aware,
-  and the editor exposes an in-app help entry for the new shortcut-driven workflow.
-findings: []
+  The regression-fix pass addresses the newly reported toolbar and post-boolean
+  interaction issues without introducing blocking problems. The boolean actions
+  remain directly available on the toolbar, toolbar buttons now use an explicit
+  dark-theme template, and explicit-geometry brushes now participate in viewport
+  hit testing instead of falling back to primitive transform bounds.
+findings:
+  - severity: medium
+    area: performance
+    file: src/MapEditor.App/ViewModels/MainViewModel.cs:124-126,132-144,843-889
+    note: >
+      Boolean toolbar enablement currently runs BSP-based intersection and merge
+      checks during `CanExecute`, so every selection or scene change can trigger
+      expensive CSG work on the UI thread.
+  - severity: low
+    area: maintainability
+    file: src/MapEditor.App/MainWindow.xaml.cs:32-35; src/MapEditor.App/ViewModels/MainViewModel.cs:41,71-72,354-363
+    note: >
+      `NewBrushOperation` state remains in the view model, but all viewport attach
+      lambdas hardcode additive brush creation and no toolbar element consumes that
+      state. The unused path is misleading and currently untested.
+blocking_findings: []
 residual_risks:
-  - Perspective face picking currently ray-tests generated brush meshes on demand, which is appropriate for current PoC scene sizes but should be revisited if scene complexity grows substantially.
-  - The help surface is intentionally lightweight and modal for this iteration; if the shortcut set grows further, a richer reference panel may become worthwhile.
+  - Toolbar eligibility relies on live CSG checks instead of cached validity state.
+  - There is no view-level coverage that asserts the compact toolbar wiring itself or the exact visual states of ToolBar-hosted buttons.
 test_readiness: ready
-notes:
-  - App tests now cover the texture browser toggle shortcut, the split surface-mapping fields/chip model, the browser visibility toggle command, and surface hit testing against generated brush meshes.
-  - The implementation keeps viewport input handling in the App layer and avoids pushing UI concerns into rendering or core domain code.
+rework_target: null

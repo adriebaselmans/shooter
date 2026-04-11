@@ -41,7 +41,7 @@ public sealed class ResizeTool
         }
 
         var brush = context.SceneService.Scene.Brushes.FirstOrDefault(b => b.Id == selectedId.Value);
-        if (brush is null)
+        if (brush is null || brush.HasExplicitGeometry)
         {
             return false;
         }

@@ -1,6 +1,7 @@
 ﻿using MapEditor.Core;
 using MapEditor.Core.Entities;
 using System.Numerics;
+using MapEditor.Core.Geometry;
 
 namespace MapEditor.Core.Commands;
 
@@ -186,6 +187,197 @@ public sealed class UpdateSurfaceMappingCommand : ISceneCommand
         }
 
         _scene.RaiseChanged();
+    }
+}
+
+/// <summary>Changes a brush operation between additive and subtractive.</summary>
+public sealed class SetBrushOperationCommand : ISceneCommand
+{
+    private readonly Scene _scene;
+    private readonly Brush _brush;
+    private readonly BrushOperation _oldOperation;
+    private readonly BrushOperation _newOperation;
+
+    public SetBrushOperationCommand(Scene scene, Brush brush, BrushOperation newOperation)
+    {
+        _scene = scene;
+        _brush = brush;
+        _oldOperation = brush.Operation;
+        _newOperation = newOperation;
+    }
+
+    public void Execute()
+    {
+        _brush.Operation = _newOperation;
+        _brush.TouchAppearance();
+        _scene.RaiseChanged();
+    }
+
+    public void Undo()
+    {
+        _brush.Operation = _oldOperation;
+        _brush.TouchAppearance();
+        _scene.RaiseChanged();
+    }
+}
+
+/// <summary>Subtracts the cutter brush from every intersecting brush and consumes the cutter.</summary>
+public sealed class SubtractIntersectingBrushesCommand : ISceneCommand
+{
+    private readonly Scene _scene;
+    private readonly Brush _cutter;
+    private readonly int _cutterIndex;
+    private readonly IReadOnlyList<Brush> _targets;
+    private readonly IReadOnlyDictionary<Guid, int> _targetIndices;
+    private readonly IReadOnlyDictionary<Guid, Brush?> _replacementBrushes;
+
+    public int AffectedBrushCount => _targets.Count;
+    public IReadOnlyList<Brush> ReplacementBrushes => _replacementBrushes.Values.Where(candidate => candidate is not null).Cast<Brush>().ToArray();
+
+    public SubtractIntersectingBrushesCommand(Scene scene, Brush cutter, IBrushBooleanKernel? kernel = null)
+    {
+        ArgumentNullException.ThrowIfNull(scene);
+        ArgumentNullException.ThrowIfNull(cutter);
+
+        _scene = scene;
+        _cutter = cutter;
+        _cutterIndex = scene.Brushes.TakeWhile(candidate => !ReferenceEquals(candidate, cutter)).Count();
+        kernel ??= new BspBrushBooleanKernel();
+
+        var targets = scene.Brushes
+            .Where(candidate => !ReferenceEquals(candidate, cutter))
+            .Where(candidate => kernel.HasIntersection(cutter, candidate))
+            .ToArray();
+
+        if (targets.Length == 0)
+        {
+            throw new ArgumentException("The cutter does not intersect any other brushes.", nameof(cutter));
+        }
+
+        _targets = targets;
+        _targetIndices = _targets.ToDictionary(
+            target => target.Id,
+            target => scene.Brushes.TakeWhile(candidate => !ReferenceEquals(candidate, target)).Count());
+
+        var replacements = new Dictionary<Guid, Brush?>();
+        foreach (var target in _targets)
+        {
+            var result = kernel.Subtract(target, cutter);
+            replacements[target.Id] = result is null ? null : BooleanResultBrushFactory.Create(target, result);
+        }
+
+        _replacementBrushes = replacements;
+    }
+
+    public void Execute()
+    {
+        _scene.RemoveBrush(_cutter);
+        foreach (var target in _targets.OrderByDescending(target => _targetIndices[target.Id]))
+        {
+            _scene.RemoveBrush(target);
+        }
+
+        foreach (var target in _targets.OrderBy(target => _targetIndices[target.Id]))
+        {
+            var replacement = _replacementBrushes[target.Id];
+            if (replacement is not null)
+            {
+                _scene.InsertBrush(Math.Min(_targetIndices[target.Id], _scene.Brushes.Count), replacement);
+            }
+        }
+    }
+
+    public void Undo()
+    {
+        foreach (var replacement in _replacementBrushes.Values.Where(candidate => candidate is not null).Cast<Brush>())
+        {
+            _scene.RemoveBrush(replacement);
+        }
+
+        var removedBrushes = _targets
+            .Select(target => (Index: _targetIndices[target.Id], Brush: target))
+            .Append((Index: _cutterIndex, Brush: _cutter))
+            .OrderBy(item => item.Index);
+
+        foreach (var (index, brush) in removedBrushes)
+        {
+            _scene.InsertBrush(Math.Min(index, _scene.Brushes.Count), brush);
+        }
+    }
+}
+
+/// <summary>Merges the selected brushes into one exact resulting brush.</summary>
+public sealed class MergeSelectedBrushesCommand : ISceneCommand
+{
+    private readonly Scene _scene;
+    private readonly IReadOnlyList<Brush> _sources;
+    private readonly IReadOnlyDictionary<Guid, int> _sourceIndices;
+    private readonly Brush _mergedBrush;
+
+    public Brush MergedBrush => _mergedBrush;
+
+    public MergeSelectedBrushesCommand(Scene scene, IEnumerable<Brush> brushes, IBrushBooleanKernel? kernel = null)
+    {
+        ArgumentNullException.ThrowIfNull(scene);
+        ArgumentNullException.ThrowIfNull(brushes);
+
+        _scene = scene;
+        _sources = brushes.ToArray();
+        if (_sources.Count < 2)
+        {
+            throw new ArgumentException("At least two brushes are required to merge.", nameof(brushes));
+        }
+
+        _sourceIndices = _sources.ToDictionary(
+            brush => brush.Id,
+            brush => scene.Brushes.TakeWhile(candidate => !ReferenceEquals(candidate, brush)).Count());
+
+        kernel ??= new BspBrushBooleanKernel();
+        var result = kernel.Merge(_sources);
+        if (result is null)
+        {
+            throw new ArgumentException("The selected brushes cannot be merged into one valid brush.", nameof(brushes));
+        }
+
+        _mergedBrush = BooleanResultBrushFactory.Create(_sources[0], result);
+    }
+
+    public void Execute()
+    {
+        foreach (var brush in _sources.OrderByDescending(brush => _sourceIndices[brush.Id]))
+        {
+            _scene.RemoveBrush(brush);
+        }
+
+        _scene.InsertBrush(Math.Min(_sourceIndices.Values.Min(), _scene.Brushes.Count), _mergedBrush);
+    }
+
+    public void Undo()
+    {
+        _scene.RemoveBrush(_mergedBrush);
+        foreach (var brush in _sources.OrderBy(brush => _sourceIndices[brush.Id]))
+        {
+            _scene.InsertBrush(Math.Min(_sourceIndices[brush.Id], _scene.Brushes.Count), brush);
+        }
+    }
+}
+
+internal static class BooleanResultBrushFactory
+{
+    public static Brush Create(Brush source, BrushBooleanKernelResult result)
+    {
+        var brush = new Brush
+        {
+            Name = source.Name,
+            Primitive = source.Primitive,
+            Operation = source.Operation,
+            MaterialName = source.MaterialName,
+            Transform = result.Transform
+        };
+
+        brush.SetGeometry(result.Geometry);
+        brush.ReplaceSurfaceMappings(result.SurfaceMappings);
+        return brush;
     }
 }
 

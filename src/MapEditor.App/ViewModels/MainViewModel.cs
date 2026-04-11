@@ -4,6 +4,7 @@ using MapEditor.App.Services;
 using MapEditor.App.Tools;
 using MapEditor.Core.Commands;
 using MapEditor.Core.Entities;
+using MapEditor.Core.Geometry;
 using MapEditor.Core;
 using MapEditor.Formats;
 using Microsoft.Win32;
@@ -28,6 +29,7 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
     private readonly SceneOutlinerViewModel _outlinerVm;
     private readonly PropertiesViewModel _propertiesVm;
     private readonly StatusBarViewModel _statusBarVm;
+    private readonly IBrushBooleanKernel _booleanKernel = new BspBrushBooleanKernel();
     private const float PasteOffset = 32f;
 
     private string? _filePath;
@@ -36,6 +38,7 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
     [ObservableProperty] private string _windowTitle = "MapEditor — Untitled";
     [ObservableProperty] private string _activeToolName = "Select";
     [ObservableProperty] private BrushPrimitive _newBrushPrimitive = BrushPrimitive.Box;
+    [ObservableProperty] private BrushOperation _newBrushOperation = BrushOperation.Additive;
     [ObservableProperty] private string? _selectedTextureKey;
     [ObservableProperty] private string _textureSearchText = string.Empty;
     [ObservableProperty] private bool _isTextureBrowserVisible = true;
@@ -65,6 +68,11 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
     public bool IsCylinderBrushToolActive => IsBrushPrimitiveToolActive(BrushPrimitive.Cylinder);
     public bool IsConeBrushToolActive => IsBrushPrimitiveToolActive(BrushPrimitive.Cone);
     public bool IsWedgeBrushToolActive => IsBrushPrimitiveToolActive(BrushPrimitive.Wedge);
+    public bool IsAdditiveBrushOperationActive => NewBrushOperation == BrushOperation.Additive;
+    public bool IsSubtractiveBrushOperationActive => NewBrushOperation == BrushOperation.Subtractive;
+    public bool CanEditSelectedBrushOperation => GetSelectedBrush() is not null;
+    public bool IsSelectedBrushAdditive => GetSelectedBrush()?.Operation == BrushOperation.Additive;
+    public bool IsSelectedBrushSubtractive => GetSelectedBrush()?.Operation == BrushOperation.Subtractive;
 
     public MainViewModel(
         SceneService sceneService,
@@ -113,6 +121,12 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         _statusBarVm.BrushCount = _sceneService.Scene.Brushes.Count;
         UndoCommand.NotifyCanExecuteChanged();
         RedoCommand.NotifyCanExecuteChanged();
+        SetSelectedBrushOperationCommand.NotifyCanExecuteChanged();
+        SubtractSelectedBoxesCommand.NotifyCanExecuteChanged();
+        MergeSelectedBoxesCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(CanEditSelectedBrushOperation));
+        OnPropertyChanged(nameof(IsSelectedBrushAdditive));
+        OnPropertyChanged(nameof(IsSelectedBrushSubtractive));
     }
 
     private void OnSelectionChanged(object? sender, EventArgs e)
@@ -125,6 +139,12 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         CommitSurfaceMappingEditsCommand.NotifyCanExecuteChanged();
         FitSelectedSurfaceMappingsCommand.NotifyCanExecuteChanged();
         ResetSelectedSurfaceMappingsCommand.NotifyCanExecuteChanged();
+        SetSelectedBrushOperationCommand.NotifyCanExecuteChanged();
+        SubtractSelectedBoxesCommand.NotifyCanExecuteChanged();
+        MergeSelectedBoxesCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(CanEditSelectedBrushOperation));
+        OnPropertyChanged(nameof(IsSelectedBrushAdditive));
+        OnPropertyChanged(nameof(IsSelectedBrushSubtractive));
     }
 
     private void OnSurfaceSelectionChanged(object? sender, EventArgs e)
@@ -145,6 +165,7 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         OnPropertyChanged(nameof(IsSelectToolActive));
         OnPropertyChanged(nameof(IsCreateBrushToolActive));
         NotifyBrushPrimitiveToolStateChanged();
+        NotifyBrushOperationStateChanged();
     }
 
     private void UpdateTitle()
@@ -330,6 +351,87 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
     }
 
     [RelayCommand]
+    private void SetNewBrushOperation(BrushOperation operation)
+    {
+        if (NewBrushOperation == operation)
+        {
+            return;
+        }
+
+        NewBrushOperation = operation;
+        _statusBarVm.Message = "Brush creation now defaults to additive; use Subtract From Intersections for boolean cuts.";
+    }
+
+    [RelayCommand(CanExecute = nameof(CanEditSelectedBrushOperation))]
+    private void SetSelectedBrushOperation(BrushOperation operation)
+    {
+        var brush = GetSelectedBrush();
+        if (brush is null || brush.Operation == operation)
+        {
+            return;
+        }
+
+        _sceneService.Execute(new SetBrushOperationCommand(_sceneService.Scene, brush, operation));
+        RefreshSelectionDetails();
+        _statusBarVm.Message = $"Brush operation set to {operation}.";
+    }
+
+    [RelayCommand(CanExecute = nameof(CanSubtractSelectedBoxes))]
+    private void SubtractSelectedBoxes()
+    {
+        if (!TryGetSubtractSelection(out var cutter, out var errorMessage))
+        {
+            _statusBarVm.Message = errorMessage;
+            return;
+        }
+
+        var command = new SubtractIntersectingBrushesCommand(_sceneService.Scene, cutter!, _booleanKernel);
+        _sceneService.Execute(command);
+        var replacementBrushes = command.ReplacementBrushes;
+        if (replacementBrushes.Count == 1)
+        {
+            _selectionService.SetSingle(replacementBrushes[0].Id);
+        }
+        else if (replacementBrushes.Count > 1)
+        {
+            _selectionService.SetSingle(replacementBrushes[0].Id);
+            foreach (var replacement in replacementBrushes.Skip(1))
+            {
+                _selectionService.Add(replacement.Id);
+            }
+        }
+        else
+        {
+            _selectionService.Clear();
+        }
+
+        RefreshSelectionDetails();
+        _statusBarVm.Message = $"Subtracted '{cutter!.Name}' from {command.AffectedBrushCount} intersecting brush(es).";
+    }
+
+    private bool CanSubtractSelectedBoxes() =>
+        TryGetSubtractSelection(out _, out _);
+
+    [RelayCommand(CanExecute = nameof(CanMergeSelectedBoxes))]
+    private void MergeSelectedBoxes()
+    {
+        if (!TryGetMergeSelection(out var selectedBrushes, out var errorMessage))
+        {
+            _statusBarVm.Message = errorMessage;
+            return;
+        }
+
+        var command = new MergeSelectedBrushesCommand(_sceneService.Scene, selectedBrushes!, _booleanKernel);
+        _sceneService.Execute(command);
+        _selectionService.SetSingle(command.MergedBrush.Id);
+        RefreshSelectionDetails();
+        _statusBarVm.Message = $"Merged {selectedBrushes!.Count} brush(es) into '{command.MergedBrush.Name}'.";
+    }
+
+    private bool CanMergeSelectedBoxes() =>
+        TryGetMergeSelection(out _, out _);
+
+    [RelayCommand]
     private void CommitPropertyEdits()
     {
         var brush = GetSelectedBrush();
@@ -499,6 +601,9 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
     partial void OnNewBrushPrimitiveChanged(BrushPrimitive value) =>
         UpdateBrushPrimitive(value);
 
+    partial void OnNewBrushOperationChanged(BrushOperation value) =>
+        NotifyBrushOperationStateChanged();
+
     partial void OnSelectedTextureKeyChanged(string? value)
     {
         ApplySelectedTextureToBrushCommand.NotifyCanExecuteChanged();
@@ -521,7 +626,7 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
     private void ToggleSurfaceSelection(string surfaceId)
     {
         var brush = GetSelectedBrush();
-        if (brush is null || !BrushSurfaceIds.IsValid(brush.Primitive, surfaceId))
+        if (brush is null || !brush.HasSurface(surfaceId))
         {
             return;
         }
@@ -615,7 +720,7 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
 
         _surfaceSelectionService.Replace(
             brush.Id,
-            surfaceIds.Where(surfaceId => BrushSurfaceIds.IsValid(brush.Primitive, surfaceId)));
+            surfaceIds.Where(brush.HasSurface));
     }
 
     private Brush? GetSelectedBrush()
@@ -661,7 +766,7 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         }
 
         var validSurfaceIds = _surfaceSelectionService.SelectedSurfaceIds
-            .Where(surfaceId => BrushSurfaceIds.IsValid(brush.Primitive, surfaceId))
+            .Where(brush.HasSurface)
             .ToArray();
         _surfaceSelectionService.Replace(brush.Id, validSurfaceIds);
     }
@@ -669,6 +774,23 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
     private static Vector2 GetFitScale(Brush brush, string surfaceId)
     {
         static float FitFor(float dimension) => dimension <= 0.001f ? 1f : 64f / dimension;
+
+        if (brush.HasExplicitGeometry)
+        {
+            var face = brush.Geometry?.Faces.FirstOrDefault(candidate => candidate.Id == surfaceId);
+            if (face is not null)
+            {
+                var vertices = face.Vertices.Select(vertex => Vector3.Multiply(vertex, brush.Transform.Scale)).ToArray();
+                var normal = face.GetNormal();
+                var axisU = GetFaceAxisU(normal, vertices);
+                var axisV = Vector3.Normalize(Vector3.Cross(normal, axisU));
+                var minU = vertices.Min(vertex => Vector3.Dot(vertex, axisU));
+                var maxU = vertices.Max(vertex => Vector3.Dot(vertex, axisU));
+                var minV = vertices.Min(vertex => Vector3.Dot(vertex, axisV));
+                var maxV = vertices.Max(vertex => Vector3.Dot(vertex, axisV));
+                return new Vector2(FitFor(maxU - minU), FitFor(maxV - minV));
+            }
+        }
 
         var scale = brush.Transform.Scale;
         return surfaceId switch
@@ -680,6 +802,23 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
             BrushSurfaceIds.Base => new Vector2(FitFor(scale.X), FitFor(scale.Z)),
             _ => new Vector2(FitFor(scale.X), FitFor(scale.Y))
         };
+    }
+
+    private static Vector3 GetFaceAxisU(Vector3 normal, IReadOnlyList<Vector3> vertices)
+    {
+        for (int i = 1; i < vertices.Count; i++)
+        {
+            var candidate = vertices[i] - vertices[0];
+            if (candidate.LengthSquared() > 0.000001f)
+            {
+                return Vector3.Normalize(candidate);
+            }
+        }
+
+        var fallback = MathF.Abs(Vector3.Dot(normal, Vector3.UnitY)) < 0.99f
+            ? Vector3.UnitY
+            : Vector3.UnitX;
+        return Vector3.Normalize(Vector3.Cross(fallback, normal));
     }
 
     private bool TryParseSurfaceMappingInputs(out Vector2 offset, out Vector2 scale, out float rotation)
@@ -698,6 +837,54 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
 
         offset = new Vector2(offsetU, offsetV);
         scale = new Vector2(scaleU, scaleV);
+        return true;
+    }
+
+    private bool TryGetSubtractSelection(out Brush? cutter, out string errorMessage)
+    {
+        cutter = null;
+        errorMessage = "Select one brush that intersects another brush.";
+
+        cutter = GetSelectedBrush();
+        if (cutter is null)
+        {
+            return false;
+        }
+
+        var selectedCutter = cutter;
+        if (_sceneService.Scene.Brushes.Any(candidate => !ReferenceEquals(candidate, selectedCutter) && _booleanKernel.HasIntersection(selectedCutter, candidate)))
+        {
+            return true;
+        }
+
+        errorMessage = "No intersecting target brushes were found for the selected cutter.";
+        return false;
+    }
+
+    private bool TryGetMergeSelection(out List<Brush>? selectedBrushes, out string errorMessage)
+    {
+        selectedBrushes = null;
+        errorMessage = "Select two or more brushes that can become one solid.";
+
+        var orderedSelection = GetSelectedBrushesInBooleanOrder();
+        if (orderedSelection.Count < 2)
+        {
+            return false;
+        }
+
+        if (orderedSelection.Select(brush => brush.Operation).Distinct().Skip(1).Any())
+        {
+            errorMessage = "Merged brushes must use the same operation.";
+            return false;
+        }
+
+        if (_booleanKernel.Merge(orderedSelection) is null)
+        {
+            errorMessage = "Those brushes cannot be represented as one valid merged brush.";
+            return false;
+        }
+
+        selectedBrushes = orderedSelection;
         return true;
     }
 
@@ -752,5 +939,32 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         OnPropertyChanged(nameof(IsCylinderBrushToolActive));
         OnPropertyChanged(nameof(IsConeBrushToolActive));
         OnPropertyChanged(nameof(IsWedgeBrushToolActive));
+    }
+
+    private void NotifyBrushOperationStateChanged()
+    {
+        OnPropertyChanged(nameof(IsAdditiveBrushOperationActive));
+        OnPropertyChanged(nameof(IsSubtractiveBrushOperationActive));
+    }
+
+    private List<Brush> GetSelectedBrushes() =>
+        _selectionService.SelectedEntityIds
+            .Select(id => _sceneService.Scene.Brushes.FirstOrDefault(brush => brush.Id == id))
+            .Where(brush => brush is not null)
+            .Cast<Brush>()
+            .ToList();
+
+    private List<Brush> GetSelectedBrushesInBooleanOrder()
+    {
+        var selectedBrushes = GetSelectedBrushes();
+        if (_selectionService.PrimarySelectionId is not Guid primaryId)
+        {
+            return selectedBrushes;
+        }
+
+        return selectedBrushes
+            .OrderByDescending(brush => brush.Id == primaryId)
+            .ThenBy(brush => _sceneService.Scene.Brushes.TakeWhile(candidate => !ReferenceEquals(candidate, brush)).Count())
+            .ToList();
     }
 }

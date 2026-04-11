@@ -7,6 +7,7 @@ using MapEditor.App.Tools;
 using MapEditor.App.ViewModels;
 using MapEditor.Core;
 using MapEditor.Core.Entities;
+using MapEditor.Core.Geometry;
 using MapEditor.Rendering.Cameras;
 using MapEditor.Rendering.Infrastructure;
 using MapEditor.Rendering.Renderers;
@@ -60,6 +61,7 @@ public partial class ViewportPanel : UserControl
     private StatusBarViewModel? _statusBarViewModel;
     private ITextureCatalog? _textureCatalog;
     private Func<BrushPrimitive>? _brushPrimitiveProvider;
+    private Func<BrushOperation>? _brushOperationProvider;
     private EditorViewportKind _viewportKind;
     private ViewAxis? _viewAxis;
     private Point _lastPointerPosition;
@@ -81,7 +83,8 @@ public partial class ViewportPanel : UserControl
         SurfaceSelectionService surfaceSelectionService,
         StatusBarViewModel statusBarViewModel,
         ITextureCatalog textureCatalog,
-        Func<BrushPrimitive> brushPrimitiveProvider)
+        Func<BrushPrimitive> brushPrimitiveProvider,
+        Func<BrushOperation> brushOperationProvider)
     {
         _sceneService = sceneService;
         _activeToolService = activeToolService;
@@ -90,6 +93,7 @@ public partial class ViewportPanel : UserControl
         _statusBarViewModel = statusBarViewModel;
         _textureCatalog = textureCatalog;
         _brushPrimitiveProvider = brushPrimitiveProvider;
+        _brushOperationProvider = brushOperationProvider;
         _viewportKind = EditorViewportKind.Perspective;
         _viewAxis = null;
         _selectionService.SelectionChanged += OnSelectionChanged;
@@ -113,6 +117,7 @@ public partial class ViewportPanel : UserControl
         StatusBarViewModel statusBarViewModel,
         ITextureCatalog textureCatalog,
         Func<BrushPrimitive> brushPrimitiveProvider,
+        Func<BrushOperation> brushOperationProvider,
         ViewAxis axis)
     {
         _sceneService = sceneService;
@@ -122,6 +127,7 @@ public partial class ViewportPanel : UserControl
         _statusBarViewModel = statusBarViewModel;
         _textureCatalog = textureCatalog;
         _brushPrimitiveProvider = brushPrimitiveProvider;
+        _brushOperationProvider = brushOperationProvider;
         _viewportKind = axis switch
         {
             ViewAxis.Top => EditorViewportKind.Top,
@@ -314,6 +320,7 @@ public partial class ViewportPanel : UserControl
             PixelHeight = Math.Max(1, GlHost.PixelHeight),
             GridSize = GridSize,
             SelectedBrushPrimitive = _brushPrimitiveProvider?.Invoke() ?? BrushPrimitive.Box,
+            SelectedBrushOperation = _brushOperationProvider?.Invoke() ?? BrushOperation.Additive,
             OrthographicCamera = _orthoRenderer?.Camera,
             PerspectiveCamera = _perspRenderer?.Camera,
             ViewAxis = _viewAxis,
@@ -573,19 +580,28 @@ public partial class ViewportPanel : UserControl
         for (int i = _sceneService!.Scene.Brushes.Count - 1; i >= 0; i--)
         {
             var brush = _sceneService.Scene.Brushes[i];
-            var half = brush.Transform.Scale * 0.5f;
-            var center = brush.Transform.Position;
+            if (!BrushBounds.TryGetWorldBounds(brush, out var min, out var max))
+            {
+                continue;
+            }
+
             bool hit = axis switch
             {
                 ViewAxis.Top =>
-                    Math.Abs(worldPoint.Value.X - center.X) <= half.X &&
-                    Math.Abs(worldPoint.Value.Z - center.Z) <= half.Z,
+                    worldPoint.Value.X >= min.X &&
+                    worldPoint.Value.X <= max.X &&
+                    worldPoint.Value.Z >= min.Z &&
+                    worldPoint.Value.Z <= max.Z,
                 ViewAxis.Front =>
-                    Math.Abs(worldPoint.Value.X - center.X) <= half.X &&
-                    Math.Abs(worldPoint.Value.Y - center.Y) <= half.Y,
+                    worldPoint.Value.X >= min.X &&
+                    worldPoint.Value.X <= max.X &&
+                    worldPoint.Value.Y >= min.Y &&
+                    worldPoint.Value.Y <= max.Y,
                 _ =>
-                    Math.Abs(worldPoint.Value.Y - center.Y) <= half.Y &&
-                    Math.Abs(worldPoint.Value.Z - center.Z) <= half.Z
+                    worldPoint.Value.Y >= min.Y &&
+                    worldPoint.Value.Y <= max.Y &&
+                    worldPoint.Value.Z >= min.Z &&
+                    worldPoint.Value.Z <= max.Z
             };
 
             if (hit)
@@ -610,9 +626,11 @@ public partial class ViewportPanel : UserControl
 
         foreach (var brush in _sceneService!.Scene.Brushes)
         {
-            var half = brush.Transform.Scale * 0.5f;
-            var min = brush.Transform.Position - half;
-            var max = brush.Transform.Position + half;
+            if (!BrushBounds.TryGetWorldBounds(brush, out var min, out var max))
+            {
+                continue;
+            }
+
             if (!TryIntersectAabb(ray, min, max, out var distance))
             {
                 continue;

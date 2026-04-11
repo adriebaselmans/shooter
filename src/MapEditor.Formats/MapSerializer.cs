@@ -1,6 +1,7 @@
 using System.Numerics;
 using MapEditor.Core.Entities;
 using MapEditor.Core;
+using MapEditor.Core.Geometry;
 using MapEditor.Formats.Dto;
 
 namespace MapEditor.Formats;
@@ -33,11 +34,15 @@ public static class MapSerializer
                 MaterialName = b.MaterialName
             };
 
+            if (b.Geometry is not null)
+            {
+                brush.SetGeometry(ToGeometry(b.Geometry));
+            }
+
             if (b.SurfaceMappings is not null)
             {
                 brush.ReplaceSurfaceMappings(
                     b.SurfaceMappings
-                        .Where(pair => BrushSurfaceIds.IsValid(brush.Primitive, pair.Key))
                         .Select(pair => new KeyValuePair<string, SurfaceMapping>(pair.Key, ToSurfaceMapping(pair.Value, brush.MaterialName))));
             }
 
@@ -94,6 +99,7 @@ public static class MapSerializer
                 PrimitiveType = b.Primitive.ToString().ToLowerInvariant(),
                 Transform    = FromTransform(b.Transform),
                 MaterialName = b.MaterialName,
+                Geometry = b.HasExplicitGeometry ? FromGeometry(b.Geometry!) : null,
                 SurfaceMappings = b.SurfaceMappings.Count == 0
                     ? null
                     : b.SurfaceMappings.ToDictionary(
@@ -172,6 +178,24 @@ public static class MapSerializer
         RotationDegrees = mapping.RotationDegrees,
         TextureLocked = mapping.TextureLocked
     };
+
+    private static BrushGeometry ToGeometry(BrushGeometryDto dto) =>
+        new(dto.Faces.Select(face => new BrushFace(
+            face.Id,
+            face.Vertices.Select(ToVec3))));
+
+    private static BrushGeometryDto FromGeometry(BrushGeometry geometry) => new()
+    {
+        Faces = geometry.Faces
+            .Select(face => new BrushFaceDto
+            {
+                Id = face.Id,
+                Vertices = face.Vertices.Select(FromVec3).ToArray()
+            })
+            .ToList()
+    };
+
+    private static Vector3 ToVec3(float[]? arr) => ToVec3(arr, Vector3.Zero);
 
     private static Vector2 ToVec2(float[]? arr, Vector2 fallback) =>
         arr is { Length: >= 2 }

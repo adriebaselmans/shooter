@@ -29,10 +29,10 @@ public partial class MainWindow : Window
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         var textureCatalog = _vm.TextureLibrary;
-        ViewportTop.AttachOrthographic(_vm.SceneService, _vm.ActiveToolService, _vm.SelectionService, _vm.SurfaceSelectionService, _vm.StatusBar, textureCatalog, () => _vm.NewBrushPrimitive, ViewAxis.Top);
-        ViewportFront.AttachOrthographic(_vm.SceneService, _vm.ActiveToolService, _vm.SelectionService, _vm.SurfaceSelectionService, _vm.StatusBar, textureCatalog, () => _vm.NewBrushPrimitive, ViewAxis.Front);
-        ViewportSide.AttachOrthographic(_vm.SceneService, _vm.ActiveToolService, _vm.SelectionService, _vm.SurfaceSelectionService, _vm.StatusBar, textureCatalog, () => _vm.NewBrushPrimitive, ViewAxis.Side);
-        ViewportPersp.AttachPerspective(_vm.SceneService, _vm.ActiveToolService, _vm.SelectionService, _vm.SurfaceSelectionService, _vm.StatusBar, textureCatalog, () => _vm.NewBrushPrimitive);
+        ViewportTop.AttachOrthographic(_vm.SceneService, _vm.ActiveToolService, _vm.SelectionService, _vm.SurfaceSelectionService, _vm.StatusBar, textureCatalog, () => _vm.NewBrushPrimitive, () => MapEditor.Core.Entities.BrushOperation.Additive, ViewAxis.Top);
+        ViewportFront.AttachOrthographic(_vm.SceneService, _vm.ActiveToolService, _vm.SelectionService, _vm.SurfaceSelectionService, _vm.StatusBar, textureCatalog, () => _vm.NewBrushPrimitive, () => MapEditor.Core.Entities.BrushOperation.Additive, ViewAxis.Front);
+        ViewportSide.AttachOrthographic(_vm.SceneService, _vm.ActiveToolService, _vm.SelectionService, _vm.SurfaceSelectionService, _vm.StatusBar, textureCatalog, () => _vm.NewBrushPrimitive, () => MapEditor.Core.Entities.BrushOperation.Additive, ViewAxis.Side);
+        ViewportPersp.AttachPerspective(_vm.SceneService, _vm.ActiveToolService, _vm.SelectionService, _vm.SurfaceSelectionService, _vm.StatusBar, textureCatalog, () => _vm.NewBrushPrimitive, () => MapEditor.Core.Entities.BrushOperation.Additive);
 
         ViewportTop.LayoutToggleRequested += OnViewportLayoutToggleRequested;
         ViewportFront.LayoutToggleRequested += OnViewportLayoutToggleRequested;

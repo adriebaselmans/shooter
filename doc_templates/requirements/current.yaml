@@ -1,127 +1,161 @@
-feature: poc-brush-texturing-workflow
+feature: poc-freeform-boolean-brushes-and-compact-toolbar
 status: ready
 summary: >
-  Add a professional-feeling texture assignment workflow for brush-based level
-  editing so users can assign a texture to an entire brush or to individual
-  brush surfaces, inspect and tweak basic surface mapping, and save/load that
-  data without breaking the current fast PoC editor flow.
+  Replace the earlier box-first CSG direction with a true freeform boolean brush
+  workflow and a more professional compact toolbar. The editor must support
+  explicit subtract and merge actions on rotated and arbitrarily positioned
+  brushes, keep the result as exact editable brush geometry, and present brush
+  creation and boolean actions in clearly separated compact UI groups.
 user_need: >
-  The editor already lets the user create and edit brushes, but the next major
-  usability gap is texturing. The user wants a workflow comparable to established
-  3D map editors, where textures can be applied quickly to a whole brush or to
-  selected faces, adjusted with simple controls, and shown clearly in the 3D
-  viewport.
+  The current box-only subtract/merge approach does not match the expected level
+  editing workflow. The user wants to draw primitive brushes freely, select a
+  brush and subtract it from every intersecting brush in one action, merge
+  selected brushes into one exact resulting brush, and use a tighter, more
+  professional toolbar where primitive creation and boolean actions are visually
+  grouped without oversized labeled buttons.
 in_scope:
-  - Assign a texture to the currently selected brush as its default texture.
-  - Assign a texture to one or more selected brush surfaces.
-  - Add a texture browser with previews and a current texture selection.
-  - Add a surface inspector for core mapping controls: offset, scale, rotation,
-    and fit/reset actions.
-  - Add an in-app help entry that explains the texture-editing shortcuts and core workflow.
-  - Preserve texture placement when brush transforms change through a texture-lock workflow.
-  - Render textures in the 3D viewport and expose a readable editor fallback in orthographic views.
-  - Persist texture assignments and mapping data in the `.shmap` format.
-  - Keep all texture edits undoable and redoable through the existing command flow.
+  - Replace box-only boolean assumptions with freeform brush booleans for the active editor workflow.
+  - Support boolean subtract on arbitrarily transformed editor brushes without an axis-aligned restriction.
+  - Support boolean merge that produces one exact resulting brush from the selected input brushes.
+  - Keep subtract and merge as explicit destructive actions with full undo and redo.
+  - Use the selected brush as the subtract cutter and apply it to every intersecting brush in the scene.
+  - Consume the subtract cutter brush as part of the subtract action.
+  - Default newly created faces from subtract and merge to the target or first-selected brush texture baseline.
+  - Introduce a compact grouped toolbar layout with icon-first primitive creation controls and a separate boolean-actions group.
+  - Move boolean actions out of the cluttered properties workflow and make their enabled and disabled states obvious.
+  - Keep subtract and merge directly reachable from visible toolbar buttons, not only from a menu path.
+  - Preserve direct editor interaction with the resulting boolean-edited brushes immediately after subtract or merge.
+  - Keep toolbar button visuals stable and readable during hover, press, and disabled states.
+  - Evolve the map format so exact resulting brush geometry can be saved and loaded while keeping backward compatibility with existing maps.
 out_of_scope:
-  - Full PBR material authoring or shader-graph editing.
-  - Texture painting, decals, terrain splatting, or sculpt workflows.
-  - Imported static-mesh material editing.
-  - Advanced UV unwrapping tools beyond brush/surface mapping controls.
-  - Runtime asset packaging, streaming, or compression pipelines.
+  - A non-destructive modifier stack or live CSG tree for the first implementation slice.
+  - Dedicated vertex, edge, or face editing tools beyond what is required to store, render, select, transform, and texture boolean results.
+  - Arbitrary imported mesh editing as a first-class replacement for the brush workflow.
+  - Scene-wide per-frame CSG evaluation or BSP-style brush-order semantics.
+  - Boolean operations on lights, spawn points, or non-brush entities.
 functional_requirements:
   - id: FR-1
     requirement: >
-      The editor shall expose a browsable texture library sourced from project-local
-      image assets so the user can choose a texture visually instead of typing names manually.
+      The editor shall present primitive brush creation as a compact grouped set
+      of icon-first controls that can be used without oversized text-heavy
+      buttons.
   - id: FR-2
     requirement: >
-      With a brush selected, the user shall be able to apply the current texture
-      to the whole brush in one action.
+      The editor shall present subtract and merge as a separate compact boolean
+      actions group, visually distinct from primitive creation controls.
   - id: FR-3
     requirement: >
-      The editor shall support selecting one or more logical brush surfaces and
-      applying the current texture only to those selected surfaces.
+      The subtract action shall use the currently selected brush as the cutter,
+      find every other brush in the scene whose solid intersects it, subtract
+      the cutter volume from each intersecting brush, and consume the cutter.
   - id: FR-4
     requirement: >
-      For each textured surface, the editor shall support editable offset, scale,
-      and rotation controls, plus a fit/reset action suitable for brush-based level editing.
+      The merge action shall combine the selected brushes into one exact
+      resulting brush rather than approximating the result as a larger primitive
+      or rejecting non-axis-aligned inputs.
   - id: FR-5
     requirement: >
-      The editor shall preserve texture mapping during supported brush transform
-      operations when texture lock is enabled.
+      Boolean operations shall support rotated and otherwise freely transformed
+      brushes that are valid for the chosen solid representation.
   - id: FR-6
     requirement: >
-      The 3D viewport shall render applied textures on brushes and shall make
-      the currently selected textured surface visually obvious.
+      When subtract or merge creates new faces, those faces shall default to the
+      target brush texture baseline for subtract and the first-selected brush
+      texture baseline for merge unless a later explicit mapping pass changes them.
   - id: FR-7
     requirement: >
-      Orthographic views shall provide a readable indication of the applied brush
-      or surface texture without sacrificing editing clarity.
+      The editor shall preserve one coherent brush entity per boolean result so
+      the resulting solid can be selected, transformed, saved, and textured as a
+      single brush object.
   - id: FR-8
     requirement: >
-      Texture assignment and mapping changes shall participate in undo and redo
-      through the existing scene command system.
+      The editor shall keep boolean actions fully undoable and redoable through
+      the existing command-driven mutation workflow.
   - id: FR-9
     requirement: >
-      Saving and reopening a scene shall preserve brush default textures,
-      per-surface overrides, and surface mapping values.
+      The editor shall give clear feedback when subtract or merge cannot run,
+      including no intersecting targets, invalid solid geometry, or a union
+      result that cannot be represented as one valid brush.
   - id: FR-10
     requirement: >
-      The data model shall support both brush-wide default texture assignment and
-      per-surface overrides without requiring raw triangle-level editing in the UI.
+      Saving and reopening a scene shall preserve exact resulting brush geometry
+      and face-level texture data, while existing primitive-only maps continue
+      to load correctly.
   - id: FR-11
     requirement: >
-      The feature shall use stable logical surface identifiers for each supported
-      brush primitive so saved texture data remains deterministic across sessions.
+      The properties experience shall support inspecting the selected brush's
+      geometry state and texturing context without becoming the primary place for
+      triggering subtract and merge.
   - id: FR-12
     requirement: >
-      The editor shall provide a discoverable in-app help entry that lists the
-      texture-editing shortcuts and briefly explains the primary interaction flow
-      for selecting faces, browsing textures, and applying or picking textures.
+      Subtract and merge shall remain directly accessible from visible toolbar
+      buttons in addition to any menu-based discoverability entry.
+  - id: FR-13
+    requirement: >
+      After subtract or merge completes, the resulting brush or brushes shall
+      remain immediately selectable and transformable through the normal
+      orthographic and perspective interaction workflow.
+  - id: FR-14
+    requirement: >
+      Toolbar buttons shall retain the intended dark editor styling during
+      normal, hover, pressed, and disabled states instead of falling back to a
+      white default control appearance.
 acceptance_criteria:
   - id: AC-1
     criterion: >
-      The user can open a texture browser, pick a texture preview, and see the
-      selected texture become the active texture for subsequent apply actions.
+      The toolbar shows a compact primitive creation group and a separate compact
+      boolean actions group, with primitive controls no longer rendered as large
+      text-heavy buttons.
   - id: AC-2
     criterion: >
-      Applying a texture to a selected brush updates the 3D viewport immediately
-      and can be undone and redone.
+      Given a rotated or otherwise freely transformed brush selected as cutter,
+      pressing subtract removes the cutter and applies its volume to every
+      intersecting brush in the scene in one undoable action.
   - id: AC-3
     criterion: >
-      Applying a texture to a selected brush surface updates only that surface
-      while other surfaces keep their previous texture assignment.
+      If the selected subtract cutter intersects no other brushes, the editor
+      leaves the scene unchanged and reports that no intersecting targets were found.
   - id: AC-4
     criterion: >
-      Editing offset, scale, or rotation in the surface inspector changes the
-      visible mapping in the 3D viewport and persists after save/reopen.
+      Given two selected overlapping or touching brushes, pressing merge replaces
+      them with one exact resulting brush entity and that result can be undone.
   - id: AC-5
     criterion: >
-      Using fit or reset on a selected surface produces a stable, readable texture
-      layout suited to brush editing.
+      Subtract and merge both preserve usable face texturing, and any newly
+      created faces default to the target or first-selected brush texture baseline.
   - id: AC-6
     criterion: >
-      With texture lock enabled, moving or resizing a brush preserves surface texture
-      placement according to the chosen mapping rules.
+      A boolean result remains one selectable brush entity in the outliner and
+      properties workflow rather than being approximated back into primitive fragments.
   - id: AC-7
     criterion: >
-      A box brush and at least one non-box primitive can be textured, saved, reopened,
-      and rendered with the same assignments and mapping values.
+      A map saved after boolean editing reloads with the same resulting brush
+      geometry and face texture assignments.
   - id: AC-8
     criterion: >
-      Existing map files that only contain the old brush-wide `material_name`
-      continue to load successfully with sensible defaults.
+      Existing primitive-only `.shmap` files still load successfully without
+      requiring manual migration.
   - id: AC-9
     criterion: >
-      A user can open a help entry from the editor UI and see the supported
-      texture-editing shortcuts and their meaning without needing external documentation.
+      The subtract and merge actions are visibly available as toolbar buttons and
+      do not require opening a menu to access them.
+  - id: AC-10
+    criterion: >
+      After a subtract operation, the cutter brush is no longer present in the
+      scene and the resulting edited brush or brushes can still be selected and
+      manipulated in the editor.
+  - id: AC-11
+    criterion: >
+      Toolbar buttons keep the intended dark editor look instead of flashing to a
+      white default button style during normal interaction.
 constraints:
-  - Remain within the current WPF/.NET 10 PoC stack and existing project structure.
-  - Reuse the current command-based scene mutation flow so undo/redo remains coherent.
-  - Keep the user workflow fast and editor-first; acceptance automation and DoD remain skipped per user preference.
-  - Keep the current left-handed, Y-up world convention intact.
+  - Remain within the current WPF/.NET 10 PoC stack and existing project structure where practical.
+  - Preserve the current left-handed, Y-up world convention.
+  - Keep one explicit mutation path through scene commands so undo and redo stay coherent.
+  - Prefer a robust boolean kernel behind a narrow editor-facing abstraction instead of extending the rejected box-only math.
+  - Keep the fast PoC iteration style; acceptance automation and DoD remain skipped per user preference.
 assumptions:
-  - The first delivery can treat a "texture" as a project-local image asset referenced by a stable key.
-  - Logical surfaces are the user-facing editing unit, even when a primitive is internally rendered by multiple triangles.
-  - Initial surface editing can focus on the 3D viewport rather than requiring full per-surface picking in orthographic views.
+  - Subtract and merge are destructive editor actions, not live procedural modifiers.
+  - Merge is intended for selected brushes that form one meaningful resulting solid.
+  - Boolean results may require the persisted brush model to move beyond primitive plus transform as the sole source of truth.
 open_questions: []

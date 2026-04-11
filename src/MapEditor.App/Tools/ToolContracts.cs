@@ -66,6 +66,7 @@ public sealed class ToolContext
     public required int PixelHeight { get; init; }
     public required float GridSize { get; init; }
     public required BrushPrimitive SelectedBrushPrimitive { get; init; }
+    public required BrushOperation SelectedBrushOperation { get; init; }
     public required Func<Point, Vector3?> TryGetWorldPoint { get; init; }
     public required Func<Point, Vector3?> TryGetSnappedWorldPoint { get; init; }
     public required Func<Point, Guid?> HitTestEntity { get; init; }

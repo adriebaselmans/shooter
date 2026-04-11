@@ -129,6 +129,33 @@ public sealed class MapSerializerTests
     }
 
     [Fact]
+    public void RoundTrip_PreservesExplicitGeometry()
+    {
+        var scene = new Scene();
+        var brush = new Brush { MaterialName = "stone/base.png" };
+        brush.SetGeometry(new MapEditor.Core.Geometry.BrushGeometry(
+        [
+            new MapEditor.Core.Geometry.BrushFace("face-a", [new(-2f, -1f, 0f), new(2f, -1f, 0f), new(2f, 1f, 0f), new(-2f, 1f, 0f)]),
+            new MapEditor.Core.Geometry.BrushFace("face-b", [new(-2f, -1f, 2f), new(-2f, 1f, 2f), new(2f, 1f, 2f), new(2f, -1f, 2f)])
+        ]));
+        brush.ReplaceSurfaceMappings(new Dictionary<string, SurfaceMapping>
+        {
+            ["face-a"] = new("brick/wall.png", new Vector2(2f, 3f), new Vector2(0.5f, 1.5f), 45f, true),
+            ["face-b"] = SurfaceMapping.Default("stone/base.png")
+        });
+        scene.AddBrush(brush);
+
+        var dto = MapSerializer.FromScene(scene);
+        dto.FormatVersion.Should().Be("1.1.0");
+        dto.Brushes[0].Geometry.Should().NotBeNull();
+
+        var roundTripped = MapSerializer.ToScene(dto);
+        roundTripped.Brushes[0].HasExplicitGeometry.Should().BeTrue();
+        roundTripped.Brushes[0].GetSurfaceIds().Should().ContainInOrder("face-a", "face-b");
+        roundTripped.Brushes[0].GetEffectiveSurfaceMapping("face-a").TextureKey.Should().Be("brick/wall.png");
+    }
+
+    [Fact]
     public void ToScene_BackwardCompatibleMaterialOnlyBrush_UsesDefaultSurfaceTexture()
     {
         var dto = new MapEditor.Formats.Dto.MapDto

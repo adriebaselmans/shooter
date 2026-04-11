@@ -6,7 +6,7 @@ using MapEditor.Rendering.Cameras;
 
 namespace MapEditor.App.Tools;
 
-/// <summary>Creates additive brushes by click-dragging in orthographic viewports.</summary>
+/// <summary>Creates brushes by click-dragging in orthographic viewports.</summary>
 public sealed class CreateBrushTool : IEditorTool
 {
     private readonly SceneService _sceneService;
@@ -110,7 +110,7 @@ public sealed class CreateBrushTool : IEditorTool
         {
             Name = $"{context.SelectedBrushPrimitive} Brush",
             Primitive = context.SelectedBrushPrimitive,
-            Operation = BrushOperation.Additive,
+            Operation = context.SelectedBrushOperation,
             Transform = BuildTransform(context.ViewAxis!.Value, startWorld, endWorld, context.GridSize)
         };
     }
