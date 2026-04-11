@@ -51,6 +51,7 @@ public sealed class OrthographicViewportRenderer : IDisposable
         if (width <= 0 || height <= 0) return;
 
         EnsureShaders();
+        PruneStaleBuffers(scene);
 
         _gl.Viewport(0, 0, (uint)width, (uint)height);
         _gl.Disable(EnableCap.DepthTest);
@@ -108,7 +109,7 @@ public sealed class OrthographicViewportRenderer : IDisposable
         foreach (var brush in scene.Brushes)
         {
             var buf = GetOrCreateBuffer(brush);
-            var model = BuildModelMatrix(brush.Transform);
+            var model = TransformMath.BuildModelMatrix(brush.Transform);
             _shader.SetUniform("uModel", model);
 
             bool selected = SelectedEntityIds.Contains(brush.Id);
@@ -120,7 +121,15 @@ public sealed class OrthographicViewportRenderer : IDisposable
             bool solidSamplesPassed = DrawWithVisibilityQuery(buf.DrawSolid);
 
             _shader.SetUniform("uColor", outlineColor);
-            bool wireSamplesPassed = DrawWithVisibilityQuery(buf.DrawWireframe);
+            bool wireSamplesPassed = DrawWithVisibilityQuery(buf.DrawTargetEdges);
+
+            // Draw cutter-sourced inner-wall edges at 30% alpha
+            if (buf.HasCutterEdges)
+            {
+                var dimmedOutline = outlineColor with { W = outlineColor.W * 0.3f };
+                _shader.SetUniform("uColor", dimmedOutline);
+                wireSamplesPassed |= DrawWithVisibilityQuery(buf.DrawCutterEdges);
+            }
 
             if (selected)
             {
@@ -149,7 +158,7 @@ public sealed class OrthographicViewportRenderer : IDisposable
         }
 
         var brush = scene.Brushes.FirstOrDefault(candidate => candidate.Id == PrimarySelectedEntityId.Value);
-        if (brush is null)
+        if (brush is null || brush.HasExplicitGeometry)
         {
             return;
         }
@@ -203,7 +212,7 @@ public sealed class OrthographicViewportRenderer : IDisposable
     private string CreateMeshSignature(Brush brush) =>
         string.Create(
             System.Globalization.CultureInfo.InvariantCulture,
-            $"{brush.Primitive}|{brush.Transform.Scale.X:0.####}|{brush.Transform.Scale.Y:0.####}|{brush.Transform.Scale.Z:0.####}|{brush.AppearanceVersion}");
+            $"{brush.Primitive}|{brush.GeometryVersion}|{brush.Transform.Scale.X:0.####}|{brush.Transform.Scale.Y:0.####}|{brush.Transform.Scale.Z:0.####}|{brush.AppearanceVersion}");
 
     private Vector4 GetOrthographicFillColor(Brush brush)
     {
@@ -246,15 +255,20 @@ public sealed class OrthographicViewportRenderer : IDisposable
             buf.Dispose();
     }
 
-    private static Matrix4x4 BuildModelMatrix(Core.Entities.Transform t)
+    public void SynchronizeBrushBuffers(IReadOnlyCollection<Guid> liveBrushIds)
     {
-        var scale = Matrix4x4.CreateScale(t.Scale);
-        var rot   = Matrix4x4.CreateFromYawPitchRoll(
-            float.DegreesToRadians(t.EulerDegrees.Y),
-            float.DegreesToRadians(t.EulerDegrees.X),
-            float.DegreesToRadians(t.EulerDegrees.Z));
-        var trans = Matrix4x4.CreateTranslation(t.Position);
-        return scale * rot * trans;
+        ArgumentNullException.ThrowIfNull(liveBrushIds);
+
+        foreach (var staleBrushId in _brushBuffers.Keys.Where(id => !liveBrushIds.Contains(id)).ToArray())
+        {
+            RemoveBrush(staleBrushId);
+        }
+    }
+
+    private void PruneStaleBuffers(Scene scene)
+    {
+        var liveIds = new HashSet<Guid>(scene.Brushes.Select(b => b.Id));
+        SynchronizeBrushBuffers(liveIds);
     }
 
     public void Dispose()

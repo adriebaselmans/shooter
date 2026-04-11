@@ -12,9 +12,10 @@ namespace MapEditor.Rendering.Buffers;
 public sealed class BrushMeshBuffer : IDisposable
 {
     private readonly GL _gl;
-    private uint _vao, _vbo, _ebo, _lineEbo;
+    private uint _vao, _vbo, _ebo, _lineEbo, _cutterLineEbo;
     private int  _indexCount;
     private int _lineIndexCount;
+    private int _cutterLineIndexCount;
     private bool _disposed;
 
     public bool IsDirty { get; set; } = true;
@@ -28,6 +29,7 @@ public sealed class BrushMeshBuffer : IDisposable
         _vbo = gl.GenBuffer();
         _ebo = gl.GenBuffer();
         _lineEbo = gl.GenBuffer();
+        _cutterLineEbo = gl.GenBuffer();
     }
 
     public void SetMesh(Core.Geometry.Mesh mesh)
@@ -52,11 +54,17 @@ public sealed class BrushMeshBuffer : IDisposable
             _gl.BufferData(BufferTargetARB.ElementArrayBuffer,
                 (nuint)(Mesh.Indices.Length * sizeof(uint)), ptr, BufferUsageARB.StaticDraw);
 
-        var lineIndices = MeshEdgeIndexBuilder.BuildFeatureEdges(Mesh);
+        var splitEdges = MeshEdgeIndexBuilder.BuildSplitFeatureEdges(Mesh);
+
         _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _lineEbo);
-        fixed (uint* ptr = lineIndices)
+        fixed (uint* ptr = splitEdges.TargetEdges)
             _gl.BufferData(BufferTargetARB.ElementArrayBuffer,
-                (nuint)(lineIndices.Length * sizeof(uint)), ptr, BufferUsageARB.StaticDraw);
+                (nuint)(splitEdges.TargetEdges.Length * sizeof(uint)), ptr, BufferUsageARB.StaticDraw);
+
+        _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _cutterLineEbo);
+        fixed (uint* ptr = splitEdges.CutterEdges)
+            _gl.BufferData(BufferTargetARB.ElementArrayBuffer,
+                (nuint)(splitEdges.CutterEdges.Length * sizeof(uint)), ptr, BufferUsageARB.StaticDraw);
 
         int stride = Core.Geometry.Mesh.FloatsPerVertex * sizeof(float);
 
@@ -76,7 +84,8 @@ public sealed class BrushMeshBuffer : IDisposable
         _gl.BindVertexArray(0);
 
         _indexCount = Mesh.Indices.Length;
-        _lineIndexCount = lineIndices.Length;
+        _lineIndexCount = splitEdges.TargetEdges.Length;
+        _cutterLineIndexCount = splitEdges.CutterEdges.Length;
         IsDirty = false;
     }
 
@@ -110,10 +119,11 @@ public sealed class BrushMeshBuffer : IDisposable
 
     public void DrawWireframe()
     {
-        DrawEdges();
+        DrawTargetEdges();
+        DrawCutterEdges();
     }
 
-    public unsafe void DrawEdges()
+    public unsafe void DrawTargetEdges()
     {
         UploadIfDirty();
         if (_lineIndexCount == 0) return;
@@ -124,6 +134,19 @@ public sealed class BrushMeshBuffer : IDisposable
         _gl.BindVertexArray(0);
     }
 
+    public unsafe void DrawCutterEdges()
+    {
+        UploadIfDirty();
+        if (_cutterLineIndexCount == 0) return;
+        _gl.BindVertexArray(_vao);
+        _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _cutterLineEbo);
+        _gl.DrawElements(PrimitiveType.Lines, (uint)_cutterLineIndexCount, DrawElementsType.UnsignedInt, (void*)0);
+        _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _ebo);
+        _gl.BindVertexArray(0);
+    }
+
+    public bool HasCutterEdges => _cutterLineIndexCount > 0;
+
     public void Dispose()
     {
         if (_disposed) return;
@@ -131,6 +154,7 @@ public sealed class BrushMeshBuffer : IDisposable
         _gl.DeleteBuffer(_vbo);
         _gl.DeleteBuffer(_ebo);
         _gl.DeleteBuffer(_lineEbo);
+        _gl.DeleteBuffer(_cutterLineEbo);
         _disposed = true;
     }
 }

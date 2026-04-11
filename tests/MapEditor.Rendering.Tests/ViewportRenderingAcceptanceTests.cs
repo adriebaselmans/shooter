@@ -208,6 +208,111 @@ public sealed class ViewportRenderingAcceptanceTests
         frontMovedDiagnostic.ModelMatrix.Should().NotBe(frontCreatedDiagnostic.ModelMatrix);
         sideMovedDiagnostic.ModelMatrix.Should().NotBe(sideCreatedDiagnostic.ModelMatrix);
         perspectiveMovedDiagnostic.ModelMatrix.Should().NotBe(perspectiveCreatedDiagnostic.ModelMatrix);
+
+        sceneService.Execute(new DeleteBrushCommand(sceneService.Scene, createdBrush));
+
+        var deletedSnapshots = RenderAllViewports(sceneService.Scene, topRenderer, frontRenderer, sideRenderer, perspectiveRenderer, surface);
+
+        topRenderer.LastDiagnostics.Brushes.Should().BeEmpty();
+        frontRenderer.LastDiagnostics.Brushes.Should().BeEmpty();
+        sideRenderer.LastDiagnostics.Brushes.Should().BeEmpty();
+        perspectiveRenderer.LastDiagnostics.Brushes.Should().BeEmpty();
+        deletedSnapshots.Top.CountDifferentPixels(movedSnapshots.Top).Should().BeGreaterThan(250);
+        deletedSnapshots.Front.CountDifferentPixels(movedSnapshots.Front).Should().BeGreaterThan(150);
+        deletedSnapshots.Side.CountDifferentPixels(movedSnapshots.Side).Should().BeGreaterThan(150);
+        deletedSnapshots.Perspective.CountDifferentPixels(movedSnapshots.Perspective).Should().BeGreaterThan(250);
+    }
+
+    [Fact]
+    public void SubtractIntersectingBrushes_CutterDoesNotAppearInRenderDiagnostics()
+    {
+        using var surface = new ViewportRenderTestSurface(CaptureSize, CaptureSize);
+        using var topRenderer = new OrthographicViewportRenderer(surface.Gl, ViewAxis.Top);
+        using var frontRenderer = new OrthographicViewportRenderer(surface.Gl, ViewAxis.Front);
+        using var sideRenderer = new OrthographicViewportRenderer(surface.Gl, ViewAxis.Side);
+        using var perspectiveRenderer = new PerspectiveViewportRenderer(surface.Gl);
+
+        topRenderer.CaptureDiagnostics = true;
+        frontRenderer.CaptureDiagnostics = true;
+        sideRenderer.CaptureDiagnostics = true;
+        perspectiveRenderer.CaptureDiagnostics = true;
+        ConfigureOrthographicCamera(topRenderer.Camera, 128f);
+        ConfigureOrthographicCamera(frontRenderer.Camera, 128f);
+        ConfigureOrthographicCamera(sideRenderer.Camera, 128f);
+        ConfigurePerspectiveCamera(perspectiveRenderer.Camera);
+
+        var sceneService = new SceneService();
+        sceneService.Scene.WorldSettings.AmbientColor = new Vector3(0.7f, 0.7f, 0.7f);
+        sceneService.Execute(new CreateLightCommand(
+            sceneService.Scene,
+            new LightEntity
+            {
+                Transform = new Transform
+                {
+                    Position = new Vector3(240f, 320f, -180f),
+                    EulerDegrees = Vector3.Zero,
+                    Scale = Vector3.One
+                },
+                Intensity = 1.2f,
+                Range = 2_500f
+            }));
+
+        var target = new Brush
+        {
+            Name = "Target",
+            Primitive = BrushPrimitive.Box,
+            Operation = BrushOperation.Additive,
+            Transform = new Transform
+            {
+                Position = new Vector3(24f, 48f, 40f),
+                EulerDegrees = Vector3.Zero,
+                Scale = new Vector3(176f, 96f, 144f)
+            }
+        };
+        var cutter = new Brush
+        {
+            Name = "Cutter",
+            Primitive = BrushPrimitive.Box,
+            Operation = BrushOperation.Additive,
+            Transform = new Transform
+            {
+                Position = new Vector3(24f, 48f, 40f),
+                EulerDegrees = Vector3.Zero,
+                Scale = new Vector3(80f, 48f, 64f)
+            }
+        };
+
+        sceneService.Execute(new CreateBrushCommand(sceneService.Scene, target));
+        sceneService.Execute(new CreateBrushCommand(sceneService.Scene, cutter));
+
+        // Pre-subtract: both brush IDs should appear in diagnostics
+        var preSnapshots = RenderAllViewports(sceneService.Scene, topRenderer, frontRenderer, sideRenderer, perspectiveRenderer, surface);
+
+        topRenderer.LastDiagnostics.Brushes.Should().HaveCount(2);
+        frontRenderer.LastDiagnostics.Brushes.Should().HaveCount(2);
+        sideRenderer.LastDiagnostics.Brushes.Should().HaveCount(2);
+        perspectiveRenderer.LastDiagnostics.Brushes.Should().HaveCount(2);
+
+        topRenderer.LastDiagnostics.Brushes.Should().Contain(d => d.BrushId == target.Id);
+        topRenderer.LastDiagnostics.Brushes.Should().Contain(d => d.BrushId == cutter.Id);
+
+        // Execute subtract
+        var cutterId = cutter.Id;
+        sceneService.Execute(new SubtractIntersectingBrushesCommand(sceneService.Scene, cutter));
+
+        // Post-subtract: cutter ID must NOT appear in any viewport diagnostics
+        var postSnapshots = RenderAllViewports(sceneService.Scene, topRenderer, frontRenderer, sideRenderer, perspectiveRenderer, surface);
+
+        topRenderer.LastDiagnostics.Brushes.Should().NotContain(d => d.BrushId == cutterId);
+        frontRenderer.LastDiagnostics.Brushes.Should().NotContain(d => d.BrushId == cutterId);
+        sideRenderer.LastDiagnostics.Brushes.Should().NotContain(d => d.BrushId == cutterId);
+        perspectiveRenderer.LastDiagnostics.Brushes.Should().NotContain(d => d.BrushId == cutterId);
+
+        // Pixel snapshots must differ from pre-subtract (visual change occurred)
+        postSnapshots.Top.CountDifferentPixels(preSnapshots.Top).Should().BeGreaterThan(0);
+        postSnapshots.Front.CountDifferentPixels(preSnapshots.Front).Should().BeGreaterThan(0);
+        postSnapshots.Side.CountDifferentPixels(preSnapshots.Side).Should().BeGreaterThan(0);
+        postSnapshots.Perspective.CountDifferentPixels(preSnapshots.Perspective).Should().BeGreaterThan(0);
     }
 
     private static ViewportSnapshots RenderAllViewports(

@@ -58,6 +58,7 @@ public sealed class PerspectiveViewportRenderer : IDisposable
         if (width <= 0 || height <= 0) return;
 
         EnsureShaders();
+        PruneStaleBuffers(scene);
 
         _gl.Viewport(0, 0, (uint)width, (uint)height);
         _gl.Enable(EnableCap.DepthTest);
@@ -102,7 +103,7 @@ public sealed class PerspectiveViewportRenderer : IDisposable
         foreach (var brush in scene.Brushes)
         {
             var buf = GetOrCreateBuffer(brush);
-            var model = BuildModelMatrix(brush.Transform);
+            var model = TransformMath.BuildModelMatrix(brush.Transform);
             _solidShader.SetUniform("uModel", model);
 
             bool solidSamplesPassed = false;
@@ -122,6 +123,13 @@ public sealed class PerspectiveViewportRenderer : IDisposable
             {
                 foreach (var surface in surfaces)
                 {
+                    // Enable backface culling for cutter-sourced inner walls
+                    if (surface.IsCutterFace)
+                    {
+                        _gl.Enable(EnableCap.CullFace);
+                        _gl.CullFace(TriangleFace.Back);
+                    }
+
                     var mapping = brush.GetEffectiveSurfaceMapping(surface.SurfaceId);
                     var descriptor = ResolveTexture(mapping.TextureKey);
                     BindTexture(descriptor);
@@ -129,6 +137,11 @@ public sealed class PerspectiveViewportRenderer : IDisposable
                     _solidShader.SetUniform("uObjectColor", GetSurfaceTint(brush.Operation, descriptor));
                     _solidShader.SetUniform("uIsSubtractive", brush.Operation == BrushOperation.Subtractive);
                     solidSamplesPassed |= DrawWithVisibilityQuery(() => buf.DrawSurface(surface));
+
+                    if (surface.IsCutterFace)
+                    {
+                        _gl.Disable(EnableCap.CullFace);
+                    }
                 }
 
                 if (SelectedSurfaceBrushId == brush.Id && SelectedSurfaceIds.Count > 0)
@@ -163,10 +176,19 @@ public sealed class PerspectiveViewportRenderer : IDisposable
         foreach (var brush in scene.Brushes)
         {
             var buf = GetOrCreateBuffer(brush);
-            var model = BuildModelMatrix(brush.Transform);
+            var model = TransformMath.BuildModelMatrix(brush.Transform);
             _wireShader.SetUniform("uModel", model);
-            _wireShader.SetUniform("uColor", BrushColorPalette.GetWireframe(brush.Operation, SelectedEntityIds.Contains(brush.Id)));
-            bool wireSamplesPassed = DrawWithVisibilityQuery(buf.DrawWireframe);
+
+            var wireColor = BrushColorPalette.GetWireframe(brush.Operation, SelectedEntityIds.Contains(brush.Id));
+            _wireShader.SetUniform("uColor", wireColor);
+            bool wireSamplesPassed = DrawWithVisibilityQuery(buf.DrawTargetEdges);
+
+            if (buf.HasCutterEdges)
+            {
+                var dimmedWireColor = wireColor with { W = wireColor.W * 0.3f };
+                _wireShader.SetUniform("uColor", dimmedWireColor);
+                wireSamplesPassed |= DrawWithVisibilityQuery(buf.DrawCutterEdges);
+            }
 
             if (diagnostics is not null)
             {
@@ -279,7 +301,7 @@ public sealed class PerspectiveViewportRenderer : IDisposable
     private string CreateMeshSignature(Brush brush) =>
         string.Create(
             System.Globalization.CultureInfo.InvariantCulture,
-            $"{brush.Primitive}|{brush.Transform.Scale.X:0.####}|{brush.Transform.Scale.Y:0.####}|{brush.Transform.Scale.Z:0.####}|{brush.AppearanceVersion}");
+            $"{brush.Primitive}|{brush.GeometryVersion}|{brush.Transform.Scale.X:0.####}|{brush.Transform.Scale.Y:0.####}|{brush.Transform.Scale.Z:0.####}|{brush.AppearanceVersion}");
 
     private TextureAssetDescriptor? ResolveTexture(string textureKey) =>
         _textureCatalog is not null && _textureCatalog.TryGetTexture(textureKey, out var descriptor)
@@ -345,15 +367,20 @@ public sealed class PerspectiveViewportRenderer : IDisposable
         }
     }
 
-    private static Matrix4x4 BuildModelMatrix(Core.Entities.Transform t)
+    public void SynchronizeBrushBuffers(IReadOnlyCollection<Guid> liveBrushIds)
     {
-        var scale = Matrix4x4.CreateScale(t.Scale);
-        var rot = Matrix4x4.CreateFromYawPitchRoll(
-            float.DegreesToRadians(t.EulerDegrees.Y),
-            float.DegreesToRadians(t.EulerDegrees.X),
-            float.DegreesToRadians(t.EulerDegrees.Z));
-        var trans = Matrix4x4.CreateTranslation(t.Position);
-        return scale * rot * trans;
+        ArgumentNullException.ThrowIfNull(liveBrushIds);
+
+        foreach (var staleBrushId in _brushBuffers.Keys.Where(id => !liveBrushIds.Contains(id)).ToArray())
+        {
+            RemoveBrush(staleBrushId);
+        }
+    }
+
+    private void PruneStaleBuffers(Scene scene)
+    {
+        var liveIds = new HashSet<Guid>(scene.Brushes.Select(b => b.Id));
+        SynchronizeBrushBuffers(liveIds);
     }
 
     public void Dispose()

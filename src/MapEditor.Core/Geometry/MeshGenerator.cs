@@ -18,14 +18,34 @@ public static class MeshGenerator
     public static Mesh GenerateMesh(BrushPrimitive primitive) => GenerateMesh(new Brush { Primitive = primitive });
 
     /// <summary>Generates a brush mesh using its primitive and current surface mappings.</summary>
-    public static Mesh GenerateMesh(Brush brush) => brush.Primitive switch
+    public static Mesh GenerateMesh(Brush brush)
     {
-        BrushPrimitive.Box => GenerateBox(brush),
-        BrushPrimitive.Cylinder => GenerateCylinder(brush),
-        BrushPrimitive.Cone => GenerateCone(brush),
-        BrushPrimitive.Wedge => GenerateWedge(brush),
-        _ => throw new ArgumentOutOfRangeException(nameof(brush))
-    };
+        if (brush.HasExplicitGeometry)
+        {
+            return GenerateExplicitGeometry(brush);
+        }
+
+        return brush.Primitive switch
+        {
+            BrushPrimitive.Box => GenerateBox(brush),
+            BrushPrimitive.Cylinder => GenerateCylinder(brush),
+            BrushPrimitive.Cone => GenerateCone(brush),
+            BrushPrimitive.Wedge => GenerateWedge(brush),
+            _ => throw new ArgumentOutOfRangeException(nameof(brush))
+        };
+    }
+
+    private static Mesh GenerateExplicitGeometry(Brush brush)
+    {
+        var builder = new MeshBuilder();
+        var geometry = BrushGeometryFactory.GetGeometry(brush);
+        foreach (var face in geometry.Faces)
+        {
+            AddExplicitFace(builder, brush, face);
+        }
+
+        return builder.ToMesh();
+    }
 
     private static Mesh GenerateBox(Brush brush)
     {
@@ -344,6 +364,47 @@ public static class MeshGenerator
         });
     }
 
+    private static void AddExplicitFace(MeshBuilder builder, Brush brush, BrushFace face)
+    {
+        var vertices = face.Vertices.ToArray();
+        if (vertices.Length < 3)
+        {
+            return;
+        }
+
+        var normal = face.GetNormal();
+        var axisU = GetFaceAxisU(normal, vertices);
+        var axisV = Vector3.Normalize(Vector3.Cross(normal, axisU));
+        var mapping = brush.GetEffectiveSurfaceMapping(face.Id);
+        var scaledVertices = vertices
+            .Select(vertex => Vector3.Multiply(vertex, brush.Transform.Scale))
+            .ToArray();
+        GetProjectionBounds(scaledVertices, axisU, axisV, out var minU, out var maxU, out var minV, out var maxV);
+
+        builder.AddSurface(face.Id, () =>
+        {
+            uint baseIndex = builder.GetNextVertexIndex();
+            foreach (var (vertex, scaledVertex) in vertices.Zip(scaledVertices))
+            {
+                var uv = BuildExplicitFaceUv(
+                    scaledVertex,
+                    axisU,
+                    axisV,
+                    minU,
+                    maxU,
+                    minV,
+                    maxV,
+                    mapping);
+                builder.AddVertex(vertex, normal, uv);
+            }
+
+            for (uint i = 1; i < vertices.Length - 1; i++)
+            {
+                builder.AddTriangleIndices(baseIndex, baseIndex + i, baseIndex + i + 1);
+            }
+        }, face.IsCutterFace);
+    }
+
     private static Vector2 BuildPlanarUv(
         Vector3 localPosition,
         Vector3 axisU,
@@ -362,6 +423,78 @@ public static class MeshGenerator
             : new Vector2(uCoord + 0.5f, vCoord + 0.5f);
 
         return ApplyMapping(baseUv, mapping);
+    }
+
+    private static Vector2 BuildExplicitFaceUv(
+        Vector3 scaledPosition,
+        Vector3 axisU,
+        Vector3 axisV,
+        float minU,
+        float maxU,
+        float minV,
+        float maxV,
+        SurfaceMapping mapping)
+    {
+        float uCoord = Vector3.Dot(scaledPosition, axisU);
+        float vCoord = Vector3.Dot(scaledPosition, axisV);
+
+        Vector2 baseUv = mapping.TextureLocked
+            ? new Vector2(uCoord / TextureWorldSize, vCoord / TextureWorldSize)
+            : new Vector2(
+                NormalizeToUnit(uCoord, minU, maxU),
+                NormalizeToUnit(vCoord, minV, maxV));
+
+        return ApplyMapping(baseUv, mapping);
+    }
+
+    private static void GetProjectionBounds(
+        IReadOnlyList<Vector3> vertices,
+        Vector3 axisU,
+        Vector3 axisV,
+        out float minU,
+        out float maxU,
+        out float minV,
+        out float maxV)
+    {
+        minU = maxU = Vector3.Dot(vertices[0], axisU);
+        minV = maxV = Vector3.Dot(vertices[0], axisV);
+        foreach (var vertex in vertices.Skip(1))
+        {
+            float u = Vector3.Dot(vertex, axisU);
+            float v = Vector3.Dot(vertex, axisV);
+            minU = MathF.Min(minU, u);
+            maxU = MathF.Max(maxU, u);
+            minV = MathF.Min(minV, v);
+            maxV = MathF.Max(maxV, v);
+        }
+    }
+
+    private static Vector3 GetFaceAxisU(Vector3 normal, IReadOnlyList<Vector3> vertices)
+    {
+        for (int i = 1; i < vertices.Count; i++)
+        {
+            var candidate = vertices[i] - vertices[0];
+            if (candidate.LengthSquared() > 0.000001f)
+            {
+                return Vector3.Normalize(candidate);
+            }
+        }
+
+        var fallback = MathF.Abs(Vector3.Dot(normal, Vector3.UnitY)) < 0.99f
+            ? Vector3.UnitY
+            : Vector3.UnitX;
+        return Vector3.Normalize(Vector3.Cross(fallback, normal));
+    }
+
+    private static float NormalizeToUnit(float value, float min, float max)
+    {
+        float range = max - min;
+        if (MathF.Abs(range) <= 0.0001f)
+        {
+            return 0f;
+        }
+
+        return (value - min) / range;
     }
 
     private static Vector2 ApplyMapping(Vector2 baseUv, SurfaceMapping mapping)
@@ -398,11 +531,11 @@ public static class MeshGenerator
 
         public uint GetNextVertexIndex() => (uint)(_vertices.Count / Mesh.FloatsPerVertex);
 
-        public void AddSurface(string surfaceId, Action emit)
+        public void AddSurface(string surfaceId, Action emit, bool isCutterFace = false)
         {
             int start = _indices.Count;
             emit();
-            _surfaces.Add(new MeshSurfaceRange(surfaceId, start, _indices.Count - start));
+            _surfaces.Add(new MeshSurfaceRange(surfaceId, start, _indices.Count - start, isCutterFace));
         }
 
         public void AddVertex(Vector3 position, Vector3 normal, Vector2 uv)

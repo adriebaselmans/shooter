@@ -10,6 +10,90 @@ namespace MapEditor.Core.Tests;
 public sealed class CommandHistoryTests
 {
     [Fact]
+    public void SetBrushOperationCommand_UndoRestoresPreviousOperation()
+    {
+        var svc = new SceneService();
+        var brush = CreateBoxBrush();
+        svc.Execute(new CreateBrushCommand(svc.Scene, brush));
+
+        svc.Execute(new SetBrushOperationCommand(svc.Scene, brush, BrushOperation.Subtractive));
+        brush.Operation.Should().Be(BrushOperation.Subtractive);
+
+        svc.Undo();
+
+        brush.Operation.Should().Be(BrushOperation.Additive);
+    }
+
+    [Fact]
+    public void SubtractIntersectingBrushesCommand_ReplacesTargetsWithExplicitGeometryAndConsumesCutter()
+    {
+        var svc = new SceneService();
+        var target = CreateBoxBrush(position: Vector3.Zero, scale: new Vector3(4f, 4f, 4f), name: "Target");
+        var cutter = CreateBoxBrush(position: new Vector3(0.5f, 0f, 0f), scale: new Vector3(2f, 2f, 2f), name: "Cutter");
+        cutter.Transform = cutter.Transform with { EulerDegrees = new Vector3(0f, 30f, 0f) };
+
+        svc.Execute(new CreateBrushCommand(svc.Scene, target));
+        svc.Execute(new CreateBrushCommand(svc.Scene, cutter));
+
+        var command = new SubtractIntersectingBrushesCommand(svc.Scene, cutter);
+        svc.Execute(command);
+
+        svc.Scene.Brushes.Should().ContainSingle();
+        svc.Scene.Brushes[0].Should().NotBeSameAs(target);
+        svc.Scene.Brushes[0].HasExplicitGeometry.Should().BeTrue();
+        command.ReplacementBrushes.Should().ContainSingle();
+
+        svc.Undo();
+
+        svc.Scene.Brushes.Should().ContainInOrder(target, cutter);
+    }
+
+    [Fact]
+    public void SubtractIntersectingBrushesCommand_AssignsTargetBaselineToCreatedFaces()
+    {
+        var svc = new SceneService();
+        var target = CreateBoxBrush(position: Vector3.Zero, scale: new Vector3(4f, 4f, 4f), name: "Target");
+        target.MaterialName = "stone";
+        target.SetSurfaceMapping(BrushSurfaceIds.Front, new SurfaceMapping("brick", Vector2.Zero, Vector2.One, 0f, true));
+        var cutter = CreateBoxBrush(position: Vector3.Zero, scale: new Vector3(2f, 2f, 2f), name: "Cutter");
+        cutter.MaterialName = "metal";
+
+        svc.Execute(new CreateBrushCommand(svc.Scene, target));
+        svc.Execute(new CreateBrushCommand(svc.Scene, cutter));
+
+        svc.Execute(new SubtractIntersectingBrushesCommand(svc.Scene, cutter));
+
+        svc.Scene.Brushes.Should().ContainSingle();
+        var result = svc.Scene.Brushes[0];
+        result.SurfaceMappings.Values.Should().NotContain(mapping => mapping.TextureKey == "metal");
+        result.SurfaceMappings.Values.Should().Contain(mapping => mapping.TextureKey == "stone");
+    }
+
+    [Fact]
+    public void MergeSelectedBrushesCommand_CreatesExplicitMergedBrushAndUndoRestoresSources()
+    {
+        var svc = new SceneService();
+        var first = CreateBoxBrush(position: new Vector3(-1f, 0f, 0f), scale: new Vector3(2f, 2f, 2f), name: "Left");
+        var second = CreateBoxBrush(position: new Vector3(1f, 0f, 0f), scale: new Vector3(2f, 2f, 2f), name: "Right");
+        second.MaterialName = "stone";
+
+        svc.Execute(new CreateBrushCommand(svc.Scene, first));
+        svc.Execute(new CreateBrushCommand(svc.Scene, second));
+
+        var command = new MergeSelectedBrushesCommand(svc.Scene, [first, second]);
+        svc.Execute(command);
+
+        svc.Scene.Brushes.Should().ContainSingle();
+        command.MergedBrush.HasExplicitGeometry.Should().BeTrue();
+        command.MergedBrush.MaterialName.Should().Be(first.MaterialName);
+        command.MergedBrush.SurfaceMappings.Values.Should().Contain(mapping => mapping.TextureKey == "stone");
+
+        svc.Undo();
+
+        svc.Scene.Brushes.Should().ContainInOrder(first, second);
+    }
+
+    [Fact]
     public void Execute_AddsCommandToUndoStack()
     {
         var svc = new SceneService();
@@ -145,10 +229,73 @@ public sealed class CommandHistoryTests
         brush.SurfaceMappings.Should().BeEmpty();
         brush.GetEffectiveSurfaceMapping(BrushSurfaceIds.Top).TextureKey.Should().Be(brush.MaterialName);
     }
+
+    private static Brush CreateBoxBrush(
+        Vector3? position = null,
+        Vector3? scale = null,
+        string name = "Brush")
+    {
+        return new Brush
+        {
+            Name = name,
+            Primitive = BrushPrimitive.Box,
+            Operation = BrushOperation.Additive,
+            Transform = new Transform
+            {
+                Position = position ?? Vector3.Zero,
+                EulerDegrees = Vector3.Zero,
+                Scale = scale ?? new Vector3(2f, 2f, 2f)
+            }
+        };
+    }
 }
 
 public sealed class MeshGeneratorTests
 {
+    [Fact]
+    public void GenerateMesh_ReturnsSurfaceRangesForExplicitGeometry()
+    {
+        var brush = new Brush
+        {
+            Primitive = BrushPrimitive.Box,
+            Transform = Transform.Identity
+        };
+        brush.SetGeometry(new BrushGeometry(
+        [
+            new BrushFace("face-a", [new(-1f, -1f, 0f), new(1f, -1f, 0f), new(1f, 1f, 0f), new(-1f, 1f, 0f)]),
+            new BrushFace("face-b", [new(-1f, -1f, 1f), new(-1f, 1f, 1f), new(1f, 1f, 1f), new(1f, -1f, 1f)])
+        ]));
+
+        var mesh = MeshGenerator.GenerateMesh(brush);
+
+        mesh.Surfaces.Select(surface => surface.SurfaceId).Should().ContainInOrder("face-a", "face-b");
+    }
+
+    [Fact]
+    public void BrushBounds_UsesExplicitGeometryWorldExtents()
+    {
+        var brush = new Brush
+        {
+            Primitive = BrushPrimitive.Box,
+            Transform = new Transform
+            {
+                Position = new Vector3(10f, 5f, -2f),
+                EulerDegrees = Vector3.Zero,
+                Scale = Vector3.One
+            }
+        };
+        brush.SetGeometry(new BrushGeometry(
+        [
+            new BrushFace("face-a", [new(-4f, -2f, -1f), new(4f, -2f, -1f), new(4f, 2f, -1f), new(-4f, 2f, -1f)]),
+            new BrushFace("face-b", [new(-4f, -2f, 3f), new(-4f, 2f, 3f), new(4f, 2f, 3f), new(4f, -2f, 3f)])
+        ]));
+
+        BrushBounds.TryGetWorldBounds(brush, out var min, out var max).Should().BeTrue();
+
+        min.Should().Be(new Vector3(6f, 3f, -3f));
+        max.Should().Be(new Vector3(14f, 7f, 1f));
+    }
+
     [Theory]
     [InlineData(BrushPrimitive.Box)]
     [InlineData(BrushPrimitive.Cylinder)]
@@ -235,5 +382,64 @@ public sealed class SceneServiceTests
         svc.Execute(new CreateBrushCommand(svc.Scene, new Brush()));
 
         changeCount.Should().Be(1);
+    }
+}
+
+public sealed class SubtractCutterFaceTests
+{
+    [Fact]
+    public void SubtractIntersectingBrushesCommand_CutterIdNotInSceneAfterExecute()
+    {
+        var svc = new SceneService();
+        var target = CreateBoxBrush(position: Vector3.Zero, scale: new Vector3(4f, 4f, 4f), name: "Target");
+        var cutter = CreateBoxBrush(position: Vector3.Zero, scale: new Vector3(2f, 2f, 2f), name: "Cutter");
+
+        svc.Execute(new CreateBrushCommand(svc.Scene, target));
+        svc.Execute(new CreateBrushCommand(svc.Scene, cutter));
+
+        var cutterId = cutter.Id;
+        svc.Execute(new SubtractIntersectingBrushesCommand(svc.Scene, cutter));
+
+        svc.Scene.Brushes.Should().NotContain(b => b.Id == cutterId);
+    }
+
+    [Fact]
+    public void SubtractResult_ContainsCutterFaces()
+    {
+        var svc = new SceneService();
+        var target = CreateBoxBrush(position: Vector3.Zero, scale: new Vector3(4f, 4f, 4f), name: "Target");
+        var cutter = CreateBoxBrush(position: Vector3.Zero, scale: new Vector3(2f, 2f, 2f), name: "Cutter");
+
+        svc.Execute(new CreateBrushCommand(svc.Scene, target));
+        svc.Execute(new CreateBrushCommand(svc.Scene, cutter));
+
+        var command = new SubtractIntersectingBrushesCommand(svc.Scene, cutter);
+        svc.Execute(command);
+
+        var replacement = svc.Scene.Brushes.Should().ContainSingle().Which;
+        replacement.HasExplicitGeometry.Should().BeTrue();
+
+        var geometry = BrushGeometryFactory.GetGeometry(replacement);
+        geometry.Faces.Should().Contain(f => f.IsCutterFace, "the result should contain faces from the cutter");
+        geometry.Faces.Should().Contain(f => !f.IsCutterFace, "the result should also contain faces from the target");
+    }
+
+    private static Brush CreateBoxBrush(
+        Vector3? position = null,
+        Vector3? scale = null,
+        string name = "Brush")
+    {
+        return new Brush
+        {
+            Name = name,
+            Primitive = BrushPrimitive.Box,
+            Operation = BrushOperation.Additive,
+            Transform = new Transform
+            {
+                Position = position ?? Vector3.Zero,
+                EulerDegrees = Vector3.Zero,
+                Scale = scale ?? new Vector3(2f, 2f, 2f)
+            }
+        };
     }
 }

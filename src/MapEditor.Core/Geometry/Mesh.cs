@@ -1,7 +1,7 @@
 namespace MapEditor.Core.Geometry;
 
 /// <summary>Indexed range for a logical surface inside a mesh index buffer.</summary>
-public readonly record struct MeshSurfaceRange(string SurfaceId, int IndexStart, int IndexCount);
+public readonly record struct MeshSurfaceRange(string SurfaceId, int IndexStart, int IndexCount, bool IsCutterFace = false);
 
 /// <summary>
 /// A renderable mesh with interleaved position, normal, and UV vertex data.

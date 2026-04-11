@@ -9,11 +9,33 @@ namespace MapEditor.Rendering.Buffers;
 /// </summary>
 public static class MeshEdgeIndexBuilder
 {
+    /// <summary>Result of splitting feature edges by cutter/target origin.</summary>
+    public readonly record struct SplitEdges(uint[] TargetEdges, uint[] CutterEdges);
+
     public static uint[] BuildFeatureEdges(Mesh mesh, float coplanarDotThreshold = 0.999f)
+    {
+        var split = BuildSplitFeatureEdges(mesh, coplanarDotThreshold);
+        return [.. split.TargetEdges, .. split.CutterEdges];
+    }
+
+    public static SplitEdges BuildSplitFeatureEdges(Mesh mesh, float coplanarDotThreshold = 0.999f)
     {
         if (mesh.Indices.Length < 3 || mesh.Vertices.Length < Mesh.FloatsPerVertex)
         {
-            return [];
+            return new SplitEdges([], []);
+        }
+
+        // Build a lookup: index-buffer offset → isCutterFace
+        var cutterTriangles = new HashSet<int>();
+        foreach (var surface in mesh.Surfaces)
+        {
+            if (surface.IsCutterFace)
+            {
+                for (int offset = surface.IndexStart; offset < surface.IndexStart + surface.IndexCount; offset += 3)
+                {
+                    cutterTriangles.Add(offset);
+                }
+            }
         }
 
         var edgeMap = new Dictionary<EdgeKey, EdgeRecord>();
@@ -27,23 +49,33 @@ public static class MeshEdgeIndexBuilder
             var p1 = GetPosition(mesh, i1);
             var p2 = GetPosition(mesh, i2);
             var normal = ComputeTriangleNormal(p0, p1, p2);
+            bool isCutter = cutterTriangles.Contains(i);
 
-            AddEdge(edgeMap, i0, i1, p0, p1, normal, coplanarDotThreshold);
-            AddEdge(edgeMap, i1, i2, p1, p2, normal, coplanarDotThreshold);
-            AddEdge(edgeMap, i2, i0, p2, p0, normal, coplanarDotThreshold);
+            AddEdge(edgeMap, i0, i1, p0, p1, normal, coplanarDotThreshold, isCutter);
+            AddEdge(edgeMap, i1, i2, p1, p2, normal, coplanarDotThreshold, isCutter);
+            AddEdge(edgeMap, i2, i0, p2, p0, normal, coplanarDotThreshold, isCutter);
         }
 
-        var lineIndices = new List<uint>(edgeMap.Count * 2);
+        var targetLineIndices = new List<uint>();
+        var cutterLineIndices = new List<uint>();
         foreach (var edge in edgeMap.Values)
         {
             if (edge.OccurrenceCount == 1 || edge.HasHardEdge)
             {
-                lineIndices.Add(edge.StartIndex);
-                lineIndices.Add(edge.EndIndex);
+                if (edge.AllCutter)
+                {
+                    cutterLineIndices.Add(edge.StartIndex);
+                    cutterLineIndices.Add(edge.EndIndex);
+                }
+                else
+                {
+                    targetLineIndices.Add(edge.StartIndex);
+                    targetLineIndices.Add(edge.EndIndex);
+                }
             }
         }
 
-        return [.. lineIndices];
+        return new SplitEdges([.. targetLineIndices], [.. cutterLineIndices]);
     }
 
     private static void AddEdge(
@@ -53,16 +85,22 @@ public static class MeshEdgeIndexBuilder
         Vector3 start,
         Vector3 end,
         Vector3 triangleNormal,
-        float coplanarDotThreshold)
+        float coplanarDotThreshold,
+        bool isCutterTriangle)
     {
         var key = EdgeKey.Create(start, end);
         if (!edgeMap.TryGetValue(key, out var edge))
         {
-            edgeMap[key] = new EdgeRecord(startIndex, endIndex, triangleNormal);
+            edgeMap[key] = new EdgeRecord(startIndex, endIndex, triangleNormal, isCutterTriangle);
             return;
         }
 
         edge.OccurrenceCount++;
+        if (!isCutterTriangle)
+        {
+            edge.AllCutter = false;
+        }
+
         if (!edge.HasHardEdge && triangleNormal != Vector3.Zero)
         {
             float dot = Vector3.Dot(edge.FirstNormal, triangleNormal);
@@ -120,13 +158,14 @@ public static class MeshEdgeIndexBuilder
 
     private struct EdgeRecord
     {
-        public EdgeRecord(uint startIndex, uint endIndex, Vector3 firstNormal)
+        public EdgeRecord(uint startIndex, uint endIndex, Vector3 firstNormal, bool isCutterTriangle)
         {
             StartIndex = startIndex;
             EndIndex = endIndex;
             FirstNormal = firstNormal;
             OccurrenceCount = 1;
             HasHardEdge = false;
+            AllCutter = isCutterTriangle;
         }
 
         public uint StartIndex { get; }
@@ -134,5 +173,6 @@ public static class MeshEdgeIndexBuilder
         public Vector3 FirstNormal { get; }
         public int OccurrenceCount { get; set; }
         public bool HasHardEdge { get; set; }
+        public bool AllCutter { get; set; }
     }
 }
