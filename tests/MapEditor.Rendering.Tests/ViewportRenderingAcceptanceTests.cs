@@ -278,7 +278,7 @@ public sealed class ViewportRenderingAcceptanceTests
             {
                 Position = new Vector3(24f, 48f, 40f),
                 EulerDegrees = Vector3.Zero,
-                Scale = new Vector3(80f, 48f, 64f)
+                Scale = new Vector3(80f, 128f, 64f)
             }
         };
 

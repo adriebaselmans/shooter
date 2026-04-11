@@ -85,7 +85,50 @@ public sealed class BspBrushBooleanKernel : IBrushBooleanKernel
                     source)));
         }
 
+        EnsureOutwardNormals(polygons);
         return new CsgSolid(polygons);
+    }
+
+    /// <summary>
+    /// Ensures all polygon normals point outward (away from the solid's centroid).
+    /// The BSP CSG algorithm requires consistent outward-facing normals to correctly
+    /// partition space into inside/outside regions. Some primitive generators produce
+    /// faces with inconsistent winding, which creates degenerate BSP trees that fail
+    /// to clip geometry extending beyond the solid's bounds.
+    /// </summary>
+    private static void EnsureOutwardNormals(List<CsgPolygon> polygons)
+    {
+        if (polygons.Count == 0) return;
+
+        var centroid = Vector3.Zero;
+        int vertexCount = 0;
+        foreach (var polygon in polygons)
+        {
+            foreach (var vertex in polygon.Vertices)
+            {
+                centroid += vertex.Position;
+                vertexCount++;
+            }
+        }
+        if (vertexCount == 0) return;
+        centroid /= vertexCount;
+
+        foreach (var polygon in polygons)
+        {
+            var faceCenter = Vector3.Zero;
+            foreach (var vertex in polygon.Vertices)
+            {
+                faceCenter += vertex.Position;
+            }
+            faceCenter /= polygon.Vertices.Count;
+
+            var outward = faceCenter - centroid;
+            if (outward.LengthSquared() > float.Epsilon &&
+                Vector3.Dot(polygon.Plane.Normal, outward) < 0f)
+            {
+                polygon.Flip();
+            }
+        }
     }
 
     private static BrushBooleanKernelResult? BuildResult(

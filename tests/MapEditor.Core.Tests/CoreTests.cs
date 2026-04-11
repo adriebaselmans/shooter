@@ -424,6 +424,35 @@ public sealed class SubtractCutterFaceTests
         geometry.Faces.Should().Contain(f => !f.IsCutterFace, "the result should also contain faces from the target");
     }
 
+    [Fact]
+    public void SubtractPegThroughBoard_ResultVerticesStayWithinBoardBounds()
+    {
+        // Board: wide and thin — extends from (-2, -0.25, -2) to (2, 0.25, 2)
+        var board = CreateBoxBrush(position: Vector3.Zero, scale: new Vector3(4f, 0.5f, 4f), name: "Board");
+        // Peg: tall and thin — extends from (-0.5, -2, -0.5) to (0.5, 2, 0.5)
+        var peg = CreateBoxBrush(position: Vector3.Zero, scale: new Vector3(1f, 4f, 1f), name: "Peg");
+
+        var kernel = new BspBrushBooleanKernel();
+        var result = kernel.Subtract(board, peg);
+        result.Should().NotBeNull("subtracting an intersecting peg from a board should produce geometry");
+
+        const float boardHalfY = 0.25f;
+        const float epsilon = 0.001f;
+        var center = result!.Transform.Position;
+
+        foreach (var face in result.Geometry.Faces)
+        {
+            foreach (var localVertex in face.Vertices)
+            {
+                var worldY = localVertex.Y + center.Y;
+                worldY.Should().BeGreaterThanOrEqualTo(-boardHalfY - epsilon,
+                    $"vertex at world Y={worldY:F4} is below the board (local={localVertex}, center={center})");
+                worldY.Should().BeLessThanOrEqualTo(boardHalfY + epsilon,
+                    $"vertex at world Y={worldY:F4} is above the board (local={localVertex}, center={center})");
+            }
+        }
+    }
+
     private static Brush CreateBoxBrush(
         Vector3? position = null,
         Vector3? scale = null,
