@@ -43,7 +43,7 @@ public sealed class SelectTool : IEditorTool
         var hitEntityId = context.HitTestEntity(pointerEvent.Position);
         if (hitEntityId is null)
         {
-            if (!pointerEvent.IsShiftPressed)
+            if (!pointerEvent.IsShiftPressed && !pointerEvent.IsControlPressed)
             {
                 context.SelectionService.Clear();
                 context.RefreshSelectionDetails();
@@ -52,7 +52,7 @@ public sealed class SelectTool : IEditorTool
             return;
         }
 
-        if (pointerEvent.IsShiftPressed)
+        if (pointerEvent.IsShiftPressed || pointerEvent.IsControlPressed)
         {
             context.SelectionService.Toggle(hitEntityId.Value);
         }

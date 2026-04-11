@@ -9,6 +9,7 @@ using MapEditor.Rendering.Cameras;
 using System.IO;
 using System.Numerics;
 using System.Windows;
+using System.Windows.Input;
 
 namespace MapEditor.App.Tests;
 
@@ -174,6 +175,115 @@ public sealed class SelectToolTests
 
             brush.Transform.Position.Should().Be(new Vector3(32f, 0f, 32f));
             statusBar.Message.Should().Be("Selection moved.");
+        }
+        finally
+        {
+            Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void SelectTool_CtrlClickTogglesSelection()
+    {
+        string tempDirectory = CreateTempDirectory();
+
+        try
+        {
+            var sceneService = new SceneService();
+            var selectionService = new SelectionService();
+            var statusBar = new StatusBarViewModel(new SessionLogService(
+                tempDirectory,
+                new DateTimeOffset(2026, 4, 8, 14, 55, 6, TimeSpan.Zero)));
+
+            var brushA = new Brush
+            {
+                Transform = new Transform
+                {
+                    Position = Vector3.Zero,
+                    EulerDegrees = Vector3.Zero,
+                    Scale = new Vector3(64f, 64f, 64f)
+                }
+            };
+
+            var brushB = new Brush
+            {
+                Transform = new Transform
+                {
+                    Position = new Vector3(128f, 0f, 0f),
+                    EulerDegrees = Vector3.Zero,
+                    Scale = new Vector3(64f, 64f, 64f)
+                }
+            };
+
+            sceneService.Execute(new CreateBrushCommand(sceneService.Scene, brushA));
+            sceneService.Execute(new CreateBrushCommand(sceneService.Scene, brushB));
+
+            var resizeTool = new ResizeTool();
+            var moveTool = new MoveTool();
+            var selectTool = new SelectTool(resizeTool, moveTool);
+
+            Guid? hitResult = brushA.Id;
+
+            var context = new ToolContext
+            {
+                SceneService = sceneService,
+                SelectionService = selectionService,
+                StatusBarViewModel = statusBar,
+                ViewportKind = EditorViewportKind.Top,
+                PixelWidth = 100,
+                PixelHeight = 100,
+                GridSize = 32f,
+                SelectedBrushPrimitive = BrushPrimitive.Box,
+                SelectedBrushOperation = BrushOperation.Additive,
+                OrthographicCamera = new OrthographicCamera
+                {
+                    Axis = ViewAxis.Top,
+                    Zoom = 500f
+                },
+                PerspectiveCamera = null,
+                ViewAxis = ViewAxis.Top,
+                TryGetWorldPoint = ResolveWorldPoint,
+                TryGetSnappedWorldPoint = ResolveWorldPoint,
+                HitTestEntity = _ => hitResult,
+                RefreshSelectionDetails = static () => { },
+                SetStatusMessage = message => statusBar.Message = message,
+                SetActiveTool = static _ => { }
+            };
+
+            // Regular click selects brushA
+            selectTool.OnPointerDown(context, new ViewportPointerEvent(
+                ViewportPointerAction.Down,
+                ViewportPointerButton.Left,
+                new Point(0.5, 0.5),
+                0,
+                ModifierKeys.None));
+
+            selectionService.SelectedEntityIds.Should().ContainSingle()
+                .Which.Should().Be(brushA.Id);
+
+            // Ctrl+click on brushB adds it to selection
+            hitResult = brushB.Id;
+            selectTool.OnPointerDown(context, new ViewportPointerEvent(
+                ViewportPointerAction.Down,
+                ViewportPointerButton.Left,
+                new Point(0.5, 0.5),
+                0,
+                ModifierKeys.Control));
+
+            selectionService.SelectedEntityIds.Should().HaveCount(2);
+            selectionService.SelectedEntityIds.Should().Contain(brushA.Id);
+            selectionService.SelectedEntityIds.Should().Contain(brushB.Id);
+
+            // Ctrl+click on brushB again removes it (toggle)
+            selectTool.OnPointerDown(context, new ViewportPointerEvent(
+                ViewportPointerAction.Down,
+                ViewportPointerButton.Left,
+                new Point(0.5, 0.5),
+                0,
+                ModifierKeys.Control));
+
+            selectionService.SelectedEntityIds.Should().ContainSingle()
+                .Which.Should().Be(brushA.Id);
         }
         finally
         {
