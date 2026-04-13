@@ -53,6 +53,12 @@ internal static class NativeMethods
     [DllImport("opengl32.dll")]
     internal static extern IntPtr wglGetProcAddress(string procName);
 
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern IntPtr GetModuleHandle(string? lpModuleName);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Ansi, SetLastError = true, EntryPoint = "GetProcAddress")]
+    private static extern IntPtr GetProcAddressNative(IntPtr hModule, string procName);
+
     // ── WGL_ARB_create_context (OpenGL 4.5 core profile) ─────────────────────
 
     internal const int WGL_CONTEXT_MAJOR_VERSION_ARB = 0x2091;
@@ -81,6 +87,25 @@ internal static class NativeMethods
         wglMakeCurrent(IntPtr.Zero, IntPtr.Zero);
         wglDeleteContext(tempCtx);
     }
+
+    internal static IntPtr GetOpenGlProcAddress(string procName)
+    {
+        var proc = wglGetProcAddress(procName);
+        if (IsValidOpenGlProcAddress(proc))
+        {
+            return proc;
+        }
+
+        var module = GetModuleHandle("opengl32.dll");
+        return module == IntPtr.Zero ? IntPtr.Zero : GetProcAddressNative(module, procName);
+    }
+
+    private static bool IsValidOpenGlProcAddress(IntPtr proc) =>
+        proc != IntPtr.Zero &&
+        proc != new IntPtr(1) &&
+        proc != new IntPtr(2) &&
+        proc != new IntPtr(3) &&
+        proc != new IntPtr(-1);
 
     // ── Win32 constants ───────────────────────────────────────────────────────
 

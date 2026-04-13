@@ -89,7 +89,6 @@ public sealed class GlViewportHost : HwndHost
 
     [DllImport("opengl32.dll")] private static extern bool wglMakeCurrent(IntPtr hdc, IntPtr hrc);
     [DllImport("opengl32.dll")] private static extern bool wglDeleteContext(IntPtr hrc);
-    [DllImport("opengl32.dll")] private static extern IntPtr wglGetProcAddress(string procName);
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern IntPtr GetModuleHandle(string? moduleName);
 
@@ -130,7 +129,7 @@ public sealed class GlViewportHost : HwndHost
 
         _hdc       = GetDC(_childHwnd);
         _glContext = GlContextManager.Instance.CreateSharedViewportContext(_hdc);
-        _gl        = Silk.NET.OpenGL.GL.GetApi(wglGetProcAddress);
+        _gl        = Silk.NET.OpenGL.GL.GetApi(GlContextManager.GetOpenGlProcAddress);
         _contextReady = true;
 
         CompositionTarget.Rendering += OnCompositionTargetRendering;

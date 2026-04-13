@@ -8,6 +8,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
+using MessageBox = System.Windows.MessageBox;
 
 namespace MapEditor.App;
 
@@ -22,34 +23,47 @@ public partial class App : Application
         RegisterGlobalExceptionLogging(_sessionLogService);
         _sessionLogService.WriteInfo("Application startup.");
 
-        base.OnStartup(e);
+        try
+        {
+            base.OnStartup(e);
 
-        var sc = new ServiceCollection();
-        sc.AddSingleton(_sessionLogService);
-        sc.AddSingleton<SceneService>();
-        sc.AddSingleton<MapFileService>();
-        sc.AddSingleton<BrushClipboardService>();
-        sc.AddSingleton<SelectionService>();
-        sc.AddSingleton<SurfaceSelectionService>();
-        sc.AddSingleton<TextureLibraryService>();
-        sc.AddSingleton<ResizeTool>();
-        sc.AddSingleton<SelectTool>();
-        sc.AddSingleton<CreateBrushTool>();
-        sc.AddSingleton<MoveTool>();
-        sc.AddSingleton<ActiveToolService>();
-        sc.AddSingleton<MainViewModel>();
-        sc.AddSingleton<SceneOutlinerViewModel>();
-        sc.AddSingleton<PropertiesViewModel>();
-        sc.AddSingleton<StatusBarViewModel>();
-        sc.AddSingleton<MainWindow>();
+            var sc = new ServiceCollection();
+            sc.AddSingleton(_sessionLogService);
+            sc.AddSingleton<SceneService>();
+            sc.AddSingleton<MapFileService>();
+            sc.AddSingleton<BrushClipboardService>();
+            sc.AddSingleton<SelectionService>();
+            sc.AddSingleton<SurfaceSelectionService>();
+            sc.AddSingleton<TextureLibraryService>();
+            sc.AddSingleton<ResizeTool>();
+            sc.AddSingleton<SelectTool>();
+            sc.AddSingleton<CreateBrushTool>();
+            sc.AddSingleton<MoveTool>();
+            sc.AddSingleton<ActiveToolService>();
+            sc.AddSingleton<MainViewModel>();
+            sc.AddSingleton<SceneOutlinerViewModel>();
+            sc.AddSingleton<PropertiesViewModel>();
+            sc.AddSingleton<StatusBarViewModel>();
+            sc.AddSingleton<MainWindow>();
 
-        _services = sc.BuildServiceProvider();
+            _services = sc.BuildServiceProvider();
+            _sessionLogService.WriteInfo("Service provider created.");
 
-        var statusBar = _services.GetRequiredService<StatusBarViewModel>();
-        statusBar.Message = $"Ready — logging to {Path.GetFileName(_sessionLogService.LogFilePath)}";
+            var statusBar = _services.GetRequiredService<StatusBarViewModel>();
+            statusBar.Message = $"Ready — logging to {Path.GetFileName(_sessionLogService.LogFilePath)}";
+            _sessionLogService.WriteInfo("Status bar initialized.");
 
-        var mainWindow = _services.GetRequiredService<MainWindow>();
-        mainWindow.Show();
+            var mainWindow = _services.GetRequiredService<MainWindow>();
+            _sessionLogService.WriteInfo("Main window resolved from DI.");
+            mainWindow.Show();
+            _sessionLogService.WriteInfo("Main window shown.");
+        }
+        catch (Exception exception)
+        {
+            _sessionLogService.WriteException("Application startup failed", exception);
+            ShowStartupFailure(exception, _sessionLogService.LogFilePath);
+            Shutdown(-1);
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)
@@ -75,5 +89,16 @@ public partial class App : Application
             sessionLogService.WriteException("TaskScheduler.UnobservedTaskException", args.Exception);
             args.SetObserved();
         };
+    }
+
+    private static void ShowStartupFailure(Exception exception, string logFilePath)
+    {
+        MessageBox.Show(
+            $"MapEditor failed during startup.{Environment.NewLine}{Environment.NewLine}" +
+            $"{exception.Message}{Environment.NewLine}{Environment.NewLine}" +
+            $"Log: {logFilePath}",
+            "MapEditor Startup Error",
+            MessageBoxButton.OK,
+            MessageBoxImage.Error);
     }
 }

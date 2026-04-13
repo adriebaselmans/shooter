@@ -20,6 +20,9 @@ public sealed class GlContextManager : IDisposable
 
     public IntPtr SharedHrc => _resourceHrc;
 
+    public static IntPtr GetOpenGlProcAddress(string procName) =>
+        NativeMethods.GetOpenGlProcAddress(procName);
+
     /// <summary>Creates the shared resource context. Call once at application startup.</summary>
     public static void Initialise()
     {
@@ -69,7 +72,7 @@ public sealed class GlContextManager : IDisposable
 
         NativeMethods.wglMakeCurrent(_resourceHdc, _resourceHrc);
 
-        _gl = GL.GetApi(NativeMethods.wglGetProcAddress);
+        _gl = GL.GetApi(NativeMethods.GetOpenGlProcAddress);
 
         NativeMethods.wglMakeCurrent(IntPtr.Zero, IntPtr.Zero);
     }
@@ -77,11 +80,29 @@ public sealed class GlContextManager : IDisposable
     /// <summary>Creates a new OpenGL 4.5 core-profile context that shares resources with the master context.</summary>
     public IntPtr CreateSharedViewportContext(IntPtr hdc)
     {
+        if (hdc == IntPtr.Zero)
+        {
+            throw new InvalidOperationException("Cannot create a viewport OpenGL context with a null device context.");
+        }
+
         var pfd = PixelFormatDescriptor.Default();
         int fmt = NativeMethods.ChoosePixelFormat(hdc, ref pfd);
-        NativeMethods.SetPixelFormat(hdc, fmt, ref pfd);
+        if (fmt == 0)
+        {
+            throw CreateWin32Exception("Failed to choose a pixel format for a viewport OpenGL context.");
+        }
+
+        if (!NativeMethods.SetPixelFormat(hdc, fmt, ref pfd))
+        {
+            throw CreateWin32Exception("Failed to set a pixel format for a viewport OpenGL context.");
+        }
 
         var ctx = CreateCoreProfileContext(hdc, _resourceHrc);
+        if (ctx == IntPtr.Zero)
+        {
+            throw new InvalidOperationException("Failed to create a shared viewport OpenGL context.");
+        }
+
         return ctx;
     }
 
@@ -105,8 +126,20 @@ public sealed class GlContextManager : IDisposable
 
         // Fallback: legacy context (no profile)
         var legacyCtx = NativeMethods.wglCreateContext(hdc);
+        if (legacyCtx == IntPtr.Zero)
+        {
+            return IntPtr.Zero;
+        }
+
         if (shareContext != IntPtr.Zero)
-            NativeMethods.wglShareLists(shareContext, legacyCtx);
+        {
+            if (!NativeMethods.wglShareLists(shareContext, legacyCtx))
+            {
+                NativeMethods.wglDeleteContext(legacyCtx);
+                throw new InvalidOperationException("Failed to share OpenGL resources with the viewport context.");
+            }
+        }
+
         return legacyCtx;
     }
 

@@ -1,3 +1,4 @@
+using MapEditor.App.Services;
 using MapEditor.App.ViewModels;
 using MapEditor.App.Views;
 using MapEditor.Rendering.Cameras;
@@ -12,15 +13,19 @@ namespace MapEditor.App;
 public partial class MainWindow : Window
 {
     private readonly MainViewModel _vm;
+    private readonly SessionLogService _sessionLogService;
     private ViewportPanel? _maximizedViewport;
 
-    public MainWindow(MainViewModel vm)
+    public MainWindow(MainViewModel vm, SessionLogService sessionLogService)
     {
         _vm = vm;
+        _sessionLogService = sessionLogService;
         InitializeComponent();
         DataContext = _vm;
 
+        _sessionLogService.WriteInfo("Main window constructed. Initializing OpenGL context manager.");
         GlContextManager.Initialise();
+        _sessionLogService.WriteInfo("Shared OpenGL context manager initialized.");
 
         Loaded += OnLoaded;
         PreviewKeyDown += OnPreviewKeyDown;
@@ -28,6 +33,7 @@ public partial class MainWindow : Window
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        _sessionLogService.WriteInfo("Main window loaded. Attaching viewport renderers.");
         var textureCatalog = _vm.TextureLibrary;
         ViewportTop.AttachOrthographic(_vm.SceneService, _vm.ActiveToolService, _vm.SelectionService, _vm.SurfaceSelectionService, _vm.StatusBar, textureCatalog, () => _vm.NewBrushPrimitive, () => MapEditor.Core.Entities.BrushOperation.Additive, ViewAxis.Top);
         ViewportFront.AttachOrthographic(_vm.SceneService, _vm.ActiveToolService, _vm.SelectionService, _vm.SurfaceSelectionService, _vm.StatusBar, textureCatalog, () => _vm.NewBrushPrimitive, () => MapEditor.Core.Entities.BrushOperation.Additive, ViewAxis.Front);
@@ -38,6 +44,7 @@ public partial class MainWindow : Window
         ViewportFront.LayoutToggleRequested += OnViewportLayoutToggleRequested;
         ViewportSide.LayoutToggleRequested += OnViewportLayoutToggleRequested;
         ViewportPersp.LayoutToggleRequested += OnViewportLayoutToggleRequested;
+        _sessionLogService.WriteInfo("Viewport renderers attached.");
     }
 
     private void OnWindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
