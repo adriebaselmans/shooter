@@ -1,0 +1,21 @@
+name: external-research
+description: Retrieve current external evidence for freshness-sensitive technical decisions and return a concise, source-backed brief.
+response_mode: one-shot
+required_inputs:
+  - bounded research question
+  - why the answer matters
+  - relevant local context when available
+expected_outputs:
+  - concise research brief
+  - verified facts
+  - sources with links and dates or versions
+  - implications when relevant
+  - confidence level
+  - remaining unknowns
+owned_artifacts: []
+completion_criteria:
+  - The brief is concise and decision-relevant.
+  - Facts are grounded in sources.
+  - Freshness-sensitive claims include dates or versions when practical.
+  - Breaking changes, deprecations, and version differences are called out when relevant.
+  - The brief does not make the final architecture or implementation decision.

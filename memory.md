@@ -6,6 +6,7 @@
 - GitHub: `adriebaselmans/shooter`
 - Current branch baseline: `main`
 - Stack: WPF editor app + Silk.NET OpenGL renderer + command-based scene/core layers.
+- AI dev team framework: `ai-dev-team-core` v1.0.5 bootstrapped (`.ai-team/`, `.github/agents/`, `.github/skills/`, `AGENTS.md`).
 
 ## Product intent
 - Build a professional-feeling 3D map editor inspired by UnrealEd / SketchUp workflows.

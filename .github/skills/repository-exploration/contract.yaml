@@ -1,0 +1,17 @@
+name: repository-exploration
+description: Analyze a repository quickly and produce compact grounded repository knowledge.
+response_mode: one-shot
+required_inputs:
+  - target repository path, URL, or checkout location
+  - user request or downstream role question
+  - existing repository knowledge in .ai-team/framework/memory/repository-knowledge/ when available
+expected_outputs:
+  - .ai-team/framework/memory/repository-knowledge/<repo-slug>/brief.md
+  - .ai-team/framework/memory/repository-knowledge/<repo-slug>/facts.json
+  - .ai-team/framework/memory/repository-knowledge/index.md when the repository is new
+owned_artifacts:
+  - .ai-team/framework/memory/repository-knowledge/<repo-slug>/brief.md
+  - .ai-team/framework/memory/repository-knowledge/<repo-slug>/facts.json
+completion_criteria:
+  - The brief captures structure, conventions, risks, and open questions.
+  - Evidence paths and provenance are included in the output.

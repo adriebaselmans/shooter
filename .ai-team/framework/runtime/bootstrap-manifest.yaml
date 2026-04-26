@@ -1,0 +1,14 @@
+version: 1
+description: Slim project runtime footprint copied into bootstrapped application repositories.
+include_paths:
+  - AGENTS.md
+  - .gitignore
+  - .github/agents/
+  - .github/skills/
+  - .ai-team/framework/
+  - .ai-team/flows/
+  - doc_templates/
+  - docs/README.md
+notes:
+  - The bootstrap footprint is intentionally app-first and excludes skeleton source, validation harness code, and framework tests.
+  - Bootstrapped projects receive .ai-team/ as the isolated framework root plus root-level AGENTS.md and Copilot assets.

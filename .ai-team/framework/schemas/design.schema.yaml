@@ -1,0 +1,60 @@
+artifact_type: design
+title: Current Design
+required_fields:
+  - title
+  - design_goal
+  - architecture_approach
+  - affected_areas
+  - separation_of_concerns
+  - module_boundaries
+  - data_flow
+  - interfaces
+  - technology_and_environment_considerations
+  - clean_code_constraints
+  - performance_considerations
+  - risks_and_tradeoffs
+  - non_goals
+field_types:
+  title: string
+  design_goal: string
+  architecture_approach: list
+  affected_areas: list
+  separation_of_concerns: list
+  module_boundaries: list
+  data_flow: list
+  interfaces: list
+  technology_and_environment_considerations: list
+  clean_code_constraints: list
+  performance_considerations: list
+  risks_and_tradeoffs: list
+  non_goals: list
+summary_fields:
+  - title
+  - design_goal
+markdown_sections:
+  - heading: Title
+    field: title
+  - heading: Design Goal
+    field: design_goal
+  - heading: Architecture Approach
+    field: architecture_approach
+  - heading: Affected Areas
+    field: affected_areas
+  - heading: Separation Of Concerns
+    field: separation_of_concerns
+  - heading: Module Boundaries
+    field: module_boundaries
+  - heading: Data Flow
+    field: data_flow
+  - heading: Interfaces
+    field: interfaces
+  - heading: Technology And Environment Considerations
+    field: technology_and_environment_considerations
+  - heading: Clean Code Constraints
+    field: clean_code_constraints
+  - heading: Performance Considerations
+    field: performance_considerations
+  - heading: Risks And Tradeoffs
+    field: risks_and_tradeoffs
+  - heading: Non Goals
+    field: non_goals

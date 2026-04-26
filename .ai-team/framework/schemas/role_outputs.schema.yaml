@@ -1,0 +1,609 @@
+version: 1
+definitions:
+  nullable_string:
+    anyOf:
+      - type: string
+      - type: "null"
+  string_list:
+    type: array
+    items:
+      type: string
+  work_item:
+    type: object
+    additionalProperties: false
+    properties:
+      id:
+        type: string
+      description:
+        type: string
+    required:
+      - id
+      - description
+  technology_choice:
+    type: object
+    additionalProperties: false
+    properties:
+      name:
+        type: string
+      category:
+        enum: ["engine", "framework", "library", "sdk", "runtime", "tooling", "platform", "other"]
+      version:
+        type: string
+      target_runtime:
+        anyOf:
+          - type: string
+          - type: "null"
+      rationale:
+        type: string
+      source:
+        anyOf:
+          - type: string
+          - type: "null"
+      verified_at:
+        anyOf:
+          - type: string
+          - type: "null"
+      status:
+        enum: ["latest_verified", "project_pinned", "inherited", "unknown"]
+    required:
+      - name
+      - category
+      - version
+      - target_runtime
+      - rationale
+      - source
+      - verified_at
+      - status
+  validation_attempt:
+    type: object
+    additionalProperties: false
+    properties:
+      kind:
+        enum: ["build", "compile", "typecheck", "lint", "test", "other"]
+      command:
+        type: string
+      status:
+        enum: ["passed", "failed", "skipped", "not_applicable"]
+      inspected_output:
+        type: boolean
+      summary:
+        type: string
+    required:
+      - kind
+      - command
+      - status
+      - inspected_output
+      - summary
+  task_brief:
+    type: object
+    additionalProperties: false
+    properties:
+      objective:
+        type: string
+      scope:
+        $ref: "#/definitions/string_list"
+      constraints:
+        $ref: "#/definitions/string_list"
+      acceptance_signals:
+        $ref: "#/definitions/string_list"
+      repo_mode:
+        enum: ["existing", "greenfield"]
+      task_size:
+        enum: ["small", "medium", "large"]
+      risk_level:
+        enum: ["low", "medium", "high"]
+      mode:
+        enum: ["compact", "full"]
+      needs_repo_grounding:
+        type: boolean
+      needs_freshness_check:
+        type: boolean
+      open_questions:
+        $ref: "#/definitions/string_list"
+    required:
+      - objective
+      - scope
+      - constraints
+      - acceptance_signals
+      - repo_mode
+      - task_size
+      - risk_level
+      - mode
+      - needs_repo_grounding
+      - needs_freshness_check
+      - open_questions
+  support_dispatch:
+    anyOf:
+      - type: "null"
+      - type: object
+        additionalProperties: false
+        properties:
+          approved:
+            type: boolean
+          support_role:
+            type: string
+          resume_step:
+            type: string
+          requested_by:
+            $ref: "#/definitions/nullable_string"
+          question:
+            $ref: "#/definitions/nullable_string"
+        required:
+          - approved
+          - support_role
+          - resume_step
+  support_request:
+    anyOf:
+      - type: "null"
+      - type: object
+        additionalProperties: false
+        properties:
+          id:
+            type: string
+          pending:
+            type: boolean
+          requested_by:
+            type: string
+          support_role:
+            type: string
+          question:
+            type: string
+          resume_step:
+            type: string
+          reason:
+            type: string
+        required:
+          - id
+          - pending
+          - requested_by
+          - support_role
+          - question
+          - resume_step
+          - reason
+  coordination:
+    type: object
+    additionalProperties: false
+    properties:
+      status:
+        type: string
+      repo_mode:
+        anyOf:
+          - enum: ["existing", "greenfield"]
+          - type: "null"
+      ui_heavy:
+        type: boolean
+      mode:
+        enum: ["compact", "full"]
+      task_size:
+        enum: ["small", "medium", "large"]
+      risk_level:
+        enum: ["low", "medium", "high"]
+      needs_repo_grounding:
+        type: boolean
+      needs_freshness_check:
+        type: boolean
+      parallel_development:
+        type: boolean
+      work_items:
+        type: array
+        items:
+          $ref: "#/definitions/work_item"
+      integration_owner:
+        type: string
+      support_resume_step:
+        anyOf:
+          - type: string
+          - type: "null"
+      support_dispatch:
+        $ref: "#/definitions/support_dispatch"
+      final_summary:
+        anyOf:
+          - type: string
+          - type: "null"
+    required:
+      - status
+      - repo_mode
+      - ui_heavy
+      - mode
+      - task_size
+      - risk_level
+      - needs_repo_grounding
+      - needs_freshness_check
+      - parallel_development
+      - work_items
+      - integration_owner
+      - support_resume_step
+      - support_dispatch
+      - final_summary
+  requirements:
+    type: object
+    additionalProperties: false
+    properties:
+      ready:
+        type: boolean
+      summary:
+        type: string
+      acceptance_criteria:
+        $ref: "#/definitions/string_list"
+      constraints:
+        $ref: "#/definitions/string_list"
+      needs_user_input:
+        type: boolean
+      in_scope:
+        $ref: "#/definitions/string_list"
+      out_of_scope:
+        $ref: "#/definitions/string_list"
+      functional_requirements:
+        $ref: "#/definitions/string_list"
+      assumptions:
+        $ref: "#/definitions/string_list"
+      open_questions:
+        $ref: "#/definitions/string_list"
+    required:
+      - ready
+      - summary
+      - acceptance_criteria
+      - constraints
+      - needs_user_input
+  ux_ui:
+    type: object
+    additionalProperties: false
+    properties:
+      status:
+        enum: ["ready", "skipped", "blocked"]
+      guidance:
+        $ref: "#/definitions/string_list"
+      requested_by:
+        anyOf:
+          - type: string
+          - type: "null"
+    required:
+      - status
+      - guidance
+      - requested_by
+  analysis:
+    type: object
+    additionalProperties: false
+    properties:
+      status:
+        enum: ["ready", "skipped", "blocked"]
+      repository_roles:
+        $ref: "#/definitions/string_list"
+      insights:
+        $ref: "#/definitions/string_list"
+      requested_by:
+        anyOf:
+          - type: string
+          - type: "null"
+    required:
+      - status
+      - repository_roles
+      - insights
+      - requested_by
+  research:
+    type: object
+    additionalProperties: false
+    properties:
+      status:
+        enum: ["ready", "skipped", "blocked"]
+      brief:
+        $ref: "#/definitions/string_list"
+      requested_by:
+        anyOf:
+          - type: string
+          - type: "null"
+      verified_facts:
+        $ref: "#/definitions/string_list"
+      sources:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          properties:
+            title:
+              type: string
+            url:
+              type: string
+            date:
+              anyOf:
+                - type: string
+                - type: "null"
+          required:
+            - title
+            - url
+      confidence:
+        anyOf:
+          - enum: ["low", "medium", "high"]
+          - type: "null"
+      unknowns:
+        $ref: "#/definitions/string_list"
+    required:
+      - status
+      - brief
+      - requested_by
+  design:
+    type: object
+    additionalProperties: false
+    properties:
+      approved_for_build:
+        type: boolean
+      architecture:
+        $ref: "#/definitions/string_list"
+      non_functional_requirements:
+        $ref: "#/definitions/string_list"
+      work_items:
+        type: array
+        items:
+          $ref: "#/definitions/work_item"
+      module_boundaries:
+        $ref: "#/definitions/string_list"
+      interfaces:
+        $ref: "#/definitions/string_list"
+      data_flow:
+        $ref: "#/definitions/string_list"
+      risks_and_tradeoffs:
+        $ref: "#/definitions/string_list"
+      technology_choices:
+        type: array
+        items:
+          $ref: "#/definitions/technology_choice"
+    required:
+      - approved_for_build
+      - architecture
+      - non_functional_requirements
+      - work_items
+      - technology_choices
+  development:
+    type: object
+    additionalProperties: false
+    properties:
+      status:
+        enum: ["implemented", "blocked", "in_progress"]
+      revision:
+        type: integer
+        minimum: 1
+      strategy:
+        enum: ["sequential", "parallel"]
+      worker_results:
+        type: array
+        items:
+          $ref: "#/definitions/development_artifact"
+      changes:
+        $ref: "#/definitions/string_list"
+      integration_owner:
+        type: string
+      blockers:
+        $ref: "#/definitions/string_list"
+      rework_target:
+        anyOf:
+          - enum: ["developer", "architect", "requirements-engineer"]
+          - type: "null"
+      validation_attempts:
+        type: array
+        items:
+          $ref: "#/definitions/validation_attempt"
+      technology_alignment:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          properties:
+            name:
+              type: string
+            expected_version:
+              type: string
+            actual_version:
+              anyOf:
+                - type: string
+                - type: "null"
+            status:
+              enum: ["aligned", "mismatch", "unverified"]
+            summary:
+              type: string
+          required:
+            - name
+            - expected_version
+            - actual_version
+            - status
+            - summary
+    required:
+      - status
+      - revision
+      - strategy
+      - worker_results
+      - changes
+      - integration_owner
+      - validation_attempts
+      - technology_alignment
+  development_artifact:
+    type: object
+    additionalProperties: false
+    properties:
+      worker_id:
+        anyOf:
+          - type: string
+          - type: "null"
+      description:
+        anyOf:
+          - type: string
+          - type: "null"
+      status:
+        type: string
+    required:
+      - worker_id
+      - description
+      - status
+  review:
+    type: object
+    additionalProperties: false
+    properties:
+      decision:
+        enum: ["approved", "rework"]
+      approved:
+        type: boolean
+      feedback:
+        type: string
+      score:
+        type: number
+      blocking_findings:
+        $ref: "#/definitions/string_list"
+      rework_target:
+        enum: ["developer", "architect", "requirements-engineer"]
+      residual_risks:
+        $ref: "#/definitions/string_list"
+      technology_mismatches:
+        $ref: "#/definitions/string_list"
+    required:
+      - decision
+      - approved
+      - feedback
+      - score
+      - blocking_findings
+      - rework_target
+      - technology_mismatches
+  test_results:
+    type: object
+    additionalProperties: false
+    properties:
+      decision:
+        enum: ["passed", "failed"]
+      passed:
+        type: boolean
+      errors:
+        $ref: "#/definitions/string_list"
+      automated:
+        type: boolean
+      rework_target:
+        enum: ["developer", "architect", "requirements-engineer"]
+      validation_attempts:
+        type: array
+        items:
+          $ref: "#/definitions/validation_attempt"
+    required:
+      - decision
+      - passed
+      - errors
+      - automated
+      - rework_target
+      - validation_attempts
+  dod_review:
+    type: object
+    additionalProperties: false
+    properties:
+      decision:
+        enum: ["accepted", "rework"]
+      approved:
+        type: boolean
+      feedback:
+        type: string
+      blocking_findings:
+        $ref: "#/definitions/string_list"
+      rework_target:
+        enum: ["developer", "architect", "requirements-engineer"]
+    required:
+      - decision
+      - approved
+      - feedback
+      - blocking_findings
+      - rework_target
+roles:
+  coordinator:
+    type: object
+    additionalProperties: false
+    properties:
+      coordination:
+        $ref: "#/definitions/coordination"
+      task_brief:
+        $ref: "#/definitions/task_brief"
+      support_request:
+        $ref: "#/definitions/support_request"
+    required:
+      - coordination
+      - task_brief
+  requirements-engineer:
+    type: object
+    additionalProperties: false
+    properties:
+      requirements:
+        $ref: "#/definitions/requirements"
+      support_request:
+        $ref: "#/definitions/support_request"
+    required:
+      - requirements
+  ux-ui-designer:
+    type: object
+    additionalProperties: false
+    properties:
+      ux_ui:
+        $ref: "#/definitions/ux_ui"
+    required:
+      - ux_ui
+  explorer:
+    type: object
+    additionalProperties: false
+    properties:
+      analysis:
+        $ref: "#/definitions/analysis"
+    required:
+      - analysis
+  scout:
+    type: object
+    additionalProperties: false
+    properties:
+      research:
+        $ref: "#/definitions/research"
+    required:
+      - research
+  architect:
+    type: object
+    additionalProperties: false
+    properties:
+      design:
+        $ref: "#/definitions/design"
+      support_request:
+        $ref: "#/definitions/support_request"
+    required:
+      - design
+  developer:
+    type: object
+    additionalProperties: false
+    properties:
+      development:
+        $ref: "#/definitions/development"
+      development_artifact:
+        $ref: "#/definitions/development_artifact"
+      support_request:
+        $ref: "#/definitions/support_request"
+    anyOf:
+      - required:
+          - development
+      - required:
+          - development_artifact
+  reviewer:
+    type: object
+    additionalProperties: false
+    properties:
+      review:
+        $ref: "#/definitions/review"
+      support_request:
+        $ref: "#/definitions/support_request"
+    required:
+      - review
+  tester:
+    type: object
+    additionalProperties: false
+    properties:
+      test_results:
+        $ref: "#/definitions/test_results"
+      support_request:
+        $ref: "#/definitions/support_request"
+    required:
+      - test_results
+  dod-reviewer:
+    type: object
+    additionalProperties: false
+    properties:
+      dod_review:
+        $ref: "#/definitions/dod_review"
+    required:
+      - dod_review

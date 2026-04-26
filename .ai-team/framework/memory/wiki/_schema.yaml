@@ -1,0 +1,39 @@
+version: 1
+page_format:
+  required_frontmatter:
+    - id
+    - cat
+    - rev
+    - created
+    - updated
+    - by
+    - tags
+    - summary
+    - status
+  optional_frontmatter:
+    - refs
+  status_values: [active, stale, archived]
+  body: terse markdown, target ~200 tokens per page
+
+categories:
+  project:
+    purpose: "Project identity, goals, scope, stakeholders"
+  architecture:
+    purpose: "Stack, modules, interfaces, deployment topology"
+  decisions:
+    purpose: "ADR-style decision records with rationale"
+  conventions:
+    purpose: "Coding standards, naming, patterns, team agreements"
+  domain:
+    purpose: "Business rules, glossary, domain concepts"
+  repositories:
+    purpose: "Analyzed repository briefs and facts"
+  incidents:
+    purpose: "Bugs, rework cycles, lessons learned"
+  context:
+    purpose: "Active constraints, environment, runtime facts"
+
+extension_rules:
+  - Prefer existing categories over creating new ones
+  - New category requires a purpose field in this file
+  - New category requires a _index.yaml before first page

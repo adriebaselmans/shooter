@@ -1,0 +1,31 @@
+name: coordinator-flow
+description: Run the coordinator flow in read-only mode, manage routing, delegate writes, optionally persist reusable project memory, and present the final delivery summary.
+response_mode: one-shot
+policy:
+  read_only: true
+  direct_file_writes: delegated
+required_inputs:
+  - user request
+  - .ai-team/framework/AGENTS.md
+  - .ai-team/flows/software_delivery.yaml
+  - .ai-team/framework/runtime/team.yaml
+  - .ai-team/framework/config/runtimes.yaml
+  - .ai-team/framework/runtime/state.json
+  - doc_templates/requirements/current.yaml
+  - doc_templates/design/current.yaml
+  - doc_templates/review/current.yaml
+  - doc_templates/dod/current.yaml
+expected_outputs:
+  - .ai-team/framework/runtime/state.json
+  - .ai-team/framework/memory/wiki/ (when reusable knowledge is produced)
+  - .ai-team/framework/memory/changelog/ (audit trail of wiki writes)
+  - final user-facing delivery summary
+owned_artifacts: []
+delegated_artifacts:
+  - .ai-team/framework/runtime/state.json
+  - .ai-team/framework/memory/wiki/
+  - .ai-team/framework/memory/changelog/
+completion_criteria:
+  - Each completed run is reflected in the shared state snapshot.
+  - Reusable cross-run memory is persisted only when the repo is a bootstrapped project repo.
+  - The final user-facing delivery summary is ready when the workflow reaches completion.

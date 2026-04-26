@@ -1,0 +1,75 @@
+version: 1
+default_host: github-copilot-vscode
+
+hosts:
+  github-copilot-vscode:
+    kind: native
+    primary: true
+    capabilities:
+      - custom-agents
+      - handoffs
+      - subagents
+    notes:
+      - Primary host runtime for this skeleton.
+      - Use .github/agents/*.agent.md as the native execution surface.
+  codex:
+    kind: compatibility
+    primary: false
+    capabilities:
+      - prompt-layering
+      - sub-agents-when-host-supports-them
+    notes:
+      - Codex compatibility runtime.
+      - Follow the same role, flow, and prompt contracts defined for the framework.
+
+roles:
+  coordinator:
+    primary_host: github-copilot-vscode
+    compatible_hosts:
+      - codex
+    agent_profile: .github/agents/coordinator.agent.md
+  requirements-engineer:
+    primary_host: github-copilot-vscode
+    compatible_hosts:
+      - codex
+    agent_profile: .github/agents/requirements-engineer.agent.md
+  ux-ui-designer:
+    primary_host: github-copilot-vscode
+    compatible_hosts:
+      - codex
+    agent_profile: .github/agents/ux-ui-designer.agent.md
+  explorer:
+    primary_host: github-copilot-vscode
+    compatible_hosts:
+      - codex
+    agent_profile: .github/agents/explorer.agent.md
+  scout:
+    primary_host: github-copilot-vscode
+    compatible_hosts:
+      - codex
+    agent_profile: .github/agents/scout.agent.md
+  architect:
+    primary_host: github-copilot-vscode
+    compatible_hosts:
+      - codex
+    agent_profile: .github/agents/architect.agent.md
+  developer:
+    primary_host: github-copilot-vscode
+    compatible_hosts:
+      - codex
+    agent_profile: .github/agents/developer.agent.md
+  reviewer:
+    primary_host: github-copilot-vscode
+    compatible_hosts:
+      - codex
+    agent_profile: .github/agents/reviewer.agent.md
+  tester:
+    primary_host: github-copilot-vscode
+    compatible_hosts:
+      - codex
+    agent_profile: .github/agents/tester.agent.md
+  dod-reviewer:
+    primary_host: github-copilot-vscode
+    compatible_hosts:
+      - codex
+    agent_profile: .github/agents/dod-reviewer.agent.md

@@ -1,0 +1,53 @@
+artifact_type: dod
+title: Current Definition of Done
+required_fields:
+  - status
+  - title
+  - delivery_summary
+  - requirements_coverage
+  - what_was_built
+  - what_was_verified
+  - automated_regression_coverage
+  - acceptance_test_coverage
+  - known_gaps_or_risks
+  - decision
+  - user_feedback_needed
+field_types:
+  status: string
+  title: string
+  delivery_summary: list
+  requirements_coverage: list
+  what_was_built: list
+  what_was_verified: list
+  automated_regression_coverage: list
+  acceptance_test_coverage: list
+  known_gaps_or_risks: list
+  decision: string
+  user_feedback_needed: list
+summary_fields:
+  - status
+  - title
+  - decision
+markdown_sections:
+  - heading: Status
+    field: status
+  - heading: Title
+    field: title
+  - heading: Delivery Summary
+    field: delivery_summary
+  - heading: Requirements Coverage
+    field: requirements_coverage
+  - heading: What Was Built
+    field: what_was_built
+  - heading: What Was Verified
+    field: what_was_verified
+  - heading: Automated Regression Coverage
+    field: automated_regression_coverage
+  - heading: Acceptance Test Coverage
+    field: acceptance_test_coverage
+  - heading: Known Gaps Or Risks
+    field: known_gaps_or_risks
+  - heading: Decision
+    field: decision
+  - heading: User Feedback Needed
+    field: user_feedback_needed

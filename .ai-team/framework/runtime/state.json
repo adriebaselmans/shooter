@@ -1,0 +1,42 @@
+{
+  "input": "",
+  "task_brief": null,
+  "repository": {
+    "mode": null,
+    "path": null,
+    "facts": []
+  },
+  "coordination": null,
+  "requirements": null,
+  "ux_ui": null,
+  "analysis": null,
+  "research": null,
+  "design": null,
+  "development": null,
+  "review": null,
+  "test_results": null,
+  "dod_review": null,
+  "support_request": null,
+  "trace": [],
+  "meta": {
+    "flow_name": null,
+    "roles": [],
+    "role_runtimes": {},
+    "role_prompts": {},
+    "current_step": null,
+    "last_role": null,
+    "last_next_step": null,
+    "iteration": 0,
+    "max_iterations": 5,
+    "executed_steps": 0,
+    "max_steps": 40,
+    "max_step_visits": 8,
+    "visit_counts": {},
+    "step_history": [],
+    "completed_support_requests": [],
+    "terminated": false,
+    "completed": false,
+    "termination_reason": null,
+    "autonomous": true
+  }
+}

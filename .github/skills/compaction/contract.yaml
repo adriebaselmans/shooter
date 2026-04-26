@@ -1,0 +1,17 @@
+name: compaction
+description: Compress phase outcomes into a dense structured handoff brief.
+response_mode: one-shot
+required_inputs:
+  - completed phase artifact or artifacts
+  - current workflow phase and next intended phase
+  - relevant memory entries for the phase boundary
+  - open questions, risks, or unresolved constraints
+expected_outputs:
+  - dense structured brief for downstream use
+  - preserved decisions and outcomes
+  - remaining risks or follow-ups
+owned_artifacts:
+  - .ai-team/framework/memory/records/
+completion_criteria:
+  - The brief is materially smaller than the source material.
+  - The brief preserves the decisions and next-step context needed downstream.

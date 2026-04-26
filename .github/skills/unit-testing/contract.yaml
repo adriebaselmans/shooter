@@ -1,0 +1,13 @@
+name: unit-testing
+description: Add or improve unit tests for relevant new or changed logic.
+response_mode: one-shot
+required_inputs:
+  - changed implementation
+  - requirements and design context
+expected_outputs:
+  - unit tests for relevant new or changed behavior
+owned_artifacts:
+  - tests relevant to the changed code
+completion_criteria:
+  - Nominal paths, error paths, and meaningful edge cases are covered.
+  - Tests are deterministic and readable.

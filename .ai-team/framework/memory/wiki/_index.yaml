@@ -1,0 +1,64 @@
+version: 1
+updated: 2026-04-26T12:00:00Z
+total_pages: 7
+categories:
+  project:
+    count: 1
+    summary: "Project identity, goals, scope, stakeholders"
+    hot:
+      - id: shooter-identity
+        summary: "Shooter repo identity, product intent, and milestone goal."
+        tags: [shooter, map-editor, wpf, dotnet, silk-net, identity]
+        rev: 1
+  architecture:
+    count: 2
+    summary: "Stack, modules, interfaces, deployment topology"
+    hot:
+      - id: module-boundaries
+        summary: "Module ownership rules and key files for the shooter map editor."
+        tags: [modules, boundaries, wpf, rendering, scene, formats]
+        rev: 1
+      - id: coordinate-contract
+        summary: "Left-handed Y-up coordinate contract and viewport axis mappings."
+        tags: [coordinates, axes, left-handed, y-up, viewports, colors]
+        rev: 1
+  decisions:
+    count: 0
+    summary: "ADR-style decision records with rationale"
+    hot: []
+  conventions:
+    count: 1
+    summary: "Coding standards, naming, patterns, team agreements"
+    hot:
+      - id: validation-workflow
+        summary: "Validation baseline, test command, and workflow preferences for shooter."
+        tags: [validation, testing, workflow, dotnet, fast-poc]
+        rev: 1
+  domain:
+    count: 0
+    summary: "Business rules, glossary, domain concepts"
+    hot: []
+  repositories:
+    count: 0
+    summary: "Analyzed repository briefs and facts"
+    hot: []
+  incidents:
+    count: 1
+    summary: "Bugs, rework cycles, lessons learned"
+    hot:
+      - id: known-gotchas
+        summary: "Known recurring pitfalls in the shooter map editor codebase."
+        tags: [gotchas, wpf, hwndhost, keyboard, axis-colors, shader, mvvm-toolkit]
+        rev: 1
+  context:
+    count: 2
+    summary: "Active constraints, environment, runtime facts"
+    hot:
+      - id: current-behavior
+        summary: "Stable user-facing behaviors that must not regress."
+        tags: [behavior, ux, editor, viewports, shortcuts, primitives]
+        rev: 1
+      - id: implementation-history
+        summary: "Completed implementation milestones for the shooter map editor."
+        tags: [history, implemented, editor, viewports, brushes, gl, wpf]
+        rev: 1

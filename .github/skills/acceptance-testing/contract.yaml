@@ -1,0 +1,16 @@
+name: acceptance-testing
+description: Create or maintain automated acceptance or end-to-end tests when feasible and validate important user flows.
+response_mode: one-shot
+required_inputs:
+  - doc_templates/requirements/current.yaml
+  - doc_templates/design/current.yaml
+  - implementation and existing tests
+  - current DoD artifact
+expected_outputs:
+  - automated acceptance or end-to-end regression tests when feasible
+  - clear rerun command or instructions for that regression suite
+owned_artifacts:
+  - doc_templates/dod/current.yaml
+completion_criteria:
+  - Important user flows are validated at acceptance level when automation is feasible.
+  - The DoD explains when automation is not practical or cost-effective.

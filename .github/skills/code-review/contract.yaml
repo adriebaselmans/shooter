@@ -1,0 +1,16 @@
+name: code-review
+description: Review the implementation for correctness risks, maintainability, and alignment with the approved design.
+response_mode: one-shot
+required_inputs:
+  - doc_templates/requirements/current.yaml
+  - doc_templates/design/current.yaml
+  - .ai-team/framework/clean-code.md
+  - relevant implementation and tests in src/
+expected_outputs:
+  - doc_templates/review/current.yaml
+  - clear structured decision: approved for testing or rework required
+owned_artifacts:
+  - doc_templates/review/current.yaml
+completion_criteria:
+  - Findings are ordered by severity and include file references where possible.
+  - The review artifact clearly states whether testing can proceed.

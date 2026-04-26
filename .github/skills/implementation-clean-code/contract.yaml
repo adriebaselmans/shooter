@@ -1,0 +1,16 @@
+name: implementation-clean-code
+description: Implement the approved design in clean, maintainable code and leave the repo ready for review.
+response_mode: one-shot
+required_inputs:
+  - doc_templates/requirements/current.yaml
+  - doc_templates/design/current.yaml
+  - .ai-team/framework/clean-code.md
+  - relevant code in src/
+expected_outputs:
+  - updated implementation in src/
+  - unit tests for relevant new or changed behavior
+owned_artifacts:
+  - src/
+completion_criteria:
+  - Relevant behavior is implemented and tested.
+  - Avoidable lint errors and warning-level issues are resolved where practical.

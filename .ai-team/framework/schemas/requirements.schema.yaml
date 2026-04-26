@@ -1,0 +1,57 @@
+artifact_type: requirements
+title: Current Requirements
+required_fields:
+  - status
+  - title
+  - user_need
+  - goal
+  - in_scope
+  - out_of_scope
+  - functional_requirements
+  - acceptance_criteria
+  - constraints
+  - assumptions
+  - open_questions
+  - definition_of_ready
+field_types:
+  status: string
+  title: string
+  user_need: string
+  goal: string
+  in_scope: list
+  out_of_scope: list
+  functional_requirements: list
+  acceptance_criteria: list
+  constraints: list
+  assumptions: list
+  open_questions: list
+  definition_of_ready: string
+summary_fields:
+  - status
+  - title
+  - definition_of_ready
+markdown_sections:
+  - heading: Status
+    field: status
+  - heading: Title
+    field: title
+  - heading: User Need
+    field: user_need
+  - heading: Goal
+    field: goal
+  - heading: In Scope
+    field: in_scope
+  - heading: Out Of Scope
+    field: out_of_scope
+  - heading: Functional Requirements
+    field: functional_requirements
+  - heading: Acceptance Criteria
+    field: acceptance_criteria
+  - heading: Constraints
+    field: constraints
+  - heading: Assumptions
+    field: assumptions
+  - heading: Open Questions
+    field: open_questions
+  - heading: Definition Of Ready
+    field: definition_of_ready

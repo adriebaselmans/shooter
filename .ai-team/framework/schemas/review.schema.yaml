@@ -1,0 +1,33 @@
+artifact_type: review
+title: Current Review
+required_fields:
+  - status
+  - title
+  - decision
+  - findings
+  - residual_risks
+  - recommendation
+field_types:
+  status: string
+  title: string
+  decision: string
+  findings: list
+  residual_risks: list
+  recommendation: string
+summary_fields:
+  - status
+  - title
+  - decision
+markdown_sections:
+  - heading: Status
+    field: status
+  - heading: Title
+    field: title
+  - heading: Decision
+    field: decision
+  - heading: Findings
+    field: findings
+  - heading: Residual Risks
+    field: residual_risks
+  - heading: Recommendation
+    field: recommendation

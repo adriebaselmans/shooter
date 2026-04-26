@@ -1,0 +1,191 @@
+name: software-delivery-orchestration
+start_at: intake
+steps:
+  intake:
+    kind: agent
+    agent: coordinator
+    next: repo-decision
+  repo-decision:
+    kind: decision
+    routes:
+      - when:
+          path: coordination.repo_mode
+          equals: existing
+        next: initial-exploration
+      - default: requirements
+  initial-exploration:
+    kind: agent
+    agent: explorer
+    next: requirements
+  requirements:
+    kind: agent
+    agent: requirements-engineer
+    counts_as_iteration: true
+    next: requirements-support-check
+  requirements-support-check:
+    kind: decision
+    routes:
+      - when:
+          path: support_request.pending
+          truthy: true
+        next: support-approval
+      - default: ux-ui-decision
+  ux-ui-decision:
+    kind: decision
+    routes:
+      - when:
+          path: coordination.ui_heavy
+          truthy: true
+        next: ux-ui
+      - default: architecture
+  ux-ui:
+    kind: agent
+    agent: ux-ui-designer
+    next: architecture
+  architecture:
+    kind: agent
+    agent: architect
+    counts_as_iteration: true
+    next: architecture-support-check
+  architecture-support-check:
+    kind: decision
+    routes:
+      - when:
+          path: support_request.pending
+          truthy: true
+        next: support-approval
+      - default: plan-development
+  plan-development:
+    kind: agent
+    agent: coordinator
+    next: development-entry
+  development-entry:
+    kind: decision
+    counts_as_iteration: true
+    routes:
+      - when:
+          path: coordination.parallel_development
+          truthy: true
+        next: parallel-development
+      - default: development
+  parallel-development:
+    kind: parallel-agent
+    agent: developer
+    items_path: coordination.work_items
+    collect_field: development_artifact
+    store_path: development.worker_results
+    next: integrate-development
+  integrate-development:
+    kind: agent
+    agent: developer
+    next: development-support-check
+  development:
+    kind: agent
+    agent: developer
+    next: development-support-check
+  development-support-check:
+    kind: decision
+    routes:
+      - when:
+          path: support_request.pending
+          truthy: true
+        next: support-approval
+      - default: review
+  review:
+    kind: agent
+    agent: reviewer
+    next: review-support-check
+  review-support-check:
+    kind: decision
+    routes:
+      - when:
+          path: support_request.pending
+          truthy: true
+        next: support-approval
+      - default: review-gate
+  review-gate:
+    kind: decision
+    routes:
+      - when:
+          path: review.approved
+          equals: true
+        next: testing
+      - when:
+          path: review.rework_target
+          equals: architect
+        next: architecture
+      - when:
+          path: review.rework_target
+          equals: requirements-engineer
+        next: requirements
+      - default: development-entry
+  testing:
+    kind: agent
+    agent: tester
+    next: testing-support-check
+  testing-support-check:
+    kind: decision
+    routes:
+      - when:
+          path: support_request.pending
+          truthy: true
+        next: support-approval
+      - default: testing-gate
+  testing-gate:
+    kind: decision
+    routes:
+      - when:
+          path: test_results.passed
+          equals: true
+        next: dod-review
+      - when:
+          path: test_results.rework_target
+          equals: architect
+        next: architecture
+      - when:
+          path: test_results.rework_target
+          equals: requirements-engineer
+        next: requirements
+      - default: development-entry
+  dod-review:
+    kind: agent
+    agent: dod-reviewer
+    next: dod-gate
+  dod-gate:
+    kind: decision
+    routes:
+      - when:
+          path: dod_review.approved
+          equals: true
+        next: finalize
+      - when:
+          path: dod_review.rework_target
+          equals: architect
+        next: architecture
+      - when:
+          path: dod_review.rework_target
+          equals: requirements-engineer
+        next: requirements
+      - default: development-entry
+  support-approval:
+    kind: agent
+    agent: coordinator
+    next: support-execute
+  support-execute:
+    kind: dynamic-agent
+    agent_path: coordination.support_dispatch.support_role
+    next: support-finalize
+  support-finalize:
+    kind: agent
+    agent: coordinator
+    next: support-resume
+  support-resume:
+    kind: decision
+    next_path: coordination.support_resume_step
+  finalize:
+    kind: agent
+    agent: coordinator
+    next: done
+  done:
+    kind: terminal
+    reason: completed

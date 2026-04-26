@@ -1,0 +1,19 @@
+status: Complete.
+title: Example Project
+delivery_summary:
+- Delivered revision 1 with acceptance confirmed.
+requirements_coverage:
+- Required phases complete with structured outputs.
+- Review, testing, and DoD gates pass.
+what_was_built:
+- Prepared development revision 1.
+- Worked from the compact task brief and relevant upstream artifacts only.
+what_was_verified:
+- Automated validation passed.
+automated_regression_coverage:
+- Automated validation executed by tester.
+acceptance_test_coverage:
+- All functional and non-functional acceptance criteria are satisfied.
+known_gaps_or_risks: []
+decision: Accepted for user review.
+user_feedback_needed: []

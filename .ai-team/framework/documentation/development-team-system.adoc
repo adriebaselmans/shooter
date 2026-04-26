@@ -1,0 +1,154 @@
+= Development Team System Design
+:toc: left
+:toclevels: 3
+:sectanchors:
+:sectnums:
+:source-highlighter: rouge
+
+== Purpose
+
+This document explains how the AI Development Team System works as an operating model.
+
+It describes:
+
+- the agents and their responsibilities
+- how the coordinator drives work across phases
+- how repository exploration fits in as a conditional shared support capability
+- how the active orchestrator uses shared state, support dispatch, and structured gates
+- how artifacts move from requirements to delivery
+- how memory, review, and testing keep the system durable and auditable
+
+== System Summary
+
+The Development Team System is a coordinator-led, phase-based delivery model for AI-assisted software work.
+
+At a high level:
+
+- the *Coordinator* is the only user-facing agent
+- specialist agents own bounded work products
+- repository exploration is a shared support capability when repository grounding is required
+- each major delivery phase has an explicit artifact
+- the active orchestrator is flow-driven and state-driven
+- project memory remains optional and structured when it is captured
+
+== Shared Support Capability
+
+Repository grounding is handled as a shared support capability, not as a standalone role.
+
+The coordinator can invoke it when the work must be grounded in another codebase.
+
+[plantuml,team-system-context,svg]
+----
+@startuml
+skinparam backgroundColor transparent
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam ArrowColor #34495e
+skinparam DefaultTextAlignment center
+
+actor User
+rectangle "Coordinator" as Coordinator
+rectangle "Specialist Agents" as Specialists {
+  rectangle "Requirements Engineer" as RE
+  rectangle "Architect" as Arch
+  rectangle "Developer" as Dev
+  rectangle "Reviewer" as Rev
+  rectangle "Tester" as Test
+  rectangle "DoD Reviewer" as DoD
+}
+rectangle "Shared Support Capability" as SharedTool
+database "Project Artifacts\n/docs, /src, /framework/memory" as Artifacts
+rectangle "Flow + Runtime Metadata\n/flows + /framework/runtime" as Runtime
+
+User --> Coordinator : feature request\napproval or feedback
+Coordinator --> SharedTool : repository analysis task\nwhen needed
+Coordinator --> RE : requirements task
+Coordinator --> Arch : architecture task
+Coordinator --> Dev : implementation task
+Coordinator --> Rev : technical review task
+Coordinator --> Test : validation task
+Coordinator --> DoD : acceptance gate task
+
+SharedTool --> Artifacts : repository brief\n+ facts
+RE --> Artifacts : requirements baseline
+Arch --> Artifacts : design baseline
+Dev --> Artifacts : code + unit tests
+Rev --> Artifacts : review findings
+Test --> Artifacts : test evidence\n+ regression guidance
+DoD --> Artifacts : DoD decision
+
+Coordinator --> Artifacts : status + durable artifacts
+Coordinator --> Runtime : uses flow, team, and model metadata
+Runtime --> Coordinator : routing rules,\nrole metadata
+@enduml
+----
+
+== Core Components
+
+=== Coordinator Layer
+
+The coordinator owns orchestration, phase transitions, support dispatch, and user-facing communication.
+
+=== Specialist Layer
+
+Each specialist has a narrow mission and a bounded write scope.
+
+[cols="1,2,2",options="header"]
+|===
+| Agent | Primary Responsibility | Primary Outputs
+
+| Coordinator
+| Orchestration, user communication, phase control, support approval
+| `framework/runtime/state.json`
+
+| Repository exploration support
+| Analyze a target repository and capture reusable repository knowledge
+| `.ai-team/framework/memory/repository-knowledge/*`
+
+| Requirements Engineer
+| Convert a user need into an implementation-ready baseline
+| `doc_templates/requirements/current.yaml`
+
+| Architect
+| Produce the simplest safe design that satisfies the requirements
+| `doc_templates/design/current.yaml`
+
+| Developer
+| Implement the design and add unit-level verification
+| `src/`
+
+| Reviewer
+| Perform technical review for correctness and maintainability risks
+| `doc_templates/review/current.yaml`
+
+| Tester
+| Validate user-visible behavior and automation coverage
+| automated tests + runtime test evidence
+
+| DoD Reviewer
+| Validate functional acceptance criteria and architect-defined non-functional requirements
+| `doc_templates/dod/current.yaml`
+|===
+
+=== Runtime Contract Layer
+
+The `framework/runtime/` directory is the machine-readable contract for orchestration.
+
+The repository exploration capability is a shared support path the coordinator can invoke when work must be grounded in another codebase.
+
+== Skills and Execution Guidance
+
+- the coordinator uses `coordinator-flow` and `memory-update`
+- the repository exploration support capability uses `repository-exploration` and `repository-knowledge-compaction`
+- the requirements engineer uses `requirements-clarification`
+- the developer uses `implementation-clean-code` and `unit-testing`
+- the tester uses `acceptance-testing`
+- the DoD reviewer uses `acceptance-testing` as an acceptance-gate aid
+
+== Approval and Autonomy Model
+
+The workflow uses a constrained autonomy model: the coordinator may invoke shared support when grounding is required, and after requirements are clear the system should continue through architecture, development, review, testing, and DoD review without extra approval checkpoints.
+
+== Conclusion
+
+The Development Team System turns agent collaboration into a governed workflow with clear ownership, durable artifacts, explicit validation, and controlled autonomy.

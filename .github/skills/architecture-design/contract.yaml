@@ -1,0 +1,16 @@
+name: architecture-design
+description: Produce a compact technical design that satisfies the active requirements baseline and clean-code constraints.
+response_mode: one-shot
+required_inputs:
+  - doc_templates/requirements/current.yaml
+  - doc_templates/design/current.yaml
+  - .ai-team/framework/clean-code.md
+  - relevant code in src/
+  - project wiki via wiki-read skill
+expected_outputs:
+  - doc_templates/design/current.yaml
+owned_artifacts:
+  - doc_templates/design/current.yaml
+completion_criteria:
+  - The design is implementation-safe, bounded, and testable.
+  - Key module boundaries, contracts, and tradeoffs are explicit.

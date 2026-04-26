@@ -1,0 +1,41 @@
+- ts: 2026-04-26T12:00:00Z
+  role: coordinator
+  action: created
+  target: wiki/project/shooter-identity
+  summary: "Migrated repo identity and product intent from memory.md"
+
+- ts: 2026-04-26T12:00:00Z
+  role: coordinator
+  action: created
+  target: wiki/architecture/module-boundaries
+  summary: "Migrated module ownership and key files from memory.md"
+
+- ts: 2026-04-26T12:00:00Z
+  role: coordinator
+  action: created
+  target: wiki/architecture/coordinate-contract
+  summary: "Migrated left-handed Y-up axis contract from memory.md"
+
+- ts: 2026-04-26T12:00:00Z
+  role: coordinator
+  action: created
+  target: wiki/conventions/validation-workflow
+  summary: "Migrated validation baseline and workflow notes from memory.md"
+
+- ts: 2026-04-26T12:00:00Z
+  role: coordinator
+  action: created
+  target: wiki/context/current-behavior
+  summary: "Migrated stable UX behavior list from memory.md"
+
+- ts: 2026-04-26T12:00:00Z
+  role: coordinator
+  action: created
+  target: wiki/context/implementation-history
+  summary: "Migrated completed milestones from memory.md"
+
+- ts: 2026-04-26T12:00:00Z
+  role: coordinator
+  action: created
+  target: wiki/incidents/known-gotchas
+  summary: "Migrated known gotchas and pitfalls from memory.md"

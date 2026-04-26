@@ -1,0 +1,17 @@
+name: repository-knowledge-compaction
+description: Compress repository findings into compact durable memory for later reuse.
+response_mode: one-shot
+required_inputs:
+  - raw repository findings
+  - existing repository brief or facts file, if any
+  - .ai-team/framework/memory/repository-knowledge/TEMPLATE.md
+expected_outputs:
+  - .ai-team/framework/memory/wiki/repositories/<repo-slug>/brief.md
+  - .ai-team/framework/memory/wiki/repositories/<repo-slug>/facts.yaml
+  - .ai-team/framework/memory/wiki/repositories/_index.yaml when needed
+owned_artifacts:
+  - .ai-team/framework/memory/wiki/repositories/<repo-slug>/brief.md
+  - .ai-team/framework/memory/wiki/repositories/<repo-slug>/facts.yaml
+completion_criteria:
+  - Facts are stable, compact, and sourced.
+  - Open questions are preserved explicitly.

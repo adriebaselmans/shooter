@@ -1,0 +1,42 @@
+version: 1
+host: github-copilot-vscode
+notes:
+  - GitHub Copilot custom agents support a per-agent `model` field in `.agent.md` frontmatter.
+  - A repo-local per-agent reasoning-effort field was not verified in the official docs, so this config only manages model preferences.
+  - Model availability depends on the Copilot plan, model picker, and provider access in the current VS Code environment.
+
+roles:
+  coordinator:
+    inherit_picker: true
+  requirements-engineer:
+    model:
+      - GPT-5.4 (copilot)
+      - Claude Sonnet 4.5 (copilot)
+  ux-ui-designer:
+    model:
+      - GPT-5.4 (copilot)
+      - Claude Sonnet 4.5 (copilot)
+  explorer:
+    model:
+      - Claude Haiku 4.5 (copilot)
+  scout:
+    model:
+      - Claude Haiku 4.5 (copilot)
+  architect:
+    model:
+      - Claude Opus 4.6 (copilot)
+      - Claude Sonnet 4.5 (copilot)
+  developer:
+    model:
+      - GPT-5.4 (copilot)
+      - Claude Sonnet 4.5 (copilot)
+    reasoning_note: Copilot custom-agent frontmatter does not expose a verified per-agent reasoning-effort setting.
+  reviewer:
+    model:
+      - Claude Sonnet 4.5 (copilot)
+  tester:
+    model:
+      - Claude Sonnet 4.5 (copilot)
+  dod-reviewer:
+    model:
+      - Claude Sonnet 4.5 (copilot)

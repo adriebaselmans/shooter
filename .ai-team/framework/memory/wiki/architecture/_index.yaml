@@ -1,0 +1,13 @@
+category: architecture
+updated: 2026-04-26T12:00:00Z
+pages:
+  - id: module-boundaries
+    summary: "Module ownership rules and key files for the shooter map editor."
+    tags: [modules, boundaries, wpf, rendering, scene, formats]
+    rev: 1
+    updated: 2026-04-26T12:00:00Z
+  - id: coordinate-contract
+    summary: "Left-handed Y-up coordinate contract and viewport axis mappings."
+    tags: [coordinates, axes, left-handed, y-up, viewports, colors]
+    rev: 1
+    updated: 2026-04-26T12:00:00Z

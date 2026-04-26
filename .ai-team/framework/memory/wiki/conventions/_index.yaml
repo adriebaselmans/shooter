@@ -1,0 +1,8 @@
+category: conventions
+updated: 2026-04-26T12:00:00Z
+pages:
+  - id: validation-workflow
+    summary: "Validation baseline, test command, and workflow preferences for shooter."
+    tags: [validation, testing, workflow, dotnet, fast-poc]
+    rev: 1
+    updated: 2026-04-26T12:00:00Z

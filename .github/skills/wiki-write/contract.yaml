@@ -1,0 +1,19 @@
+name: wiki-write
+description: Create or update wiki pages, maintain indexes, and append changelog entries for reusable project knowledge.
+response_mode: one-shot
+required_inputs:
+  - knowledge to persist
+  - .ai-team/framework/memory/wiki/_schema.yaml
+  - existing page if updating
+expected_outputs:
+  - wiki/<category>/<page-id>.md
+  - wiki/<category>/_index.yaml
+  - wiki/_index.yaml
+  - memory/changelog/<YYYY-MM>.yaml
+owned_artifacts:
+  - .ai-team/framework/memory/wiki/
+  - .ai-team/framework/memory/changelog/
+completion_criteria:
+  - Page content reflects current knowledge, not appended history.
+  - Category and root indexes are consistent with page files.
+  - Changelog entry is appended for the write.

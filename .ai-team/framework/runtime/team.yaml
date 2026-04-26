@@ -1,0 +1,184 @@
+version: 2
+runtime: model-agnostic
+top_level_role: coordinator
+specialist_dispatch: orchestrator-owned
+
+prompt_bundles:
+  coordinator:
+    extends:
+      - shared
+    layers:
+      - .ai-team/framework/prompts/coordinator-base.md
+  shared:
+    layers:
+      - .ai-team/framework/prompts/base-system.md
+  specialist:
+    extends:
+      - shared
+    layers:
+      - .ai-team/framework/prompts/specialist-base.md
+  support:
+    extends:
+      - shared
+    layers:
+      - .ai-team/framework/prompts/support-base.md
+
+roles:
+  coordinator:
+    agent_type: orchestrator
+    read_only: true
+    writes: []
+    user_facing: true
+    prompt:
+      extends:
+        - coordinator
+  requirements-engineer:
+    agent_type: specialist
+    user_facing: false
+    primary_skill: .github/skills/requirements-clarification
+    prompt:
+      extends:
+        - specialist
+    writes:
+      - doc_templates/requirements/current.yaml
+  ux-ui-designer:
+    agent_type: specialist
+    user_facing: false
+    primary_skill: .github/skills/ui-ux-design
+    prompt:
+      extends:
+        - support
+    focus: ux-ui-design
+    collaboration:
+      required:
+        - role: requirements-engineer
+          purpose: define user journeys, interaction expectations, and accessibility constraints for UI-heavy work
+      optional:
+        - role: developer
+          purpose: support implementation details for UI-heavy changes
+        - role: reviewer
+          purpose: support UI coherence and usability review
+        - role: tester
+          purpose: support UI-focused acceptance and accessibility validation
+    writes: []
+  explorer:
+    agent_type: specialist
+    user_facing: false
+    primary_skill: .github/skills/repository-exploration
+    prompt:
+      extends:
+        - support
+    focus: repository-exploration
+    writes: []
+  scout:
+    agent_type: specialist
+    user_facing: false
+    primary_skill: .github/skills/external-research
+    prompt:
+      extends:
+        - support
+    focus: external-research
+    collaboration:
+      optional:
+        - role: architect
+          purpose: gather current external evidence that could materially change the design
+        - role: developer
+          purpose: gather current external evidence when implementation depends on version-sensitive or freshness-sensitive external behavior
+        - role: requirements-engineer
+          purpose: clarify the research question when the problem statement is still broad
+    writes: []
+  architect:
+    agent_type: specialist
+    user_facing: false
+    primary_skill: .github/skills/architecture-design
+    prompt:
+      extends:
+        - specialist
+    collaboration:
+      optional:
+        - role: scout
+          purpose: gather current external evidence when up-to-date sources could change the design
+    writes:
+      - doc_templates/design/current.yaml
+  developer:
+    agent_type: specialist
+    user_facing: false
+    primary_skill: .github/skills/implementation-clean-code
+    prompt:
+      extends:
+        - specialist
+    collaboration:
+      optional:
+        - role: scout
+          purpose: gather current external evidence when implementation depends on version-sensitive or freshness-sensitive external behavior
+    supporting_skills:
+      - .github/skills/unit-testing
+    writes:
+      - .ai-team/agents/
+      - .ai-team/team_orchestrator/
+      - .ai-team/flows/
+      - .ai-team/state/
+      - src/
+      - .ai-team/framework/runtime/
+      - .ai-team/framework/runtime/tests/
+      - tests/
+  reviewer:
+    agent_type: specialist
+    user_facing: false
+    primary_skill: .github/skills/code-review
+    prompt:
+      extends:
+        - specialist
+    focus: code-review-only
+    collaboration:
+      required:
+        - role: developer
+          purpose: findings handling and rework coordination
+    writes:
+      - doc_templates/review/current.yaml
+  tester:
+    agent_type: specialist
+    user_facing: false
+    primary_skill: .github/skills/acceptance-testing
+    prompt:
+      extends:
+        - specialist
+    focus: acceptance-validation
+    collaboration:
+      required:
+        - role: requirements-engineer
+          purpose: acceptance criteria understanding and satisfaction
+      optional:
+        - role: architect
+          purpose: non-functional requirement validation or clarification
+    writes:
+      - tests/
+  dod-reviewer:
+    agent_type: specialist
+    user_facing: false
+    prompt:
+      extends:
+        - specialist
+    focus: acceptance-gate
+    writes:
+      - doc_templates/dod/current.yaml
+
+shared_tools:
+  repository-exploration:
+    contract_module: .ai-team/framework/runtime/repository_tool.py
+    writes:
+      - .ai-team/framework/memory/wiki/repositories/
+  wiki-read:
+    skill: .github/skills/wiki-read
+    writes: []
+  wiki-write:
+    skill: .github/skills/wiki-write
+    writes:
+      - .ai-team/framework/memory/wiki/
+      - .ai-team/framework/memory/changelog/
+
+spawn_rules:
+  - Only the coordinator dispatches specialist work.
+  - Specialist work must be bounded and aligned with the active flow plus role skill contracts.
+  - Shared tools may be requested by any phase but are dispatched through the coordinator.
+  - Roles may only write owned outputs or explicit shared-tool outputs.

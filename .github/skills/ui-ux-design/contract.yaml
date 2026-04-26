@@ -1,0 +1,14 @@
+name: ui-ux-design
+description: Produce bounded UX/UI guidance for UI-heavy work so requirements, implementation, review, and testing can proceed without guessing about user flows, states, or accessibility expectations.
+response_mode: one-shot
+required_inputs:
+  - doc_templates/requirements/current.yaml
+  - doc_templates/design/current.yaml
+  - relevant project memory in .ai-team/framework/memory/
+expected_outputs:
+  - bounded UX/UI guidance for the active task
+  - clarification questions for the coordinator when user-flow or interaction ambiguity remains
+owned_artifacts: []
+completion_criteria:
+  - Important user journeys, screen states, and interaction expectations are explicit.
+  - Accessibility and usability-sensitive constraints are concrete enough for implementation and testing.

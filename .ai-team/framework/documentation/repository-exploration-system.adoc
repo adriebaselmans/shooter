@@ -1,0 +1,60 @@
+= Repository Exploration Shared Tool
+:toc: left
+:toclevels: 3
+:sectanchors:
+:sectnums:
+
+== Purpose
+
+This document explains the repository exploration shared tool and the repository knowledge storage model.
+
+== Why The Shared Tool Exists
+
+The base delivery system already has strong phase specialists, but it also needs a dedicated support capability for reverse engineering and codebase orientation.
+
+That gap creates three problems:
+
+- repeated rediscovery of the same repository
+- weak traceability for repository-derived claims
+- no durable place to store compact repository intelligence
+
+The shared tool solves those problems without adding a mandatory new phase to every workflow.
+
+== Activation Rules
+
+The coordinator should use the shared tool only when one of these is true:
+
+- the user asks to base work on a specific repository or application
+- a specialist is blocked because a reference repository is not yet understood well enough
+
+The shared tool is support capability, not a default phase owner.
+
+== Outputs
+
+Repository knowledge is stored in `.ai-team/framework/memory/repository-knowledge/`.
+
+Each analyzed repository should have:
+
+- `brief.md`: compact human-readable summary
+- `facts.json`: machine-readable stable facts
+
+== Coordinator Integration
+
+If repository grounding is required, the coordinator can route a bounded shared-tool request through the active support-dispatch path and return compact repository knowledge to `.ai-team/framework/memory/repository-knowledge/`.
+
+== Interaction With Other Roles
+
+The shared tool does not replace the existing specialists.
+
+Instead:
+
+- requirements uses exploration output to write grounded scope and acceptance criteria
+- architecture uses exploration output to align with real structure and extension points
+- development uses exploration output when adapting or integrating with a reference codebase
+- review uses exploration output when fit or correctness depends on the reference repository
+
+== Design Tradeoffs
+
+This design intentionally favors simple file-based storage, explicit coordinator routing, and compact reusable summaries.
+
+It intentionally does not yet add semantic retrieval infrastructure, automatic repository cloning, or a mandatory exploration phase for every task.

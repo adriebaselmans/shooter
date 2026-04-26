@@ -1,0 +1,13 @@
+name: wiki-read
+description: Navigate the project wiki index to find and retrieve only the knowledge relevant to the current task.
+response_mode: one-shot
+required_inputs:
+  - current task or phase objective
+  - .ai-team/framework/memory/wiki/_index.yaml
+expected_outputs:
+  - set of wiki page paths read
+  - knowledge gaps discovered
+owned_artifacts: []
+completion_criteria:
+  - Relevant existing knowledge has been retrieved without loading the full wiki.
+  - Knowledge gaps are noted for downstream wiki-write.

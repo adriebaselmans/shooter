@@ -1,0 +1,8 @@
+category: project
+updated: 2026-04-26T12:00:00Z
+pages:
+  - id: shooter-identity
+    summary: "Shooter repo identity, product intent, and milestone goal."
+    tags: [shooter, map-editor, wpf, dotnet, silk-net, identity]
+    rev: 1
+    updated: 2026-04-26T12:00:00Z
