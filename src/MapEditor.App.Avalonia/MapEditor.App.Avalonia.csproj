@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Tmds.DBus.Protocol" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MapEditor.Core\MapEditor.Core.csproj" />
+    <ProjectReference Include="..\MapEditor.Formats\MapEditor.Formats.csproj" />
+    <ProjectReference Include="..\MapEditor.Rendering\MapEditor.Rendering.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\MapEditor.App\IEditorShortcutTarget.cs" Link="Shared\IEditorShortcutTarget.cs" />
+    <Compile Include="..\MapEditor.App\EditorShortcutRouter.cs" Link="Shared\EditorShortcutRouter.cs" />
+    <Compile Include="..\MapEditor.App\Infrastructure\BrushSurfaceHitTester.cs" Link="Shared\Infrastructure\BrushSurfaceHitTester.cs" />
+    <Compile Include="..\MapEditor.App\Services\*.cs" Link="Shared\Services\%(Filename)%(Extension)" />
+    <Compile Include="..\MapEditor.App\Tools\*.cs" Link="Shared\Tools\%(Filename)%(Extension)" />
+    <Compile Include="..\MapEditor.App\ViewModels\*.cs" Link="Shared\ViewModels\%(Filename)%(Extension)" />
+    <Compile Include="..\MapEditor.App\Views\ViewportKeyEvent.cs" Link="Shared\Views\ViewportKeyEvent.cs" />
+    <Compile Include="..\MapEditor.App\Views\OrthographicViewportProjection.cs" Link="Shared\Views\OrthographicViewportProjection.cs" />
+  </ItemGroup>
+
+</Project>

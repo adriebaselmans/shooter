@@ -244,7 +244,7 @@ public sealed class OrthographicViewportRenderer : IDisposable
         _gl.EndQuery(QueryTarget.AnySamplesPassed);
 
         uint result = 0;
-        _gl.GetQueryObject(query, QueryObjectParameterName.QueryResult, &result);
+        _gl.GetQueryObject(query, QueryObjectParameterName.Result, &result);
         _gl.DeleteQuery(query);
         return result != 0;
     }

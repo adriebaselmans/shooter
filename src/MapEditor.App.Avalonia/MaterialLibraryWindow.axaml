@@ -1,0 +1,165 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MapEditor.App.Avalonia.MaterialLibraryWindow"
+        Title="Materials Library"
+        Width="1040"
+        Height="720"
+        MinWidth="820"
+        MinHeight="520">
+  <Window.Styles>
+    <Style Selector="Window">
+      <Setter Property="Background" Value="#1E1E1E" />
+      <Setter Property="Foreground" Value="#CCCCCC" />
+      <Setter Property="FontFamily" Value="Inter" />
+    </Style>
+    <Style Selector="TextBlock.micro-label">
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="Foreground" Value="#8F8F95" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Border.material-card">
+      <Setter Property="Width" Value="148" />
+      <Setter Property="MinHeight" Value="152" />
+      <Setter Property="Margin" Value="0,0,10,10" />
+      <Setter Property="Padding" Value="7" />
+      <Setter Property="Background" Value="#252526" />
+      <Setter Property="BorderBrush" Value="#3F3F46" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="Button.texture-action">
+      <Setter Property="MinHeight" Value="30" />
+      <Setter Property="Padding" Value="10,5" />
+      <Setter Property="Margin" Value="0,0,6,6" />
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="Auto,*,190" ColumnDefinitions="190,*,300" Margin="12" RowSpacing="10" ColumnSpacing="12">
+    <Border Grid.Row="0" Grid.ColumnSpan="3" Background="#252526" BorderBrush="#3F3F46" BorderThickness="1" Padding="10">
+      <Grid ColumnDefinitions="*,160,Auto" ColumnSpacing="8">
+        <TextBox Grid.Column="0" Watermark="Search built-in game materials by name, key, collection, or kind" Text="{Binding TextureSearchText, UpdateSourceTrigger=PropertyChanged}" />
+        <ComboBox Grid.Column="1" ItemsSource="{Binding TextureKindFilters}" SelectedItem="{Binding SelectedTextureKindFilter, Mode=TwoWay}" />
+        <CheckBox Grid.Column="2" Content="Animated" IsChecked="{Binding ShowAnimatedTexturesOnly, Mode=TwoWay}" VerticalAlignment="Center" />
+      </Grid>
+    </Border>
+
+    <Border Grid.Row="1" Grid.Column="0" Background="#252526" BorderBrush="#3F3F46" BorderThickness="1" Padding="10">
+      <Grid RowDefinitions="Auto,*">
+        <TextBlock Classes="micro-label" Text="COLLECTIONS" Margin="0,0,0,6" />
+        <ListBox Grid.Row="1" ItemsSource="{Binding TextureCategories}" SelectedItem="{Binding SelectedTextureCategory, Mode=TwoWay}" />
+      </Grid>
+    </Border>
+
+    <Border Grid.Row="1" Grid.Column="1" Background="#202024" BorderBrush="#3F3F46" BorderThickness="1" Padding="10">
+      <ListBox ItemsSource="{Binding FilteredTextures}" SelectedValue="{Binding SelectedTextureKey, Mode=TwoWay}" SelectedValueBinding="{Binding Key}">
+        <ListBox.ItemsPanel>
+          <ItemsPanelTemplate>
+            <WrapPanel />
+          </ItemsPanelTemplate>
+        </ListBox.ItemsPanel>
+        <ListBox.ItemTemplate>
+          <DataTemplate>
+            <Border Classes="material-card">
+              <StackPanel>
+                <Border Height="84" Background="{Binding AverageColorHex}" BorderBrush="#56565C" BorderThickness="1" Margin="0,0,0,7">
+                  <Grid>
+                    <Image Source="{Binding PreviewPath, Converter={StaticResource FilePathToBitmap}}" Stretch="Fill" />
+                    <Border Background="#AA2D2D30" HorizontalAlignment="Right" VerticalAlignment="Top" Padding="4,1" IsVisible="{Binding IsAnimated}">
+                      <TextBlock Text="ANIM" FontSize="9" FontWeight="SemiBold" Foreground="#FFB26B" />
+                    </Border>
+                  </Grid>
+                </Border>
+                <TextBlock Text="{Binding DisplayName}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="{Binding Category}" FontSize="10" Foreground="#9A9AA0" TextTrimming="CharacterEllipsis" />
+                <WrapPanel>
+                  <TextBlock Text="{Binding KindLabel}" FontSize="10" Foreground="#8FB6F2" Margin="0,0,6,0" />
+                  <TextBlock Text="{Binding AnimationLabel}" FontSize="10" Foreground="#D58B55" TextTrimming="CharacterEllipsis" />
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </Border>
+
+    <Border Grid.Row="1" Grid.Column="2" Background="#252526" BorderBrush="#3F3F46" BorderThickness="1" Padding="10">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="micro-label" Text="SELECTED MATERIAL" />
+        <Border Height="160" Background="{Binding SelectedTextureEntry.AverageColorHex}" BorderBrush="#56565C" BorderThickness="1">
+          <Image Source="{Binding SelectedTextureEntry.PreviewPath, Converter={StaticResource FilePathToBitmap}}" Stretch="Fill" />
+        </Border>
+        <TextBlock Text="{Binding SelectedTextureEntry.DisplayName, TargetNullValue=No material selected}" FontSize="15" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+        <TextBlock Text="{Binding SelectedTextureEntry.Key}" FontSize="10" Opacity="0.7" TextTrimming="CharacterEllipsis" />
+        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+          <TextBlock Classes="micro-label" Text="TYPE" Margin="0,0,10,4" />
+          <TextBlock Grid.Column="1" Text="{Binding SelectedTextureEntry.KindLabel}" FontSize="11" />
+          <TextBlock Grid.Row="1" Classes="micro-label" Text="SOURCE" Margin="0,0,10,4" />
+          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedTextureEntry.SourceLabel}" FontSize="11" />
+          <TextBlock Grid.Row="2" Classes="micro-label" Text="COLOR" Margin="0,0,10,4" />
+          <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedTextureEntry.AverageColorHex}" FontSize="11" />
+          <TextBlock Grid.Row="3" Classes="micro-label" Text="MOTION" Margin="0,0,10,4" />
+          <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedTextureEntry.AnimationLabel}" FontSize="11" />
+          <TextBlock Grid.Row="4" Classes="micro-label" Text="USE" Margin="0,0,10,0" />
+          <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedTextureEntry.UsageHint}" FontSize="11" TextWrapping="Wrap" />
+        </Grid>
+        <WrapPanel>
+          <Button Classes="texture-action" Content="Apply Brush" Command="{Binding ApplySelectedTextureToBrushCommand}" />
+          <Button Classes="texture-action" Content="Apply Faces" Command="{Binding ApplySelectedTextureToSelectedSurfacesCommand}" />
+        </WrapPanel>
+      </StackPanel>
+    </Border>
+
+    <Border Grid.Row="2" Grid.ColumnSpan="3" Background="#252526" BorderBrush="#3F3F46" BorderThickness="1" Padding="10">
+      <Grid ColumnDefinitions="240,*,230" ColumnSpacing="10">
+        <StackPanel Grid.Column="0" Spacing="7">
+          <TextBlock Classes="micro-label" Text="ONLINE SOURCES" />
+          <ComboBox ItemsSource="{Binding TextureAssetProviders}" SelectedItem="{Binding SelectedOnlineTextureProvider, Mode=TwoWay}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding DisplayName}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <TextBox Watermark="Search CC0 materials" Text="{Binding OnlineTextureSearchText, UpdateSourceTrigger=PropertyChanged}" />
+          <Button Content="Search" Command="{Binding SearchOnlineTexturesCommand}" HorizontalAlignment="Stretch" />
+          <TextBlock Text="{Binding SelectedOnlineTextureProvider.UsageSummary}" FontSize="10" Foreground="#9A9AA0" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <Border Grid.Column="1" Background="#202024" BorderBrush="#3F3F46" BorderThickness="1" Padding="8">
+          <ListBox ItemsSource="{Binding OnlineTextureResults}" SelectedItem="{Binding SelectedOnlineTextureResult, Mode=TwoWay}">
+            <ListBox.ItemsPanel>
+              <ItemsPanelTemplate>
+                <WrapPanel />
+              </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <Border Width="180" MinHeight="128" Margin="0,0,8,8" Padding="7" Background="#2A2A2F" BorderBrush="#46464D" BorderThickness="1">
+                  <Grid RowDefinitions="76,Auto,Auto">
+                    <Border Background="#34343A" BorderBrush="#56565C" BorderThickness="1">
+                      <Image Source="{Binding PreviewUrl, Converter={StaticResource FilePathToBitmap}}" Stretch="UniformToFill" />
+                    </Border>
+                    <TextBlock Grid.Row="1" Text="{Binding DisplayName}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,6,0,0" />
+                    <WrapPanel Grid.Row="2">
+                      <TextBlock Text="{Binding Category}" FontSize="10" Foreground="#8FB6F2" Margin="0,0,6,0" />
+                      <TextBlock Text="{Binding SourceLabel}" FontSize="10" Foreground="#B8B8BE" TextTrimming="CharacterEllipsis" />
+                    </WrapPanel>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </Border>
+
+        <StackPanel Grid.Column="2" Spacing="7">
+          <TextBlock Classes="micro-label" Text="IMPORT" />
+          <TextBlock Text="{Binding SelectedOnlineTextureResult.DisplayName, TargetNullValue=No online material selected}" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+          <TextBlock Text="{Binding SelectedOnlineTextureResult.Category}" FontSize="11" Foreground="#8FB6F2" TextTrimming="CharacterEllipsis" />
+          <TextBlock Text="{Binding SelectedOnlineTextureResult.SourceLabel}" FontSize="11" Foreground="#B8B8BE" TextTrimming="CharacterEllipsis" />
+          <TextBlock Text="{Binding SelectedOnlineTextureResult.UsageHint}" FontSize="10" Foreground="#A8A8AE" TextWrapping="Wrap" MaxHeight="52" />
+          <Button Content="Import Selected" Command="{Binding ImportSelectedOnlineTextureCommand}" HorizontalAlignment="Stretch" />
+          <TextBlock Text="{Binding OnlineTextureStatus}" FontSize="10" Foreground="#9A9AA0" TextWrapping="Wrap" />
+        </StackPanel>
+      </Grid>
+    </Border>
+  </Grid>
+</Window>

@@ -21,6 +21,7 @@ public sealed class PerspectiveViewportRenderer : IDisposable
     private readonly GL _gl;
     private readonly ITextureCatalog? _textureCatalog;
     private readonly TextureGpuCache _textureCache;
+    private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
     private ShaderProgram? _solidShader;
     private ShaderProgram? _wireShader;
     private DynamicLineBuffer? _gridBuffer;
@@ -88,6 +89,7 @@ public sealed class PerspectiveViewportRenderer : IDisposable
         _solidShader.SetUniform("uProjection", proj);
         _solidShader.SetUniform("uAmbientColor", scene.WorldSettings.AmbientColor);
         _solidShader.SetUniform("uTexture0", 0);
+        _solidShader.SetUniform("uTimeSeconds", (float)_clock.Elapsed.TotalSeconds);
 
         var lights = scene.Lights;
         _solidShader.SetUniform("uLightCount", Math.Min(lights.Count, 8));
@@ -312,6 +314,16 @@ public sealed class PerspectiveViewportRenderer : IDisposable
     {
         _gl.ActiveTexture(TextureUnit.Texture0);
         _gl.BindTexture(TextureTarget.Texture2D, _textureCache.GetTextureHandle(descriptor));
+        _solidShader!.SetUniform("uIsAnimatedTexture", descriptor?.Animation?.IsAnimated == true);
+        _solidShader.SetUniform("uAnimationKind", descriptor?.Kind switch
+        {
+            TextureMaterialKind.Water => 1,
+            TextureMaterialKind.Lava => 2,
+            TextureMaterialKind.Effect => 3,
+            _ => 0
+        });
+        _solidShader.SetUniform("uFlowSpeed", descriptor?.Animation?.FlowSpeed ?? 0f);
+        _solidShader.SetUniform("uPulseStrength", descriptor?.Animation?.PulseStrength ?? 0f);
     }
 
     private static Vector4 GetSurfaceTint(BrushOperation operation, TextureAssetDescriptor? descriptor)
@@ -324,6 +336,16 @@ public sealed class PerspectiveViewportRenderer : IDisposable
         if (operation == BrushOperation.Subtractive)
         {
             return new Vector4(0.90f, 0.55f, 0.55f, 0.90f);
+        }
+
+        if (descriptor.Kind == TextureMaterialKind.Water)
+        {
+            return new Vector4(0.82f, 0.96f, 1f, 0.72f);
+        }
+
+        if (descriptor.Kind == TextureMaterialKind.Lava)
+        {
+            return new Vector4(1f, 0.82f, 0.62f, 0.96f);
         }
 
         return new Vector4(1f, 1f, 1f, 0.92f);
@@ -343,7 +365,7 @@ public sealed class PerspectiveViewportRenderer : IDisposable
         _gl.EndQuery(QueryTarget.AnySamplesPassed);
 
         uint result = 0;
-        _gl.GetQueryObject(query, QueryObjectParameterName.QueryResult, &result);
+        _gl.GetQueryObject(query, QueryObjectParameterName.Result, &result);
         _gl.DeleteQuery(query);
         return result != 0;
     }

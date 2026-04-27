@@ -1,4 +1,5 @@
 using MapEditor.App.Services;
+using MapEditor.App.Tools;
 using MapEditor.App.ViewModels;
 using MapEditor.App.Views;
 using MapEditor.Rendering.Cameras;
@@ -71,7 +72,10 @@ public partial class MainWindow : Window
     }
 
     internal bool TryHandleEditorShortcut(Key key, ModifierKeys modifiers, object? originalSource) =>
-        EditorShortcutRouter.TryHandle(_vm, key, modifiers, originalSource);
+        WpfEditorShortcutRouter.TryHandle(_vm, key, modifiers, originalSource);
+
+    internal bool TryHandleEditorShortcut(EditorKey key, EditorModifierKeys modifiers, bool isTextEditingSource) =>
+        EditorShortcutRouter.TryHandle(_vm, key, modifiers, isTextEditingSource);
 
     private void OnPropertyEditorKeyDown(object sender, KeyEventArgs e)
     {

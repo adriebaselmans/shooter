@@ -1,50 +1,47 @@
-using MapEditor.App.ViewModels;
 using MapEditor.App.Tools;
-using System.Windows.Controls.Primitives;
-using System.Windows.Input;
 
 namespace MapEditor.App;
 
-internal static class EditorShortcutRouter
+public static class EditorShortcutRouter
 {
-    public static bool TryHandle(IEditorShortcutTarget target, Key key, ModifierKeys modifiers, object? originalSource)
+    public static bool TryHandle(IEditorShortcutTarget target, EditorKey key, EditorModifierKeys modifiers, bool isTextEditingSource)
     {
-        if (originalSource is TextBoxBase)
+        if (isTextEditingSource)
         {
             return false;
         }
 
-        if (modifiers == ModifierKeys.Control)
+        if (modifiers == EditorModifierKeys.Control)
         {
             return key switch
             {
-                Key.N => target.TryExecuteShortcut(EditorShortcutAction.NewFile),
-                Key.O => target.TryExecuteShortcut(EditorShortcutAction.OpenFile),
-                Key.S => target.TryExecuteShortcut(EditorShortcutAction.SaveFile),
-                Key.Z => target.TryExecuteShortcut(EditorShortcutAction.Undo),
-                Key.Y => target.TryExecuteShortcut(EditorShortcutAction.Redo),
-                Key.C => target.TryExecuteShortcut(EditorShortcutAction.Copy),
-                Key.V => target.TryExecuteShortcut(EditorShortcutAction.Paste),
+                EditorKey.N => target.TryExecuteShortcut(EditorShortcutAction.NewFile),
+                EditorKey.O => target.TryExecuteShortcut(EditorShortcutAction.OpenFile),
+                EditorKey.S => target.TryExecuteShortcut(EditorShortcutAction.SaveFile),
+                EditorKey.Z => target.TryExecuteShortcut(EditorShortcutAction.Undo),
+                EditorKey.Y => target.TryExecuteShortcut(EditorShortcutAction.Redo),
+                EditorKey.C => target.TryExecuteShortcut(EditorShortcutAction.Copy),
+                EditorKey.V => target.TryExecuteShortcut(EditorShortcutAction.Paste),
                 _ => false
             };
         }
 
-        if (modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && key == Key.Z)
+        if (modifiers == (EditorModifierKeys.Control | EditorModifierKeys.Shift) && key == EditorKey.Z)
         {
             return target.TryExecuteShortcut(EditorShortcutAction.Redo);
         }
 
-        if (modifiers != ModifierKeys.None)
+        if (modifiers != EditorModifierKeys.None)
         {
             return false;
         }
 
         return key switch
         {
-            Key.Delete => target.TryExecuteShortcut(EditorShortcutAction.Delete),
-            Key.B => target.TryExecuteShortcut(EditorShortcutAction.CreateBrush),
-            Key.T => target.TryExecuteShortcut(EditorShortcutAction.ToggleTextureBrowser),
-            Key.Escape => target.TryExecuteShortcut(EditorShortcutAction.SelectTool, nameof(EditorToolKind.Select)),
+            EditorKey.Delete => target.TryExecuteShortcut(EditorShortcutAction.Delete),
+            EditorKey.B => target.TryExecuteShortcut(EditorShortcutAction.CreateBrush),
+            EditorKey.T => target.TryExecuteShortcut(EditorShortcutAction.ToggleTextureBrowser),
+            EditorKey.Escape => target.TryExecuteShortcut(EditorShortcutAction.SelectTool, nameof(EditorToolKind.Select)),
             _ => false
         };
     }

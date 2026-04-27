@@ -1,16 +1,16 @@
-using System.Windows.Input;
+using MapEditor.App.Tools;
 
 namespace MapEditor.App.Views;
 
 public sealed class ViewportKeyEvent : EventArgs
 {
-    public ViewportKeyEvent(Key key, ModifierKeys modifiers)
+    public ViewportKeyEvent(EditorKey key, EditorModifierKeys modifiers)
     {
         Key = key;
         Modifiers = modifiers;
     }
 
-    public Key Key { get; }
-    public ModifierKeys Modifiers { get; }
+    public EditorKey Key { get; }
+    public EditorModifierKeys Modifiers { get; }
     public bool Handled { get; set; }
 }

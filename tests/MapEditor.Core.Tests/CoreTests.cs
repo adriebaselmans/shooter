@@ -272,6 +272,34 @@ public sealed class MeshGeneratorTests
     }
 
     [Fact]
+    public void GenerateMesh_UsesStableUvAxesForExplicitWallFragments()
+    {
+        var brush = new Brush
+        {
+            Primitive = BrushPrimitive.Box,
+            Transform = Transform.Identity
+        };
+        brush.SetGeometry(new BrushGeometry(
+        [
+            new BrushFace("fragment", [new(-1f, 1f, 0f), new(-1f, -1f, 0f), new(1f, -1f, 0f), new(1f, 1f, 0f)])
+        ]));
+
+        var mesh = MeshGenerator.GenerateMesh(brush);
+
+        var topLeft = GetUv(mesh, 0);
+        var bottomLeft = GetUv(mesh, 1);
+        var bottomRight = GetUv(mesh, 2);
+        var topRight = GetUv(mesh, 3);
+
+        bottomLeft.X.Should().BeApproximately(topLeft.X, 0.0001f);
+        bottomRight.X.Should().BeApproximately(topRight.X, 0.0001f);
+        bottomLeft.Y.Should().BeApproximately(bottomRight.Y, 0.0001f);
+        topLeft.Y.Should().BeApproximately(topRight.Y, 0.0001f);
+        bottomLeft.X.Should().BeLessThan(bottomRight.X);
+        bottomLeft.Y.Should().BeLessThan(topLeft.Y);
+    }
+
+    [Fact]
     public void BrushBounds_UsesExplicitGeometryWorldExtents()
     {
         var brush = new Brush
@@ -355,6 +383,12 @@ public sealed class MeshGeneratorTests
         mesh.Surfaces.Select(surface => surface.SurfaceId)
             .Should()
             .ContainInOrder(BrushSurfaceIds.Top, BrushSurfaceIds.Bottom, BrushSurfaceIds.Front, BrushSurfaceIds.Back, BrushSurfaceIds.Right, BrushSurfaceIds.Left);
+    }
+
+    private static Vector2 GetUv(Mesh mesh, int vertexIndex)
+    {
+        int offset = vertexIndex * Mesh.FloatsPerVertex;
+        return new Vector2(mesh.Vertices[offset + 6], mesh.Vertices[offset + 7]);
     }
 }
 

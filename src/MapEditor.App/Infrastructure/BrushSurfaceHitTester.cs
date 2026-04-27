@@ -5,9 +5,9 @@ using System.Numerics;
 
 namespace MapEditor.App.Infrastructure;
 
-internal readonly record struct BrushSurfaceHit(Guid BrushId, string SurfaceId, float Distance);
+public readonly record struct BrushSurfaceHit(Guid BrushId, string SurfaceId, float Distance);
 
-internal static class BrushSurfaceHitTester
+public static class BrushSurfaceHitTester
 {
     public static BrushSurfaceHit? HitTest(ViewportRay ray, IEnumerable<Brush> brushes)
     {

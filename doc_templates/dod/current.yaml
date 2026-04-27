@@ -1,19 +1,28 @@
-status: Complete.
-title: Example Project
+status: Complete
+title: Avalonia Production Texture Browser And Close Stability
 delivery_summary:
-- Delivered revision 1 with acceptance confirmed.
+  - Fixed close handling to use async confirmation and GL-context deinit cleanup.
+  - Replaced the temporary texture strip with a material browser and inspector.
+  - Added material metadata and built-in animated water/lava materials.
+  - Added shader-driven animated water/lava preview in the perspective viewport.
 requirements_coverage:
-- Required phases complete with structured outputs.
-- Review, testing, and DoD gates pass.
+  - FR-1 through FR-7 covered by implementation.
 what_was_built:
-- Prepared development revision 1.
-- Worked from the compact task brief and relevant upstream artifacts only.
+  - Material collections/search/type/animated filter UI.
+  - Selected-material inspector and apply actions.
+  - Procedural water/lava descriptors and texture generation.
+  - Perspective shader UV flow/pulse animation.
+  - Async close confirmation plus viewport renderer cleanup hooks.
 what_was_verified:
-- Automated validation passed.
+  - dotnet build shooter.slnx succeeded.
+  - Avalonia app launched from repository root without immediate exceptions.
+  - VS Code diagnostics found no errors in touched files.
 automated_regression_coverage:
-- Automated validation executed by tester.
+  - Not added; user requested no tests.
 acceptance_test_coverage:
-- All functional and non-functional acceptance criteria are satisfied.
-known_gaps_or_risks: []
+  - Build and startup acceptance verified.
+known_gaps_or_risks:
+  - Manual close/apply interaction still needs hands-on UI confirmation.
+  - Water/lava art is procedural until dedicated assets are added.
 decision: Accepted for user review.
 user_feedback_needed: []

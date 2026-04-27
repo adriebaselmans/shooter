@@ -1,6 +1,6 @@
 namespace MapEditor.App;
 
-internal enum EditorShortcutAction
+public enum EditorShortcutAction
 {
     NewFile,
     OpenFile,
@@ -15,7 +15,7 @@ internal enum EditorShortcutAction
     SelectTool
 }
 
-internal interface IEditorShortcutTarget
+public interface IEditorShortcutTarget
 {
     bool TryExecuteShortcut(EditorShortcutAction action, object? parameter = null);
 }

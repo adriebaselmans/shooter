@@ -1,0 +1,12 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:MapEditor.App.Avalonia.Converters"
+             x:Class="MapEditor.App.Avalonia.App"
+             RequestedThemeVariant="Dark">
+  <Application.Resources>
+    <converters:FilePathToBitmapConverter x:Key="FilePathToBitmap" />
+  </Application.Resources>
+  <Application.Styles>
+    <FluentTheme />
+  </Application.Styles>
+</Application>

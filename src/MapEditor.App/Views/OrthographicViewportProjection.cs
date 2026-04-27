@@ -1,12 +1,12 @@
+using MapEditor.App.Tools;
 using MapEditor.Rendering.Cameras;
 using System.Numerics;
-using System.Windows;
 
 namespace MapEditor.App.Views;
 
-internal static class OrthographicViewportProjection
+public static class OrthographicViewportProjection
 {
-    public static Vector3 Project(Point position, OrthographicCamera camera, int pixelWidth, int pixelHeight, ViewAxis axis)
+    public static Vector3 Project(ViewportPoint position, OrthographicCamera camera, int pixelWidth, int pixelHeight, ViewAxis axis)
     {
         float aspect = (float)pixelWidth / pixelHeight;
         float halfHeight = camera.Zoom;

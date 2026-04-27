@@ -1,0 +1,263 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:views="clr-namespace:MapEditor.App.Avalonia.Views"
+        x:Class="MapEditor.App.Avalonia.MainWindow"
+        Title="{Binding WindowTitle}"
+        Width="1400"
+        Height="900"
+        MinWidth="900"
+        MinHeight="600">
+  <Window.Styles>
+    <Style Selector="Window">
+      <Setter Property="Background" Value="#1E1E1E" />
+      <Setter Property="Foreground" Value="#CCCCCC" />
+      <Setter Property="FontFamily" Value="Inter" />
+    </Style>
+    <Style Selector="Button.toolbar">
+      <Setter Property="Background" Value="#3A3A3D" />
+      <Setter Property="Foreground" Value="#D8D8D8" />
+      <Setter Property="BorderBrush" Value="#4A4A4E" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="8,5" />
+      <Setter Property="MinWidth" Value="38" />
+      <Setter Property="Margin" Value="0,0,6,0" />
+    </Style>
+    <Style Selector="ToggleButton.tooltoggle">
+      <Setter Property="Background" Value="#3A3A3D" />
+      <Setter Property="Foreground" Value="#D8D8D8" />
+      <Setter Property="BorderBrush" Value="#4A4A4E" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="8,5" />
+      <Setter Property="MinWidth" Value="44" />
+      <Setter Property="Margin" Value="0,0,4,0" />
+    </Style>
+    <Style Selector="TextBlock.panel-title">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,0,0,8" />
+    </Style>
+    <Style Selector="TextBlock.micro-label">
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="Foreground" Value="#8F8F95" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Border.material-card">
+      <Setter Property="Width" Value="132" />
+      <Setter Property="MinHeight" Value="138" />
+      <Setter Property="Margin" Value="0,0,8,8" />
+      <Setter Property="Padding" Value="6" />
+      <Setter Property="Background" Value="#252526" />
+      <Setter Property="BorderBrush" Value="#3F3F46" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="Button.texture-action">
+      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="Padding" Value="10,4" />
+      <Setter Property="Margin" Value="0,0,6,6" />
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="Auto,Auto,*,24">
+    <Menu Grid.Row="0" Background="#2D2D30" Foreground="#CCCCCC">
+      <MenuItem Header="_File">
+        <MenuItem Header="_New" Command="{Binding NewFileCommand}" InputGesture="Ctrl+N" />
+        <MenuItem Header="_Open..." Command="{Binding OpenFileCommand}" InputGesture="Ctrl+O" />
+        <Separator />
+        <MenuItem Header="_Save" Command="{Binding SaveFileCommand}" InputGesture="Ctrl+S" />
+        <MenuItem Header="Save _As..." Command="{Binding SaveFileAsCommand}" />
+        <Separator />
+        <MenuItem Header="_Exit" Click="OnExitClick" />
+      </MenuItem>
+      <MenuItem Header="_Edit">
+        <MenuItem Header="_Undo" Command="{Binding UndoCommand}" InputGesture="Ctrl+Z" />
+        <MenuItem Header="_Redo" Command="{Binding RedoCommand}" InputGesture="Ctrl+Y" />
+        <MenuItem Header="_Copy" Command="{Binding CopySelectedBrushCommand}" InputGesture="Ctrl+C" />
+        <MenuItem Header="_Paste" Command="{Binding PasteBrushCommand}" InputGesture="Ctrl+V" />
+        <Separator />
+        <MenuItem Header="_Delete" Command="{Binding DeleteSelectedCommand}" InputGesture="Delete" />
+      </MenuItem>
+      <MenuItem Header="_View">
+        <MenuItem Header="Reset Camera" Click="OnResetCameraClick" />
+        <MenuItem Header="Restore 4-View" Click="OnRestoreViewportLayoutClick" />
+        <MenuItem Header="Materials Library" Command="{Binding ToggleTextureBrowserCommand}" />
+      </MenuItem>
+      <MenuItem Header="_Boolean">
+        <MenuItem Header="_Subtract From Intersections" Command="{Binding SubtractSelectedBoxesCommand}" />
+        <MenuItem Header="_Merge Selected" Command="{Binding MergeSelectedBoxesCommand}" />
+      </MenuItem>
+      <MenuItem Header="_Help" />
+    </Menu>
+
+    <Border Grid.Row="1" Background="#2D2D30" BorderBrush="#3F3F46" BorderThickness="0,0,0,1" Padding="4,3">
+      <StackPanel Orientation="Horizontal">
+        <Button Classes="toolbar" Content="New" Command="{Binding NewFileCommand}" />
+        <Button Classes="toolbar" Content="Open" Command="{Binding OpenFileCommand}" />
+        <Button Classes="toolbar" Content="Save" Command="{Binding SaveFileCommand}" />
+        <Button Classes="toolbar" Content="Undo" Command="{Binding UndoCommand}" />
+        <Button Classes="toolbar" Content="Redo" Command="{Binding RedoCommand}" />
+        <Border Width="1" Background="#4A4A4E" Margin="4,0,8,0" />
+        <Button Classes="toolbar" Content="Materials Library" Command="{Binding ToggleTextureBrowserCommand}" />
+      </StackPanel>
+    </Border>
+
+    <Grid Grid.Row="2" ColumnDefinitions="64,*,5,320">
+      <Border Grid.Column="0" Background="#252526" BorderBrush="#3F3F46" BorderThickness="0,0,1,0" Padding="6">
+        <StackPanel Spacing="6">
+          <TextBlock Classes="micro-label" Text="TOOLS" HorizontalAlignment="Center" />
+          <ToggleButton Classes="tooltoggle" Content="Box" IsChecked="{Binding IsBoxBrushToolActive, Mode=OneWay}" Click="OnBrushPrimitiveClick" Tag="Box" Margin="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+          <ToggleButton Classes="tooltoggle" Content="Cyl" IsChecked="{Binding IsCylinderBrushToolActive, Mode=OneWay}" Click="OnBrushPrimitiveClick" Tag="Cylinder" Margin="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+          <ToggleButton Classes="tooltoggle" Content="Cone" IsChecked="{Binding IsConeBrushToolActive, Mode=OneWay}" Click="OnBrushPrimitiveClick" Tag="Cone" Margin="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+          <ToggleButton Classes="tooltoggle" Content="Wdg" IsChecked="{Binding IsWedgeBrushToolActive, Mode=OneWay}" Click="OnBrushPrimitiveClick" Tag="Wedge" Margin="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+          <Border Height="1" Background="#4A4A4E" Margin="0,4" />
+          <TextBlock Classes="micro-label" Text="CSG" HorizontalAlignment="Center" />
+          <Button Classes="toolbar" Content="Sub" Command="{Binding SubtractSelectedBoxesCommand}" Margin="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+          <Button Classes="toolbar" Content="Mrg" Command="{Binding MergeSelectedBoxesCommand}" Margin="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+        </StackPanel>
+      </Border>
+
+      <Grid Grid.Column="1">
+        <Grid x:Name="ViewportContainer" RowDefinitions="*,5,*" ColumnDefinitions="*,5,*">
+          <views:ViewportPanel x:Name="ViewportTop" Grid.Row="0" Grid.Column="0" ViewportLabel="Top" />
+          <GridSplitter x:Name="ViewportColumnSplitter" Grid.Row="0" Grid.RowSpan="3" Grid.Column="1" Background="#3F3F46" ResizeDirection="Columns" />
+          <views:ViewportPanel x:Name="ViewportPersp" Grid.Row="0" Grid.Column="2" ViewportLabel="Perspective" />
+          <GridSplitter x:Name="ViewportRowSplitter" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Background="#3F3F46" ResizeDirection="Rows" />
+          <views:ViewportPanel x:Name="ViewportFront" Grid.Row="2" Grid.Column="0" ViewportLabel="Front" />
+          <views:ViewportPanel x:Name="ViewportSide" Grid.Row="2" Grid.Column="2" ViewportLabel="Side" />
+        </Grid>
+        
+        <Border HorizontalAlignment="Right" VerticalAlignment="Top" Background="#BB1E1E1E" BorderBrush="#3F3F46" BorderThickness="1" CornerRadius="4" Padding="4" Margin="10">
+          <StackPanel Orientation="Horizontal" Spacing="2">
+            <RadioButton Content="3D" Classes="tooltoggle" GroupName="ViewToggle" Tag="ViewportPersp" Click="OnViewToggleClick" />
+            <RadioButton Content="Top" Classes="tooltoggle" GroupName="ViewToggle" Tag="ViewportTop" Click="OnViewToggleClick" />
+            <RadioButton Content="Fnt" Classes="tooltoggle" GroupName="ViewToggle" Tag="ViewportFront" Click="OnViewToggleClick" />
+            <RadioButton Content="Sid" Classes="tooltoggle" GroupName="ViewToggle" Tag="ViewportSide" Click="OnViewToggleClick" />
+            <Border Width="1" Background="#4A4A4E" Margin="4,0,8,0" />
+            <ToggleButton Content="Split" Classes="tooltoggle" Margin="0" x:Name="SplitViewToggle" IsChecked="True" Click="OnRestoreViewportLayoutClick" />
+          </StackPanel>
+        </Border>
+
+      </Grid>
+      <GridSplitter Grid.Column="2" Background="#3F3F46" ResizeDirection="Columns" />
+      <ScrollViewer Grid.Column="3" Background="#252526">
+        <StackPanel Margin="10" Spacing="10">
+          <TextBlock Classes="panel-title" Text="Outliner &amp; Properties" />
+          
+          <Expander Header="Scene Hierarchy" IsExpanded="True" MaxHeight="250">
+            <ListBox ItemsSource="{Binding Outliner.Items}" SelectedValue="{Binding Outliner.SelectedEntityId}" SelectedValueBinding="{Binding Id}" Margin="0,8,0,0">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <StackPanel>
+                    <TextBlock Text="{Binding Name}" />
+                    <TextBlock Text="{Binding Kind}" FontSize="11" Opacity="0.7" />
+                  </StackPanel>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </Expander>
+          <StackPanel IsVisible="{Binding Properties.HasEntity}" Spacing="10">
+            <StackPanel Spacing="2">
+              <TextBlock Text="{Binding Properties.EntityName}" FontWeight="SemiBold" />
+              <TextBlock Text="{Binding Properties.EntityKind}" FontSize="11" Opacity="0.7" />
+            </StackPanel>
+
+            <Expander Header="Brush Details" IsExpanded="True" IsVisible="{Binding Properties.CanEditTexturing}">
+              <StackPanel Spacing="6" Margin="0,8,0,0">
+                <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto">
+                  <TextBlock Text="Geometry" Margin="0,0,8,4" />
+                  <TextBlock Grid.Column="1" Text="{Binding Properties.GeometryState}" Opacity="0.7" />
+                  <TextBlock Grid.Row="1" Text="Faces" Margin="0,0,8,4" />
+                  <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Properties.FaceCountText}" Opacity="0.7" />
+                  <TextBlock Grid.Row="2" Text="Materials" Margin="0,0,8,0" />
+                  <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Properties.MaterialSummary}" TextWrapping="Wrap" Opacity="0.7" />
+                </Grid>
+              </StackPanel>
+            </Expander>
+
+            <Expander Header="Transform" IsExpanded="True">
+              <StackPanel Spacing="6" Margin="0,8,0,0">
+                <TextBlock Text="Position" />
+                <TextBox Text="{Binding Properties.PositionText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding Properties.CanEditTransform}" KeyDown="OnPropertyEditorKeyDown" LostFocus="OnPropertyEditorLostFocus" />
+                <TextBlock Text="Rotation" />
+                <TextBox Text="{Binding Properties.RotationText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding Properties.CanEditTransform}" KeyDown="OnPropertyEditorKeyDown" LostFocus="OnPropertyEditorLostFocus" />
+                <TextBlock Text="Scale" />
+                <TextBox Text="{Binding Properties.ScaleText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding Properties.CanEditTransform}" KeyDown="OnPropertyEditorKeyDown" LostFocus="OnPropertyEditorLostFocus" />
+              </StackPanel>
+            </Expander>
+
+            <Expander Header="Texturing" IsExpanded="True" IsVisible="{Binding Properties.CanEditTexturing}">
+              <StackPanel Spacing="8" Margin="0,8,0,0">
+                <Border Background="#1F1F22" BorderBrush="#3F3F46" BorderThickness="1" Padding="8">
+                  <Grid ColumnDefinitions="56,*" RowDefinitions="Auto,Auto">
+                    <Border Width="48" Height="48" Background="{Binding SelectedTextureEntry.AverageColorHex}" BorderBrush="#56565C" BorderThickness="1" Margin="0,0,8,0">
+                      <Image Source="{Binding SelectedTextureEntry.PreviewPath, Converter={StaticResource FilePathToBitmap}}" Stretch="Fill" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Spacing="2">
+                      <TextBlock Text="{Binding SelectedTextureEntry.DisplayName, TargetNullValue=No material selected}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Text="{Binding SelectedTextureEntry.Category}" FontSize="10" Opacity="0.7" />
+                      <WrapPanel>
+                        <TextBlock Text="{Binding SelectedTextureEntry.KindLabel}" FontSize="10" Foreground="#8FB6F2" Margin="0,0,8,0" />
+                        <TextBlock Text="{Binding SelectedTextureEntry.AnimationLabel}" FontSize="10" Foreground="#D58B55" />
+                      </WrapPanel>
+                    </StackPanel>
+                    <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding SelectedTextureEntry.UsageHint}" TextWrapping="Wrap" FontSize="10" Opacity="0.72" Margin="0,8,0,0" />
+                  </Grid>
+                </Border>
+
+                <WrapPanel>
+                  <Button Classes="texture-action" Content="Apply Brush" Command="{Binding ApplySelectedTextureToBrushCommand}" />
+                  <Button Classes="texture-action" Content="Apply Faces" Command="{Binding ApplySelectedTextureToSelectedSurfacesCommand}" />
+                  <Button Classes="texture-action" Content="Animated" Command="{Binding ShowAnimatedTexturesCommand}" />
+                </WrapPanel>
+
+                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                  <TextBlock Classes="micro-label" Text="BRUSH" />
+                  <TextBlock Grid.Column="1" Classes="micro-label" Text="FACES" />
+                  <TextBox Grid.Row="1" Text="{Binding Properties.BrushTextureKey}" IsReadOnly="True" Margin="0,2,4,0" />
+                  <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Properties.SelectedSurfaceSummary}" FontSize="11" Opacity="0.8" TextWrapping="Wrap" Margin="4,4,0,0" />
+                </Grid>
+                <ItemsControl ItemsSource="{Binding Properties.SurfaceChips}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <WrapPanel />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <ToggleButton Content="{Binding DisplayName}" Tag="{Binding SurfaceId}" IsChecked="{Binding IsSelected, Mode=OneWay}" Click="OnSurfaceChipClick" Margin="0,0,6,6" MinWidth="54" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="Offset" />
+                <Grid ColumnDefinitions="*,8,*">
+                  <TextBox Grid.Column="0" Text="{Binding Properties.SurfaceOffsetUText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding Properties.CanEditSurfaceMapping}" KeyDown="OnSurfaceMappingEditorKeyDown" LostFocus="OnSurfaceMappingEditorLostFocus" />
+                  <TextBox Grid.Column="2" Text="{Binding Properties.SurfaceOffsetVText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding Properties.CanEditSurfaceMapping}" KeyDown="OnSurfaceMappingEditorKeyDown" LostFocus="OnSurfaceMappingEditorLostFocus" />
+                </Grid>
+                <TextBlock Text="Scale" />
+                <Grid ColumnDefinitions="*,8,*">
+                  <TextBox Grid.Column="0" Text="{Binding Properties.SurfaceScaleUText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding Properties.CanEditSurfaceMapping}" KeyDown="OnSurfaceMappingEditorKeyDown" LostFocus="OnSurfaceMappingEditorLostFocus" />
+                  <TextBox Grid.Column="2" Text="{Binding Properties.SurfaceScaleVText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding Properties.CanEditSurfaceMapping}" KeyDown="OnSurfaceMappingEditorKeyDown" LostFocus="OnSurfaceMappingEditorLostFocus" />
+                </Grid>
+                <TextBlock Text="Rotation" />
+                <TextBox Text="{Binding Properties.SurfaceRotationText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding Properties.CanEditSurfaceMapping}" KeyDown="OnSurfaceMappingEditorKeyDown" LostFocus="OnSurfaceMappingEditorLostFocus" />
+                <CheckBox Content="Texture lock" IsChecked="{Binding Properties.TextureLockEnabled}" IsEnabled="{Binding Properties.CanEditSurfaceMapping}" Checked="OnTextureLockChanged" Unchecked="OnTextureLockChanged" />
+                <WrapPanel>
+                  <Button Content="Fit" Command="{Binding FitSelectedSurfaceMappingsCommand}" Margin="0,0,6,6" />
+                  <Button Content="Reset" Command="{Binding ResetSelectedSurfaceMappingsCommand}" Margin="0,0,0,6" />
+                </WrapPanel>
+              </StackPanel>
+            </Expander>
+          </StackPanel>
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+
+    <Border Grid.Row="3" Background="#007ACC" Padding="8,2">
+      <Grid ColumnDefinitions="Auto,Auto,Auto,*">
+        <TextBlock Grid.Column="0" Text="{Binding StatusBar.ActiveTool, StringFormat='Tool: {0}'}" Margin="0,0,18,0" />
+        <TextBlock Grid.Column="1" Text="{Binding StatusBar.BrushCount, StringFormat='Brushes: {0}'}" Margin="0,0,18,0" />
+        <TextBlock Grid.Column="2" Text="{Binding StatusBar.CursorPos}" Margin="0,0,18,0" />
+        <TextBlock Grid.Column="3" Text="{Binding StatusBar.Message}" />
+      </Grid>
+    </Border>
+  </Grid>
+</Window>

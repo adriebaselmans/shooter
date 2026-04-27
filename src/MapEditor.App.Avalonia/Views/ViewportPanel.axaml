@@ -1,0 +1,38 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:MapEditor.App.Avalonia.Views"
+             x:Class="MapEditor.App.Avalonia.Views.ViewportPanel">
+  <Grid Background="#1E1E1E" RowDefinitions="22,*">
+    <Border Grid.Row="0"
+            Background="#2D2D30"
+            BorderBrush="#3F3F46"
+            BorderThickness="0,0,0,1"
+            PointerPressed="OnHeaderPointerPressed">
+      <DockPanel>
+        <Button x:Name="LayoutToggleButton"
+                DockPanel.Dock="Right"
+                Width="44"
+                Padding="4,0"
+                FontSize="10"
+                Content="Max"
+                Click="OnLayoutToggleClick" />
+        <TextBlock Foreground="#CCCCCC"
+                   FontSize="11"
+                   Padding="8,3"
+                   VerticalAlignment="Center"
+                   Text="{Binding ViewportLabel, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+      </DockPanel>
+    </Border>
+    <Grid Grid.Row="1">
+      <local:AvaloniaGlViewportHost x:Name="GlHost" />
+      <Border x:Name="InputSurface"
+              Background="Transparent"
+              Focusable="True"
+              PointerPressed="OnViewportPointerPressed"
+              PointerReleased="OnViewportPointerReleased"
+              PointerMoved="OnViewportPointerMoved"
+              PointerWheelChanged="OnViewportPointerWheelChanged"
+              PointerExited="OnViewportPointerExited" />
+    </Grid>
+  </Grid>
+</UserControl>

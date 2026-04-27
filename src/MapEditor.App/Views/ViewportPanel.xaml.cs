@@ -64,7 +64,7 @@ public partial class ViewportPanel : UserControl
     private Func<BrushOperation>? _brushOperationProvider;
     private EditorViewportKind _viewportKind;
     private ViewAxis? _viewAxis;
-    private Point _lastPointerPosition;
+    private ViewportPoint _lastPointerPosition;
     private CameraDragMode _cameraDragMode;
 
     public ViewportPanel()
@@ -305,7 +305,7 @@ public partial class ViewportPanel : UserControl
             return;
         }
 
-        keyEvent.Handled = window.TryHandleEditorShortcut(keyEvent.Key, keyEvent.Modifiers, this);
+        keyEvent.Handled = window.TryHandleEditorShortcut(keyEvent.Key, keyEvent.Modifiers, isTextEditingSource: false);
     }
 
     private ToolContext BuildToolContext()
@@ -345,7 +345,7 @@ public partial class ViewportPanel : UserControl
         }
     }
 
-    private void UpdateCursorStatus(Point position)
+    private void UpdateCursorStatus(ViewportPoint position)
     {
         if (_statusBarViewModel is null)
         {
@@ -479,7 +479,7 @@ public partial class ViewportPanel : UserControl
         return false;
     }
 
-    private void PanPerspectiveCamera(System.Windows.Vector delta)
+    private void PanPerspectiveCamera(ViewportVector delta)
     {
         if (_perspRenderer is null)
         {
@@ -505,14 +505,14 @@ public partial class ViewportPanel : UserControl
         camera.Pan((-right * (float)delta.X + up * (float)delta.Y) * scale);
     }
 
-    private Vector3? TryGetWorldPoint(Point position)
+    private Vector3? TryGetWorldPoint(ViewportPoint position)
     {
         return _viewAxis is not null
             ? TryGetOrthographicWorldPoint(position, _viewAxis.Value)
             : TryGetPerspectiveGroundPoint(position);
     }
 
-    private Vector3? TryGetOrthographicWorldPoint(Point position, ViewAxis axis)
+    private Vector3? TryGetOrthographicWorldPoint(ViewportPoint position, ViewAxis axis)
     {
         if (_orthoRenderer is null || GlHost.PixelWidth <= 0 || GlHost.PixelHeight <= 0)
         {
@@ -527,7 +527,7 @@ public partial class ViewportPanel : UserControl
             axis);
     }
 
-    private Vector3? TryGetPerspectiveGroundPoint(Point position)
+    private Vector3? TryGetPerspectiveGroundPoint(ViewportPoint position)
     {
         if (_perspRenderer is null || GlHost.PixelWidth <= 0 || GlHost.PixelHeight <= 0)
         {
@@ -538,7 +538,7 @@ public partial class ViewportPanel : UserControl
         return IntersectPlane(ray, Vector3.UnitY, Vector3.Zero);
     }
 
-    private ViewportRay CreatePerspectiveRay(Point position)
+    private ViewportRay CreatePerspectiveRay(ViewportPoint position)
     {
         var camera = _perspRenderer!.Camera;
         float aspect = (float)GlHost.PixelWidth / Math.Max(1, GlHost.PixelHeight);
@@ -557,7 +557,7 @@ public partial class ViewportPanel : UserControl
         return new ViewportRay(camera.Position, direction);
     }
 
-    private Guid? HitTestEntity(Point position)
+    private Guid? HitTestEntity(ViewportPoint position)
     {
         if (_sceneService is null)
         {
@@ -569,7 +569,7 @@ public partial class ViewportPanel : UserControl
             : HitTestPerspectiveBrush(position);
     }
 
-    private Guid? HitTestOrthographicBrush(Point position, ViewAxis axis)
+    private Guid? HitTestOrthographicBrush(ViewportPoint position, ViewAxis axis)
     {
         var worldPoint = TryGetOrthographicWorldPoint(position, axis);
         if (worldPoint is null)
@@ -613,7 +613,7 @@ public partial class ViewportPanel : UserControl
         return null;
     }
 
-    private Guid? HitTestPerspectiveBrush(Point position)
+    private Guid? HitTestPerspectiveBrush(ViewportPoint position)
     {
         if (_perspRenderer is null)
         {

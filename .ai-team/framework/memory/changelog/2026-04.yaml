@@ -39,3 +39,57 @@
   action: created
   target: wiki/incidents/known-gotchas
   summary: "Migrated known gotchas and pitfalls from memory.md"
+
+- ts: 2026-04-26T18:45:00Z
+  role: coordinator
+  action: created
+  target: wiki/decisions/avalonia-primary-editor
+  summary: "Recorded Avalonia as the primary editor shell"
+
+- ts: 2026-04-26T18:45:00Z
+  role: coordinator
+  action: created
+  target: wiki/architecture/viewport-hosting
+  summary: "Documented the Avalonia OpenGL viewport host"
+
+- ts: 2026-04-26T18:45:00Z
+  role: coordinator
+  action: created
+  target: wiki/context/active-editor-runtime
+  summary: "Recorded the active startup/build/runtime path"
+
+- ts: 2026-04-26T18:45:00Z
+  role: coordinator
+  action: updated
+  target: wiki/architecture/module-boundaries
+  summary: "Updated module ownership for Avalonia primary app"
+
+- ts: 2026-04-26T18:45:00Z
+  role: coordinator
+  action: updated
+  target: wiki/context/implementation-history
+  summary: "Added Avalonia migration milestones to history"
+
+- ts: 2026-04-26T19:20:00Z
+  role: developer
+  action: updated
+  target: wiki/architecture/viewport-hosting
+  summary: "Recorded overlay-based Avalonia viewport input routing"
+
+- ts: 2026-04-26T20:00:00Z
+  role: developer
+  action: created
+  target: wiki/architecture/material-browser-and-animation
+  summary: "Recorded material browser and animated texture architecture"
+
+- ts: 2026-04-26T20:30:00Z
+  role: developer
+  action: updated
+  target: wiki/architecture/material-browser-and-animation
+  summary: "Recorded ambientCG CC0 texture pack integration"
+
+- ts: 2026-04-26T20:45:00Z
+  role: developer
+  action: updated
+  target: wiki/architecture/material-browser-and-animation
+  summary: "Removed ambientCG pack references after user rejection"

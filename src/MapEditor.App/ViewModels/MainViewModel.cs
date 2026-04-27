@@ -7,9 +7,8 @@ using MapEditor.Core.Entities;
 using MapEditor.Core.Geometry;
 using MapEditor.Core;
 using MapEditor.Formats;
-using Microsoft.Win32;
+using System.Collections.ObjectModel;
 using System.Numerics;
-using System.Windows;
 
 namespace MapEditor.App.ViewModels;
 
@@ -26,6 +25,8 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
     private readonly BrushClipboardService _brushClipboardService;
     private readonly TextureLibraryService _textureLibraryService;
     private readonly SessionLogService _sessionLogService;
+    private readonly IEditorFileDialogService _fileDialogService;
+    private readonly IEditorMessageService _messageService;
     private readonly SceneOutlinerViewModel _outlinerVm;
     private readonly PropertiesViewModel _propertiesVm;
     private readonly StatusBarViewModel _statusBarVm;
@@ -41,7 +42,15 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
     [ObservableProperty] private BrushOperation _newBrushOperation = BrushOperation.Additive;
     [ObservableProperty] private string? _selectedTextureKey;
     [ObservableProperty] private string _textureSearchText = string.Empty;
-    [ObservableProperty] private bool _isTextureBrowserVisible = true;
+    [ObservableProperty] private string _selectedTextureCategory = "All";
+    [ObservableProperty] private string _selectedTextureKindFilter = "All";
+    [ObservableProperty] private bool _showAnimatedTexturesOnly;
+    [ObservableProperty] private bool _isTextureBrowserVisible;
+    [ObservableProperty] private TextureAssetProviderDescriptor? _selectedOnlineTextureProvider;
+    [ObservableProperty] private string _onlineTextureSearchText = "wood";
+    [ObservableProperty] private ExternalTextureSearchResult? _selectedOnlineTextureResult;
+    [ObservableProperty] private bool _isOnlineTextureBusy;
+    [ObservableProperty] private string _onlineTextureStatus = "Search CC0 online libraries, then import only the materials you choose.";
 
     public SceneService SceneService => _sceneService;
     public ActiveToolService ActiveToolService => _activeToolService;
@@ -52,14 +61,18 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
     public SurfaceSelectionService SurfaceSelectionService => _surfaceSelectionService;
     public TextureLibraryService TextureLibrary => _textureLibraryService;
     public IReadOnlyList<TextureLibraryEntry> AvailableTextures => _textureLibraryService.Entries;
+    public IReadOnlyList<TextureAssetProviderDescriptor> TextureAssetProviders => _textureLibraryService.TextureAssetProviders;
+    public ObservableCollection<ExternalTextureSearchResult> OnlineTextureResults { get; } = [];
+    public IReadOnlyList<string> TextureCategories =>
+        ["All", .. AvailableTextures.Select(entry => entry.Category).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(category => category, StringComparer.OrdinalIgnoreCase)];
+    public IReadOnlyList<string> TextureKindFilters =>
+        ["All", .. AvailableTextures.Select(entry => entry.KindLabel).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(kind => kind, StringComparer.OrdinalIgnoreCase)];
+    public IReadOnlyList<TextureLibraryEntry> AnimatedTextures =>
+        AvailableTextures.Where(entry => entry.IsAnimated).ToArray();
     public IReadOnlyList<TextureLibraryEntry> FilteredTextures =>
-        string.IsNullOrWhiteSpace(TextureSearchText)
-            ? AvailableTextures
-            : AvailableTextures
-                .Where(entry =>
-                    entry.DisplayName.Contains(TextureSearchText, StringComparison.OrdinalIgnoreCase) ||
-                    entry.Key.Contains(TextureSearchText, StringComparison.OrdinalIgnoreCase))
-                .ToArray();
+        AvailableTextures
+            .Where(MatchesTextureFilters)
+            .ToArray();
     public TextureLibraryEntry? SelectedTextureEntry =>
         AvailableTextures.FirstOrDefault(entry => string.Equals(entry.Key, SelectedTextureKey, StringComparison.OrdinalIgnoreCase));
     public bool IsSelectToolActive => _activeToolService.CurrentToolKind == EditorToolKind.Select;
@@ -83,6 +96,8 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         BrushClipboardService brushClipboardService,
         TextureLibraryService textureLibraryService,
         SessionLogService sessionLogService,
+        IEditorFileDialogService fileDialogService,
+        IEditorMessageService messageService,
         SceneOutlinerViewModel outlinerVm,
         PropertiesViewModel propertiesVm,
         StatusBarViewModel statusBarVm)
@@ -95,6 +110,8 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         _brushClipboardService = brushClipboardService;
         _textureLibraryService = textureLibraryService;
         _sessionLogService = sessionLogService;
+        _fileDialogService = fileDialogService;
+        _messageService = messageService;
         _outlinerVm = outlinerVm;
         _propertiesVm = propertiesVm;
         _statusBarVm = statusBarVm;
@@ -103,12 +120,29 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         _selectionService.SelectionChanged += OnSelectionChanged;
         _surfaceSelectionService.SelectionChanged += OnSurfaceSelectionChanged;
         _activeToolService.ToolChanged += OnToolChanged;
+        _textureLibraryService.LibraryChanged += OnTextureLibraryChanged;
 
         _outlinerVm.Refresh(_sceneService.Scene);
         _statusBarVm.BrushCount = _sceneService.Scene.Brushes.Count;
         SelectedTextureKey = AvailableTextures.FirstOrDefault()?.Key;
+        SelectedOnlineTextureProvider = TextureAssetProviders.FirstOrDefault();
         RefreshSelectionDetails();
         OnToolChanged(this, _activeToolService.CurrentToolKind);
+    }
+
+    private void OnTextureLibraryChanged(object? sender, EventArgs e)
+    {
+        OnPropertyChanged(nameof(AvailableTextures));
+        OnPropertyChanged(nameof(TextureAssetProviders));
+        OnPropertyChanged(nameof(TextureCategories));
+        OnPropertyChanged(nameof(TextureKindFilters));
+        OnPropertyChanged(nameof(FilteredTextures));
+        OnPropertyChanged(nameof(AnimatedTextures));
+        OnPropertyChanged(nameof(SelectedTextureEntry));
+        if (SelectedTextureEntry is null)
+        {
+            SelectedTextureKey = AvailableTextures.FirstOrDefault()?.Key;
+        }
     }
 
     private void OnSceneChanged(object? sender, EventArgs e)
@@ -194,26 +228,25 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
     private async Task OpenFileAsync()
     {
         if (!ConfirmDiscard()) return;
-        var dlg = new OpenFileDialog { Filter = "MapEditor Map|*.shmap|All Files|*.*" };
-        if (dlg.ShowDialog() != true) return;
+        var filePath = await _fileDialogService.ShowOpenMapDialogAsync();
+        if (string.IsNullOrWhiteSpace(filePath)) return;
 
         try
         {
-            var scene = await _mapFileService.LoadAsync(dlg.FileName);
+            var scene = await _mapFileService.LoadAsync(filePath);
             _sceneService.ReplaceScene(scene);
             _selectionService.Clear();
             _surfaceSelectionService.Clear();
             _activeToolService.SetTool(EditorToolKind.Select);
-            _filePath = dlg.FileName;
+            _filePath = filePath;
             _isDirty  = false;
             UpdateTitle();
             _statusBarVm.Message = $"Opened {System.IO.Path.GetFileName(_filePath)}";
         }
         catch (Exception ex)
         {
-            _sessionLogService.WriteException("OpenFileAsync", ex, dlg.FileName);
-            MessageBox.Show($"Failed to open file:\n{ex.Message}", "Open Error",
-                MessageBoxButton.OK, MessageBoxImage.Error);
+            _sessionLogService.WriteException("OpenFileAsync", ex, filePath);
+            await _messageService.ShowErrorAsync("Open Error", $"Failed to open file:\n{ex.Message}");
         }
     }
 
@@ -227,10 +260,10 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
     [RelayCommand]
     private async Task SaveFileAsAsync()
     {
-        var dlg = new SaveFileDialog { Filter = "MapEditor Map|*.shmap|All Files|*.*", DefaultExt = ".shmap" };
-        if (dlg.ShowDialog() != true) return;
-        await DoSaveAsync(dlg.FileName);
-        _filePath = dlg.FileName;
+        var filePath = await _fileDialogService.ShowSaveMapDialogAsync(_filePath ?? "Untitled.shmap");
+        if (string.IsNullOrWhiteSpace(filePath)) return;
+        await DoSaveAsync(filePath);
+        _filePath = filePath;
         UpdateTitle();
     }
 
@@ -247,8 +280,7 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         catch (Exception ex)
         {
             _sessionLogService.WriteException("DoSaveAsync", ex, path);
-            MessageBox.Show($"Failed to save file:\n{ex.Message}", "Save Error",
-                MessageBoxButton.OK, MessageBoxImage.Error);
+            await _messageService.ShowErrorAsync("Save Error", $"Failed to save file:\n{ex.Message}");
         }
     }
 
@@ -615,12 +647,156 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
     partial void OnTextureSearchTextChanged(string value) =>
         OnPropertyChanged(nameof(FilteredTextures));
 
+    partial void OnSelectedTextureCategoryChanged(string value) =>
+        RefreshTextureFilters();
+
+    partial void OnSelectedTextureKindFilterChanged(string value) =>
+        RefreshTextureFilters();
+
+    partial void OnShowAnimatedTexturesOnlyChanged(bool value) =>
+        RefreshTextureFilters();
+
+    partial void OnSelectedOnlineTextureProviderChanged(TextureAssetProviderDescriptor? value)
+    {
+        SearchOnlineTexturesCommand.NotifyCanExecuteChanged();
+        ImportSelectedOnlineTextureCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnSelectedOnlineTextureResultChanged(ExternalTextureSearchResult? value) =>
+        ImportSelectedOnlineTextureCommand.NotifyCanExecuteChanged();
+
+    partial void OnIsOnlineTextureBusyChanged(bool value)
+    {
+        SearchOnlineTexturesCommand.NotifyCanExecuteChanged();
+        ImportSelectedOnlineTextureCommand.NotifyCanExecuteChanged();
+    }
+
     [RelayCommand]
     private void ToggleTextureBrowser()
     {
         IsTextureBrowserVisible = !IsTextureBrowserVisible;
         _statusBarVm.Message = IsTextureBrowserVisible ? "Texture browser shown." : "Texture browser hidden.";
     }
+
+    [RelayCommand]
+    private void ShowAnimatedTextures()
+    {
+        IsTextureBrowserVisible = true;
+        ShowAnimatedTexturesOnly = true;
+        SelectedTextureCategory = "All";
+        SelectedTextureKindFilter = "All";
+        _statusBarVm.Message = "Showing animated built-in materials.";
+    }
+
+    private bool MatchesTextureFilters(TextureLibraryEntry entry)
+    {
+        if (ShowAnimatedTexturesOnly && !entry.IsAnimated)
+        {
+            return false;
+        }
+
+        if (!string.Equals(SelectedTextureCategory, "All", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(entry.Category, SelectedTextureCategory, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (!string.Equals(SelectedTextureKindFilter, "All", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(entry.KindLabel, SelectedTextureKindFilter, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(TextureSearchText))
+        {
+            return true;
+        }
+
+        return entry.DisplayName.Contains(TextureSearchText, StringComparison.OrdinalIgnoreCase) ||
+               entry.Key.Contains(TextureSearchText, StringComparison.OrdinalIgnoreCase) ||
+             entry.ProviderName.Contains(TextureSearchText, StringComparison.OrdinalIgnoreCase) ||
+               entry.Category.Contains(TextureSearchText, StringComparison.OrdinalIgnoreCase) ||
+               entry.KindLabel.Contains(TextureSearchText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void RefreshTextureFilters()
+    {
+        OnPropertyChanged(nameof(FilteredTextures));
+        OnPropertyChanged(nameof(AnimatedTextures));
+    }
+
+    [RelayCommand(CanExecute = nameof(CanSearchOnlineTextures))]
+    private async Task SearchOnlineTexturesAsync()
+    {
+        if (SelectedOnlineTextureProvider is null)
+        {
+            OnlineTextureStatus = "Choose an online provider first.";
+            return;
+        }
+
+        try
+        {
+            IsOnlineTextureBusy = true;
+            OnlineTextureStatus = $"Searching {SelectedOnlineTextureProvider.DisplayName}...";
+            OnlineTextureResults.Clear();
+            var results = await _textureLibraryService.SearchProviderAsync(SelectedOnlineTextureProvider.Id, OnlineTextureSearchText);
+            foreach (var result in results)
+            {
+                OnlineTextureResults.Add(result);
+            }
+
+            SelectedOnlineTextureResult = OnlineTextureResults.FirstOrDefault();
+            OnlineTextureStatus = results.Count == 0
+                ? "No matching online materials found."
+                : $"Found {results.Count} CC0 material(s). Select one to import.";
+        }
+        catch (Exception ex)
+        {
+            _sessionLogService.WriteException("SearchOnlineTexturesAsync", ex, SelectedOnlineTextureProvider.Id);
+            OnlineTextureStatus = $"Online texture search failed: {ex.Message}";
+        }
+        finally
+        {
+            IsOnlineTextureBusy = false;
+        }
+    }
+
+    private bool CanSearchOnlineTextures() =>
+        !IsOnlineTextureBusy && SelectedOnlineTextureProvider is not null;
+
+    [RelayCommand(CanExecute = nameof(CanImportSelectedOnlineTexture))]
+    private async Task ImportSelectedOnlineTextureAsync()
+    {
+        if (SelectedOnlineTextureResult is null)
+        {
+            OnlineTextureStatus = "Select an online material first.";
+            return;
+        }
+
+        try
+        {
+            IsOnlineTextureBusy = true;
+            OnlineTextureStatus = $"Importing {SelectedOnlineTextureResult.DisplayName}...";
+            var imported = await _textureLibraryService.ImportExternalTextureAsync(SelectedOnlineTextureResult);
+            SelectedTextureKey = imported.Key;
+            SelectedTextureCategory = "All";
+            TextureSearchText = imported.DisplayName;
+            OnlineTextureStatus = $"Imported {imported.DisplayName} from {imported.ProviderName}.";
+            _statusBarVm.Message = OnlineTextureStatus;
+        }
+        catch (Exception ex)
+        {
+            _sessionLogService.WriteException("ImportSelectedOnlineTextureAsync", ex, SelectedOnlineTextureResult.AssetId);
+            OnlineTextureStatus = $"Online texture import failed: {ex.Message}";
+        }
+        finally
+        {
+            IsOnlineTextureBusy = false;
+        }
+    }
+
+    private bool CanImportSelectedOnlineTexture() =>
+        !IsOnlineTextureBusy && SelectedOnlineTextureResult is not null;
 
     [RelayCommand]
     private void ToggleSurfaceSelection(string surfaceId)
@@ -893,23 +1069,41 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
     public bool RequestClose()
     {
         if (!_isDirty) return true;
-        var r = MessageBox.Show("You have unsaved changes. Save before closing?",
-            "Unsaved Changes", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
-        if (r == MessageBoxResult.Cancel) return false;
-        if (r == MessageBoxResult.Yes)
+        var result = _messageService
+            .ConfirmUnsavedChangesAsync("Unsaved Changes", "You have unsaved changes. Save before closing?")
+            .GetAwaiter()
+            .GetResult();
+        if (result == EditorUnsavedChangesResult.Cancel) return false;
+        if (result == EditorUnsavedChangesResult.Save)
         {
-            // Fire-and-forget synchronous save dialog
             SaveFileAsync().GetAwaiter().GetResult();
+            return !_isDirty;
         }
+        return true;
+    }
+
+    public async Task<bool> RequestCloseAsync()
+    {
+        if (!_isDirty) return true;
+
+        var result = await _messageService.ConfirmUnsavedChangesAsync("Unsaved Changes", "You have unsaved changes. Save before closing?");
+        if (result == EditorUnsavedChangesResult.Cancel) return false;
+        if (result == EditorUnsavedChangesResult.Save)
+        {
+            await SaveFileAsync();
+            return !_isDirty;
+        }
+
         return true;
     }
 
     private bool ConfirmDiscard()
     {
         if (!_isDirty) return true;
-        var r = MessageBox.Show("Discard unsaved changes?",
-            "Unsaved Changes", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
-        return r == MessageBoxResult.OK;
+        return _messageService
+            .ConfirmDiscardAsync("Unsaved Changes", "Discard unsaved changes?")
+            .GetAwaiter()
+            .GetResult();
     }
 
     private static bool ExecuteCommand(System.Windows.Input.ICommand command, object? parameter = null)

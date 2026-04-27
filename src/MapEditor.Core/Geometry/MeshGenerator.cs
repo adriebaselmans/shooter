@@ -373,8 +373,7 @@ public static class MeshGenerator
         }
 
         var normal = face.GetNormal();
-        var axisU = GetFaceAxisU(normal, vertices);
-        var axisV = Vector3.Normalize(Vector3.Cross(normal, axisU));
+        var (axisU, axisV) = GetFaceTextureAxes(normal);
         var mapping = brush.GetEffectiveSurfaceMapping(face.Id);
         var scaledVertices = vertices
             .Select(vertex => Vector3.Multiply(vertex, brush.Transform.Scale))
@@ -469,15 +468,39 @@ public static class MeshGenerator
         }
     }
 
-    private static Vector3 GetFaceAxisU(Vector3 normal, IReadOnlyList<Vector3> vertices)
+    private static (Vector3 AxisU, Vector3 AxisV) GetFaceTextureAxes(Vector3 normal)
     {
-        for (int i = 1; i < vertices.Count; i++)
+        var absoluteNormal = new Vector3(MathF.Abs(normal.X), MathF.Abs(normal.Y), MathF.Abs(normal.Z));
+
+        Vector3 axisU;
+        Vector3 axisV;
+        if (absoluteNormal.Y >= absoluteNormal.X && absoluteNormal.Y >= absoluteNormal.Z)
         {
-            var candidate = vertices[i] - vertices[0];
-            if (candidate.LengthSquared() > 0.000001f)
-            {
-                return Vector3.Normalize(candidate);
-            }
+            axisU = Vector3.UnitX;
+            axisV = normal.Y >= 0f ? Vector3.UnitZ : -Vector3.UnitZ;
+        }
+        else if (absoluteNormal.Z >= absoluteNormal.X)
+        {
+            axisU = normal.Z >= 0f ? Vector3.UnitX : -Vector3.UnitX;
+            axisV = Vector3.UnitY;
+        }
+        else
+        {
+            axisU = normal.X >= 0f ? -Vector3.UnitZ : Vector3.UnitZ;
+            axisV = Vector3.UnitY;
+        }
+
+        axisU = ProjectTextureAxis(axisU, normal);
+        axisV = ProjectTextureAxis(axisV, normal);
+        return (axisU, axisV);
+    }
+
+    private static Vector3 ProjectTextureAxis(Vector3 axis, Vector3 normal)
+    {
+        var projected = axis - normal * Vector3.Dot(axis, normal);
+        if (projected.LengthSquared() > 0.000001f)
+        {
+            return Vector3.Normalize(projected);
         }
 
         var fallback = MathF.Abs(Vector3.Dot(normal, Vector3.UnitY)) < 0.99f

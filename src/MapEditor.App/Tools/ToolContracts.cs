@@ -1,6 +1,4 @@
 using System.Numerics;
-using System.Windows;
-using System.Windows.Input;
 using MapEditor.App.Services;
 using MapEditor.App.ViewModels;
 using MapEditor.Core;
@@ -41,13 +39,13 @@ public enum ViewportPointerButton
 public readonly record struct ViewportPointerEvent(
     ViewportPointerAction Action,
     ViewportPointerButton Button,
-    Point Position,
+    ViewportPoint Position,
     int WheelDelta,
-    ModifierKeys Modifiers)
+    EditorModifierKeys Modifiers)
 {
-    public bool IsAltPressed => Modifiers.HasFlag(ModifierKeys.Alt);
-    public bool IsShiftPressed => Modifiers.HasFlag(ModifierKeys.Shift);
-    public bool IsControlPressed => Modifiers.HasFlag(ModifierKeys.Control);
+    public bool IsAltPressed => Modifiers.HasFlag(EditorModifierKeys.Alt);
+    public bool IsShiftPressed => Modifiers.HasFlag(EditorModifierKeys.Shift);
+    public bool IsControlPressed => Modifiers.HasFlag(EditorModifierKeys.Control);
 }
 
 /// <summary>Simple world-space ray used for hit testing.</summary>
@@ -67,9 +65,9 @@ public sealed class ToolContext
     public required float GridSize { get; init; }
     public required BrushPrimitive SelectedBrushPrimitive { get; init; }
     public required BrushOperation SelectedBrushOperation { get; init; }
-    public required Func<Point, Vector3?> TryGetWorldPoint { get; init; }
-    public required Func<Point, Vector3?> TryGetSnappedWorldPoint { get; init; }
-    public required Func<Point, Guid?> HitTestEntity { get; init; }
+    public required Func<ViewportPoint, Vector3?> TryGetWorldPoint { get; init; }
+    public required Func<ViewportPoint, Vector3?> TryGetSnappedWorldPoint { get; init; }
+    public required Func<ViewportPoint, Guid?> HitTestEntity { get; init; }
     public required Action RefreshSelectionDetails { get; init; }
     public required Action<string> SetStatusMessage { get; init; }
     public required Action<EditorToolKind> SetActiveTool { get; init; }
@@ -97,7 +95,7 @@ public enum EditorToolKind
     Move
 }
 
-internal static class GridSnapper
+public static class GridSnapper
 {
     public static float Snap(float value, float gridSize) =>
         gridSize <= 0f ? value : MathF.Round(value / gridSize) * gridSize;

@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Map Editor",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build map editor",
+      "program": "${workspaceFolder}/src/MapEditor.App.Avalonia/bin/Debug/net10.0/MapEditor.App.Avalonia.dll",
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "stopAtEntry": false
+    }
+  ]
+}

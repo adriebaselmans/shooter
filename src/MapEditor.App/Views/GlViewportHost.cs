@@ -1,4 +1,5 @@
 using MapEditor.App.Tools;
+using MapEditor.App.Infrastructure;
 using MapEditor.Rendering.Infrastructure;
 using Silk.NET.OpenGL;
 using System.Runtime.InteropServices;
@@ -235,8 +236,8 @@ public sealed class GlViewportHost : HwndHost
             case WM_KEYDOWN:
             case WM_SYSKEYDOWN:
                 var keyEvent = new ViewportKeyEvent(
-                    KeyInterop.KeyFromVirtualKey(unchecked((int)(long)wParam)),
-                    Keyboard.Modifiers);
+                    WpfInputMapper.ToEditorKey(KeyInterop.KeyFromVirtualKey(unchecked((int)(long)wParam))),
+                    WpfInputMapper.ToEditorModifiers(Keyboard.Modifiers));
                 KeyInput?.Invoke(this, keyEvent);
                 handled = keyEvent.Handled;
                 break;
@@ -282,22 +283,23 @@ public sealed class GlViewportHost : HwndHost
     private void RaisePointerInput(ViewportPointerAction action, ViewportPointerButton button, IntPtr lParam, int wheelDelta) =>
         RaisePointerInput(action, button, GetPointLParam(lParam), wheelDelta);
 
-    private void RaisePointerInput(ViewportPointerAction action, ViewportPointerButton button, Point position, int wheelDelta)
+    private void RaisePointerInput(ViewportPointerAction action, ViewportPointerButton button, ViewportPoint position, int wheelDelta)
     {
         PointerInput?.Invoke(this, new ViewportPointerEvent(
             action,
             button,
             position,
             wheelDelta,
-            Keyboard.Modifiers));
+            WpfInputMapper.ToEditorModifiers(Keyboard.Modifiers)));
     }
 
-    private static Point GetPointLParam(IntPtr lParam)
+    private static ViewportPoint GetPointLParam(IntPtr lParam)
     {
-        return NativeMessageDecoder.GetPoint(lParam);
+        var point = NativeMessageDecoder.GetPoint(lParam);
+        return new ViewportPoint(point.X, point.Y);
     }
 
-    private static Point GetClientPointFromScreenLParam(IntPtr hwnd, IntPtr lParam)
+    private static ViewportPoint GetClientPointFromScreenLParam(IntPtr hwnd, IntPtr lParam)
     {
         var screenPoint = GetPointLParam(lParam);
         var nativePoint = new NativePoint
@@ -312,7 +314,7 @@ public sealed class GlViewportHost : HwndHost
                 $"Failed to convert screen coordinates to client coordinates. Win32 error: {Marshal.GetLastWin32Error()}");
         }
 
-        return new Point(nativePoint.X, nativePoint.Y);
+        return new ViewportPoint(nativePoint.X, nativePoint.Y);
     }
 
     private static int GetWheelDelta(IntPtr wParam)
