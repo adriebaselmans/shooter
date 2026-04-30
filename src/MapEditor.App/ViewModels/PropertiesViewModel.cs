@@ -11,31 +11,31 @@ public sealed record SurfaceSelectionChip(string SurfaceId, string DisplayName, 
 /// <summary>Drives the properties panel. Populates when an entity is selected.</summary>
 public sealed partial class PropertiesViewModel : ObservableObject
 {
-    [ObservableProperty] private string  _entityName    = string.Empty;
-    [ObservableProperty] private string  _entityKind    = string.Empty;
-    [ObservableProperty] private bool    _hasEntity;
-    [ObservableProperty] private bool    _canEditTransform;
-    [ObservableProperty] private string  _positionText  = string.Empty;
-    [ObservableProperty] private string  _rotationText  = string.Empty;
-    [ObservableProperty] private string  _scaleText     = string.Empty;
-    [ObservableProperty] private bool    _canEditTexturing;
-    [ObservableProperty] private bool    _canEditSurfaceMapping;
-    [ObservableProperty] private string  _brushTextureKey = string.Empty;
-    [ObservableProperty] private string  _geometryState = string.Empty;
-    [ObservableProperty] private string  _faceCountText = string.Empty;
-    [ObservableProperty] private string  _materialSummary = string.Empty;
-    [ObservableProperty] private string  _selectedSurfaceSummary = "No surfaces selected";
-    [ObservableProperty] private string  _surfaceOffsetUText = string.Empty;
-    [ObservableProperty] private string  _surfaceOffsetVText = string.Empty;
-    [ObservableProperty] private string  _surfaceScaleUText = string.Empty;
-    [ObservableProperty] private string  _surfaceScaleVText = string.Empty;
-    [ObservableProperty] private string  _surfaceRotationText = string.Empty;
-    [ObservableProperty] private bool    _textureLockEnabled = true;
+    [ObservableProperty] private string _entityName = string.Empty;
+    [ObservableProperty] private string _entityKind = string.Empty;
+    [ObservableProperty] private bool _hasEntity;
+    [ObservableProperty] private bool _canEditTransform;
+    [ObservableProperty] private string _positionText = string.Empty;
+    [ObservableProperty] private string _rotationText = string.Empty;
+    [ObservableProperty] private string _scaleText = string.Empty;
+    [ObservableProperty] private bool _canEditTexturing;
+    [ObservableProperty] private bool _canEditSurfaceMapping;
+    [ObservableProperty] private string _brushTextureKey = string.Empty;
+    [ObservableProperty] private string _geometryState = string.Empty;
+    [ObservableProperty] private string _faceCountText = string.Empty;
+    [ObservableProperty] private string _materialSummary = string.Empty;
+    [ObservableProperty] private string _selectedSurfaceSummary = "No surfaces selected";
+    [ObservableProperty] private string _surfaceOffsetUText = string.Empty;
+    [ObservableProperty] private string _surfaceOffsetVText = string.Empty;
+    [ObservableProperty] private string _surfaceScaleUText = string.Empty;
+    [ObservableProperty] private string _surfaceScaleVText = string.Empty;
+    [ObservableProperty] private string _surfaceRotationText = string.Empty;
+    [ObservableProperty] private bool _textureLockEnabled = true;
     [ObservableProperty] private IReadOnlyList<SurfaceSelectionChip> _surfaceChips = Array.Empty<SurfaceSelectionChip>();
 
     public void PopulateFromBrush(Brush brush)
     {
-        HasEntity  = true;
+        HasEntity = true;
         CanEditTransform = true;
         CanEditTexturing = true;
         EntityName = brush.Name;
@@ -98,7 +98,7 @@ public sealed partial class PropertiesViewModel : ObservableObject
 
     public void Clear()
     {
-        HasEntity  = false;
+        HasEntity = false;
         CanEditTransform = false;
         CanEditTexturing = false;
         CanEditSurfaceMapping = false;

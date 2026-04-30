@@ -32,7 +32,7 @@ public sealed class ShaderProgram : IDisposable
 
     public static ShaderProgram Compile(GL gl, string vertSource, string fragSource)
     {
-        uint vert = CompileShader(gl, ShaderType.VertexShader,   vertSource);
+        uint vert = CompileShader(gl, ShaderType.VertexShader, vertSource);
         uint frag = CompileShader(gl, ShaderType.FragmentShader, fragSource);
 
         uint program = gl.CreateProgram();

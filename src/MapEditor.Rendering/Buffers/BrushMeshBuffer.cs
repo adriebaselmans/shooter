@@ -13,7 +13,7 @@ public sealed class BrushMeshBuffer : IDisposable
 {
     private readonly GL _gl;
     private uint _vao, _vbo, _ebo, _lineEbo, _cutterLineEbo;
-    private int  _indexCount;
+    private int _indexCount;
     private int _lineIndexCount;
     private int _cutterLineIndexCount;
     private bool _disposed;

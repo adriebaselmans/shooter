@@ -16,20 +16,20 @@ public sealed class PerspectiveCamera : Camera
     public const float MinDistance = 32f;
     public const float MaxDistance = 50000f;
 
-    public float Yaw        { get; set; } = -90f;
-    public float Pitch      { get; set; } = -25f;
-    public float Distance   { get; set; } = DefaultDistance;
-    public Vector3 Target   { get; set; } = Vector3.Zero;
+    public float Yaw { get; set; } = -90f;
+    public float Pitch { get; set; } = -25f;
+    public float Distance { get; set; } = DefaultDistance;
+    public Vector3 Target { get; set; } = Vector3.Zero;
     public float FieldOfView { get; set; } = 60f;
-    public float NearPlane  { get; set; } = 1f;
-    public float FarPlane   { get; set; } = MaxDistance;
+    public float NearPlane { get; set; } = 1f;
+    public float FarPlane { get; set; } = MaxDistance;
 
     public void ResetToDefault()
     {
-        Yaw      = -90f;
-        Pitch    = -25f;
+        Yaw = -90f;
+        Pitch = -25f;
         Distance = DefaultDistance;
-        Target   = Vector3.Zero;
+        Target = Vector3.Zero;
     }
 
     public void Orbit(float yawDelta, float pitchDelta)
@@ -68,7 +68,7 @@ public sealed class PerspectiveCamera : Camera
         get
         {
             float distance = ClampFinite(Distance, MinDistance, MaxDistance, DefaultDistance);
-            float yawRad   = float.DegreesToRadians(float.IsFinite(Yaw) ? Yaw : -90f);
+            float yawRad = float.DegreesToRadians(float.IsFinite(Yaw) ? Yaw : -90f);
             float pitchRad = float.DegreesToRadians(Math.Clamp(float.IsFinite(Pitch) ? Pitch : -25f, -89f, 89f));
             var target = IsFinite(Target) ? Target : Vector3.Zero;
             var offset = new Vector3(
@@ -105,9 +105,9 @@ public sealed class PerspectiveCamera : Camera
 /// <summary>Axis-aligned orthographic camera for 2D viewport projections.</summary>
 public sealed class OrthographicCamera : Camera
 {
-    public float Pan    { get; set; } = 0f;
-    public float PanY   { get; set; } = 0f;
-    public float Zoom   { get; set; } = 500f; // half-height in world units
+    public float Pan { get; set; } = 0f;
+    public float PanY { get; set; } = 0f;
+    public float Zoom { get; set; } = 500f; // half-height in world units
     public ViewAxis Axis { get; set; } = ViewAxis.Top;
 
     public override Matrix4x4 GetViewMatrix()
@@ -116,19 +116,19 @@ public sealed class OrthographicCamera : Camera
         switch (Axis)
         {
             case ViewAxis.Top:
-                eye    = new Vector3(Pan, -Zoom * 2, PanY);
+                eye = new Vector3(Pan, -Zoom * 2, PanY);
                 target = new Vector3(Pan, 0, PanY);
-                up     = Vector3.UnitZ;
+                up = Vector3.UnitZ;
                 break;
             case ViewAxis.Front:
-                eye    = new Vector3(Pan, PanY, Zoom * 2);
+                eye = new Vector3(Pan, PanY, Zoom * 2);
                 target = new Vector3(Pan, PanY, 0);
-                up     = Vector3.UnitY;
+                up = Vector3.UnitY;
                 break;
             default: // Side
-                eye    = new Vector3(-Zoom * 2, PanY, Pan);
+                eye = new Vector3(-Zoom * 2, PanY, Pan);
                 target = new Vector3(0, PanY, Pan);
-                up     = Vector3.UnitY;
+                up = Vector3.UnitY;
                 break;
         }
         return Matrix4x4.CreateLookAt(eye, target, up);

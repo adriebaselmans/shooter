@@ -84,6 +84,20 @@
         <MenuItem Header="_Subtract From Intersections" Command="{Binding SubtractSelectedBoxesCommand}" />
         <MenuItem Header="_Merge Selected" Command="{Binding MergeSelectedBoxesCommand}" />
       </MenuItem>
+      <MenuItem Header="E_ntity">
+        <MenuItem Header="Add Player _Spawn" Command="{Binding AddPlayerSpawnCommand}" />
+        <MenuItem Header="Add _Pickup">
+          <MenuItem Header="Health (Small)"      Command="{Binding AddPickupCommand}" CommandParameter="HealthSmall" />
+          <MenuItem Header="Health (Large)"      Command="{Binding AddPickupCommand}" CommandParameter="HealthLarge" />
+          <Separator />
+          <MenuItem Header="Ammo • AK-47"          Command="{Binding AddPickupCommand}" CommandParameter="AmmoAk47" />
+          <MenuItem Header="Ammo • Shotgun"        Command="{Binding AddPickupCommand}" CommandParameter="AmmoShotgun" />
+          <MenuItem Header="Ammo • Rockets"        Command="{Binding AddPickupCommand}" CommandParameter="AmmoRocket" />
+          <Separator />
+          <MenuItem Header="Weapon • Shotgun"      Command="{Binding AddPickupCommand}" CommandParameter="WeaponShotgun" />
+          <MenuItem Header="Weapon • Rocket Launcher" Command="{Binding AddPickupCommand}" CommandParameter="WeaponRocketLauncher" />
+        </MenuItem>
+      </MenuItem>
       <MenuItem Header="_Help" />
     </Menu>
 

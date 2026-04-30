@@ -1,59 +1,107 @@
-feature: avalonia-production-texture-browser-and-close-stability
-status: ready
+id: req-shooter-v1
+title: 3D Quake-like Shooter Game + Editor Spawn/Pickup Support
+status: ready_for_architecture
 summary: >
-  Stabilize Avalonia editor shutdown and replace the temporary texture strip with
-  a production-style material browser that supports static and animated editor
-  materials, including first-class animated water and lava.
-user_need: >
-  Closing the app must not crash. Texture selection/configuration should feel
-  like a serious level editor workflow, closer to Hammer or SketchUp than a raw
-  file list, and water/lava animated materials must be implemented properly.
-in_scope:
-  - Fix Avalonia close/shutdown so render handlers and GL-backed resources do not crash during app exit.
-  - Avoid blocking async confirmation dialogs on the Avalonia UI thread during close.
-  - Redesign texture UX as a material browser with collections, search, filters, tiles, and a selected-material inspector.
-  - Preserve brush-wide and selected-face material application commands.
-  - Add material metadata: category, kind, average color, usage hint, and animation metadata.
-  - Add built-in animated water and lava materials even when no source PNG assets exist.
-  - Render water and lava with time-based shader animation in the perspective viewport.
-out_of_scope:
-  - Writing automated tests, per user instruction.
-  - A full material-authoring pipeline with imported animation frame sheets.
-  - Runtime game-engine material simulation beyond editor viewport preview.
-  - Downloaded online texture packs.
+  Add a new project "Shooter.App" — a first-person 3D shooter that consumes
+  .shmap files produced by the existing MapEditor. Extend the editor to
+  author player spawn points and upgrade pickups (health / ammo / weapon)
+  that the game consumes. No automated tests; rely on linters and build.
+
+scope:
+  in:
+    - New Shooter.App executable (Silk.NET + OpenGL, cross-platform).
+    - Reuse MapEditor.Core, MapEditor.Formats, MapEditor.Rendering as libraries.
+    - Editor UI affordances to create SpawnPoints and Pickups.
+    - .shmap format extended (v1.2.0) with Pickup entities; spawn points already exist.
+    - In-game hit-scan weapons, bullet-hole decals, HUD, health/ammo pickups, weapon pickups.
+  out:
+    - Multiplayer / networking.
+    - AI enemies / NPCs.
+    - Audio.
+    - Reload animations, weapon view models (use simple muzzle/crosshair only).
+    - In-editor 3D gizmos for spawns/pickups (basic wireframe markers acceptable, can be deferred).
+    - Automated tests.
+
 functional_requirements:
-  - id: FR-1
-    requirement: Closing the Avalonia editor shall not crash because of synchronous dialog blocking or GL resource teardown.
-  - id: FR-2
-    requirement: The texture browser shall expose searchable material tiles with collection and type filters.
-  - id: FR-3
-    requirement: The selected material shall show preview, category, material kind, color, animation state, and usage guidance.
-  - id: FR-4
-    requirement: The user shall be able to filter to animated materials and quickly access water/lava.
-  - id: FR-5
-    requirement: Water and lava shall exist as selectable materials even before dedicated art files are added.
-  - id: FR-6
-    requirement: Applying the selected material to a brush or selected faces shall use the existing undoable scene-command path.
-  - id: FR-7
-    requirement: Animated water and lava shall visibly animate in the perspective OpenGL viewport.
+  # --- Game ---
+  - id: G1
+    text: Game loads a .shmap given on the command line; falls back to a default test map if none.
+  - id: G2
+    text: Player spawns at a SpawnPoint with SpawnType="player". If multiple, one is chosen at random.
+  - id: G3
+    text: First-person camera at eye height with mouse-look (yaw/pitch, pitch clamped ±89°).
+  - id: G4
+    text: WASD ground movement, Space to jump, gravity applied each tick.
+  - id: G5
+    text: Player capsule collides against world brush triangles (move-and-slide); cannot leave solid hull.
+  - id: G6
+    text: Player has Health (default 100, max 100 from small kits, max 200 from large kits), starts full.
+  - id: G7
+    text: At least three weapons implemented — Pistol (default, infinite ammo or 50 rounds), Shotgun (8 pellets spread, hit-scan), MachineGun (auto-fire, hit-scan).
+  - id: G8
+    text: Weapon switching with number keys 1/2/3 and mouse wheel.
+  - id: G9
+    text: Left mouse fires the current weapon respecting fire-rate cooldown and ammo.
+  - id: G10
+    text: Bullets are hit-scan rays from camera origin through screen-center crosshair; first triangle hit determines impact point and surface normal.
+  - id: G11
+    text: Each impact spawns a "bullet hole" decal (small quad oriented to surface normal, slight offset to avoid z-fighting); FIFO cap (≥256), oldest discarded when full.
+  - id: G12
+    text: HUD always visible — crosshair (screen center), health bar, current ammo, weapon name, FPS.
+  - id: G13
+    text: Pickup types — HealthSmall (+25 hp, cap 100), HealthLarge (+50 hp, cap 200), AmmoPistol (+30), AmmoShotgun (+10), AmmoMachineGun (+50), WeaponShotgun, WeaponMachineGun.
+  - id: G14
+    text: Picking up an item when player capsule overlaps its trigger radius applies the effect and removes the pickup from the world (no respawn in v1).
+  - id: G15
+    text: Pickups render as colored, slowly-rotating cubes (no external assets required).
+  - id: G16
+    text: World mesh built from CSG-resolved brush geometry using existing MeshGenerator pipeline.
+  - id: G17
+    text: World rendering uses ambient color + a simple directional fallback light (or first scene point/spot light direction) — sufficient to read geometry.
+  - id: G18
+    text: ESC quits, F1 toggles a small debug overlay (position, fps, triangle count).
+
+  # --- Editor extensions ---
+  - id: E1
+    text: Editor adds an "Entity" menu with "Add Player Spawn" and "Add Pickup ▸" with sub-items for each pickup kind.
+  - id: E2
+    text: New entity inserts at world origin (0,0,0); user repositions via existing Properties / Transform panel.
+  - id: E3
+    text: New "Pickup" entity in MapEditor.Core with fields { Id, Name, Transform, Kind: enum, Amount: int }.
+  - id: E4
+    text: Scene serializer round-trips Pickup entities and SpawnPoints; format_version bumped to 1.2.0; older 1.1.0 files load (pickups absent → empty list).
+  - id: E5
+    text: New SceneCommands — CreatePickupCommand, DeletePickupCommand — undoable via existing CommandHistory.
+  - id: E6
+    text: Pickups and SpawnPoints appear in the Scene Outliner (if outliner enumerates entities; otherwise deferred — see notes).
+
+non_functional_requirements:
+  - id: N1
+    text: Targets net10.0, nullable enable, ImplicitUsings enable, LangVersion latest — matching existing projects.
+  - id: N2
+    text: Cross-platform (Windows/macOS/Linux) via Silk.NET + Silk.NET.Windowing + Silk.NET.Input.
+  - id: N3
+    text: `dotnet build shooter.slnx` succeeds with no new warnings; analyzers/lints clean.
+  - id: N4
+    text: No new external runtime asset files required (procedural / solid-color rendering acceptable for v1).
+  - id: N5
+    text: Frame budget target 60 FPS on a small map (~hundreds of brushes) on a typical dev laptop.
+  - id: N6
+    text: All file I/O goes through MapEditor.Formats; no parallel JSON parsing path in the game.
+
 acceptance_criteria:
-  - id: AC-1
-    criterion: dotnet build shooter.slnx succeeds after the changes.
-  - id: AC-2
-    criterion: The Avalonia app starts from the repository root without immediate exceptions.
-  - id: AC-3
-    criterion: Closing uses an async close-confirmation path and does not synchronously block the UI thread.
-  - id: AC-4
-    criterion: The material browser shows collections, search, material type filter, animated-only filter, tiles, and an inspector.
-  - id: AC-5
-    criterion: Built-in animated water and lava entries appear in the browser and can be selected/applied like normal textures.
-  - id: AC-6
-    criterion: Renderers receive material animation metadata through the texture catalog contract.
-  - id: AC-7
-    criterion: Water and lava render with shader-driven flow/pulse animation in perspective view.
-constraints:
-  - Stay native Avalonia for the editor UI.
-  - Do not reintroduce WPF dependencies into the active Avalonia app.
-  - Do not write tests.
-  - Preserve existing texture application commands and map format behavior.
-open_questions: []
+  - id: AC1
+    text: Solution builds clean.
+  - id: AC2
+    text: Editor exposes "Entity ▸ Add Player Spawn" and "Entity ▸ Add Pickup ▸ …" menu commands; both round-trip through save/load.
+  - id: AC3
+    text: Running `Shooter.App path/to/map.shmap` opens a window, spawns the player at a SpawnPoint, and renders the brush world with HUD and crosshair.
+  - id: AC4
+    text: Firing a weapon spawns a bullet-hole decal at the aimed surface; ammo decrements; out-of-ammo dry-fires.
+  - id: AC5
+    text: Walking over a pickup applies its effect and removes the pickup from the world.
+  - id: AC6
+    text: Health and ammo HUD reflect runtime state.
+
+open_questions:
+  - Should SpawnPoints/Pickups be selectable/movable in the editor viewports immediately, or is property-panel editing sufficient for v1? (Assumed: property-panel sufficient; viewport gizmos deferred unless trivial.)

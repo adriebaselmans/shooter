@@ -403,6 +403,35 @@ public sealed class CreateSpawnPointCommand : ISceneCommand
     public void Undo() => _scene.RemoveSpawnPoint(_sp);
 }
 
+/// <summary>Adds a pickup entity to the scene. Undo removes it.</summary>
+public sealed class CreatePickupCommand : ISceneCommand
+{
+    private readonly Scene _scene;
+    private readonly PickupEntity _pickup;
+
+    public CreatePickupCommand(Scene scene, PickupEntity pickup) { _scene = scene; _pickup = pickup; }
+    public void Execute() => _scene.AddPickup(_pickup);
+    public void Undo() => _scene.RemovePickup(_pickup);
+}
+
+/// <summary>Removes a pickup from the scene. Undo re-inserts it at its original index.</summary>
+public sealed class DeletePickupCommand : ISceneCommand
+{
+    private readonly Scene _scene;
+    private readonly PickupEntity _pickup;
+    private int _originalIndex;
+
+    public DeletePickupCommand(Scene scene, PickupEntity pickup) { _scene = scene; _pickup = pickup; }
+
+    public void Execute()
+    {
+        _originalIndex = _scene.Pickups.TakeWhile(p => !ReferenceEquals(p, _pickup)).Count();
+        _scene.RemovePickup(_pickup);
+    }
+
+    public void Undo() => _scene.InsertPickup(_originalIndex, _pickup);
+}
+
 /// <summary>Wraps multiple commands into one atomic undoable operation.</summary>
 public sealed class CompositeCommand : ISceneCommand
 {

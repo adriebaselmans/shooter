@@ -6,7 +6,7 @@ namespace MapEditor.Formats.Dto;
 public sealed class MapDto
 {
     [JsonPropertyName("format_version")]
-    public string FormatVersion { get; set; } = "1.1.0";
+    public string FormatVersion { get; set; } = "1.3.0";
 
     [JsonPropertyName("editor_version")]
     public string EditorVersion { get; set; } = "0.1.0";
@@ -22,6 +22,9 @@ public sealed class MapDto
 
     [JsonPropertyName("spawn_points")]
     public List<SpawnPointDto> SpawnPoints { get; set; } = [];
+
+    [JsonPropertyName("pickups")]
+    public List<PickupDto> Pickups { get; set; } = [];
 
     /// <summary>Preserves unknown top-level fields on round-trip.</summary>
     [JsonExtensionData]
@@ -170,6 +173,27 @@ public sealed class SpawnPointDto
 
     [JsonPropertyName("spawn_type")]
     public string SpawnType { get; set; } = "player";
+
+    [JsonExtensionData]
+    public Dictionary<string, System.Text.Json.JsonElement>? AdditionalData { get; set; }
+}
+
+public sealed class PickupDto
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "Pickup";
+
+    [JsonPropertyName("transform")]
+    public TransformDto Transform { get; set; } = new();
+
+    [JsonPropertyName("kind")]
+    public string Kind { get; set; } = "HealthSmall";
+
+    [JsonPropertyName("amount")]
+    public int Amount { get; set; }
 
     [JsonExtensionData]
     public Dictionary<string, System.Text.Json.JsonElement>? AdditionalData { get; set; }

@@ -93,3 +93,33 @@
   action: updated
   target: wiki/architecture/material-browser-and-animation
   summary: "Removed ambientCG pack references after user rejection"
+
+- ts: 2026-04-29T16:00:00Z
+  role: coordinator
+  action: created
+  target: wiki/architecture/shooter-runtime
+  summary: "Recorded Shooter.App runtime architecture (physics, weapons, rendering)"
+
+- ts: 2026-04-29T16:00:00Z
+  role: developer
+  action: created
+  target: wiki/decisions/glb-asset-pipeline
+  summary: "Recorded GLB/SharpGLTF replacing FBX/Assimp for weapon models"
+
+- ts: 2026-04-29T16:00:00Z
+  role: coordinator
+  action: updated
+  target: wiki/context/implementation-history
+  summary: "Added Shooter.App game runtime milestones (weapons, GLB pipeline, scorch, flash)"
+
+- ts: 2026-04-29T16:00:00Z
+  role: coordinator
+  action: updated
+  target: wiki/context/current-behavior
+  summary: "Added Shooter.App gameplay invariants (spawn, FOV match, flash, scorch)"
+
+- ts: 2026-04-29T16:00:00Z
+  role: coordinator
+  action: updated
+  target: wiki/incidents/known-gotchas
+  summary: "Added sphere-vs-capsule, first-frame dt, view-space anchor, GLB filename gotchas"

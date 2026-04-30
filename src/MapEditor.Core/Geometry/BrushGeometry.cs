@@ -93,11 +93,11 @@ public static class BrushGeometryTransforms
         new(geometry.Faces.Select(face => new BrushFace(
             face.Id,
             face.Vertices.Select(vertex => Vector3.Transform(vertex, matrix)))
-            { IsCutterFace = face.IsCutterFace }));
+        { IsCutterFace = face.IsCutterFace }));
 
     public static BrushGeometry Translate(BrushGeometry geometry, Vector3 offset) =>
         new(geometry.Faces.Select(face => new BrushFace(
             face.Id,
             face.Vertices.Select(vertex => vertex + offset))
-            { IsCutterFace = face.IsCutterFace }));
+        { IsCutterFace = face.IsCutterFace }));
 }

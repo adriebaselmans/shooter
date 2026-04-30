@@ -1,6 +1,6 @@
 version: 1
-updated: 2026-04-26T20:45:00Z
-total_pages: 11
+updated: 2026-04-29T16:00:00Z
+total_pages: 13
 categories:
   project:
     count: 1
@@ -11,9 +11,13 @@ categories:
         tags: [shooter, map-editor, wpf, dotnet, silk-net, identity]
         rev: 1
   architecture:
-    count: 4
+    count: 5
     summary: "Stack, modules, interfaces, deployment topology"
     hot:
+      - id: shooter-runtime
+        summary: "Shooter.App game runtime: physics, weapons, rendering, asset pipeline."
+        tags: [shooter, runtime, opengl, silk-net, gameplay, weapons, rendering]
+        rev: 1
       - id: material-browser-and-animation
         summary: "Avalonia material browser and shader-driven animated texture metadata."
         tags: [avalonia, materials, textures, animation, water, lava]
@@ -27,9 +31,13 @@ categories:
         tags: [modules, boundaries, avalonia, wpf, rendering, scene, formats]
         rev: 2
   decisions:
-    count: 1
+    count: 2
     summary: "ADR-style decision records with rationale"
     hot:
+      - id: glb-asset-pipeline
+        summary: "Shooter.App uses SharpGLTF/GLB for weapons; FBX/Assimp dropped."
+        tags: [assets, glb, gltf, sharpgltf, fbx, assimp, decision]
+        rev: 1
       - id: avalonia-primary-editor
         summary: "Avalonia is the primary editor shell and startup path going forward."
         tags: [avalonia, editor, ui-migration, cross-platform, dotnet]
@@ -55,9 +63,9 @@ categories:
     summary: "Bugs, rework cycles, lessons learned"
     hot:
       - id: known-gotchas
-        summary: "Known recurring pitfalls in the shooter map editor codebase."
-        tags: [gotchas, wpf, hwndhost, keyboard, axis-colors, shader, mvvm-toolkit]
-        rev: 1
+        summary: "Known recurring pitfalls in the shooter map editor and game runtime."
+        tags: [gotchas, wpf, hwndhost, keyboard, axis-colors, shader, mvvm-toolkit, shooter, physics, glb]
+        rev: 2
   context:
     count: 3
     summary: "Active constraints, environment, runtime facts"
@@ -67,10 +75,10 @@ categories:
         tags: [runtime, avalonia, macos, dotnet, startup]
         rev: 1
       - id: implementation-history
-        summary: "Completed implementation milestones for the shooter map editor and shell migration."
-        tags: [history, implemented, editor, viewports, brushes, gl, wpf, avalonia]
-        rev: 2
+        summary: "Completed implementation milestones for the shooter map editor and game runtime."
+        tags: [history, implemented, editor, viewports, brushes, gl, wpf, avalonia, shooter, weapons, glb]
+        rev: 3
       - id: current-behavior
         summary: "Stable user-facing behaviors that must not regress."
-        tags: [behavior, ux, editor, viewports, shortcuts, primitives]
-        rev: 1
+        tags: [behavior, ux, editor, viewports, shortcuts, primitives, shooter, gameplay]
+        rev: 2

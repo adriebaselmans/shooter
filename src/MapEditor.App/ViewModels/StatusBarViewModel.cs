@@ -12,10 +12,10 @@ public sealed partial class StatusBarViewModel : ObservableObject
         LogFileName = sessionLogService.LogFileName;
     }
 
-    [ObservableProperty] private string _message    = "Ready";
-    [ObservableProperty] private int    _brushCount;
+    [ObservableProperty] private string _message = "Ready";
+    [ObservableProperty] private int _brushCount;
     [ObservableProperty] private string _activeTool = "Select";
-    [ObservableProperty] private string _cursorPos  = "0, 0, 0";
+    [ObservableProperty] private string _cursorPos = "0, 0, 0";
     [ObservableProperty] private string _logFilePath = string.Empty;
     [ObservableProperty] private string _logFileName = string.Empty;
 }

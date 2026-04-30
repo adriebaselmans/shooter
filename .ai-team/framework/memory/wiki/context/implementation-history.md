@@ -1,12 +1,12 @@
 ---
 id: implementation-history
 cat: context
-rev: 2
+rev: 3
 created: 2026-04-26T12:00:00Z
-updated: 2026-04-26T18:45:00Z
+updated: 2026-04-29T16:00:00Z
 by: coordinator
-tags: [history, implemented, editor, viewports, brushes, gl, wpf, avalonia]
-summary: "Completed implementation milestones for the shooter map editor and shell migration."
+tags: [history, implemented, editor, viewports, brushes, gl, wpf, avalonia, shooter, weapons, glb]
+summary: "Completed implementation milestones for the shooter map editor and game runtime."
 status: active
 ---
 
@@ -38,3 +38,18 @@ status: active
 
 ## open
 - None.
+
+## Shooter.App game runtime (2026-04-29)
+- Coordinator-flow delivery: requirements / design / review / DoD YAMLs filled out.
+- Map format bumped 1.2.0 → 1.3.0; spawn points + pickups authored in editor.
+- Editor pickup menu: AmmoAk47 / AmmoShotgun / AmmoRocket / WeaponShotgun / WeaponRocketLauncher.
+- Shooter.App baseline: WASD + mouse, sphere collision, Möller-Trumbore raycast, hit-scan + projectile weapons, decals, HUD, fallback arena.
+- 3 weapons: AK-47 (auto, hitscan), Shotgun (8 pellets, hitscan), Rocket Launcher (projectile, splash). All 3 owned at start.
+- Per-weapon `RecoilStrength` driving viewmodel kick.
+- View-space muzzle flash (additive billboard) with per-weapon anchor + scale; tracers retired for hitscan.
+- Rocket projectile system: integration, segment-raycast, detonation → single noisy scorch decal sized to splash.
+- GLB asset pipeline (SharpGLTF) replacing FBX/Assimp; `ModelData.AlignBarrelToForward` anchors each model's barrel tip at origin.
+- Shared `MuzzleViewOffset` + `FovYRadians` between viewmodel renderer and projectile spawn so visuals stay aligned through recoil.
+- Procedural fallback arena: 60×60 floor, perimeter walls, central platform with two pitched ramps, two side platforms, columns, crates, alley, scattered pickups.
+- Spawn snap-to-floor via downward raycast; uses `Player.Radius` (sphere collider) not `HalfHeight`.
+- `OnUpdate` clamps `dt` to `1/30s`; `Player.Update` clamps fall to `-24 m/s` terminal velocity (anti-tunnel).

@@ -1,46 +1,104 @@
-feature: avalonia-production-texture-browser-and-close-stability
-status: approved
-summary: >
-  Make texture/material handling a small metadata-driven editor subsystem and
-  route shutdown through Avalonia-safe async close confirmation plus GL-context
-  deinitialization cleanup.
-affected_modules:
-  - src/MapEditor.App.Avalonia/MainWindow.axaml
-  - src/MapEditor.App.Avalonia/MainWindow.axaml.cs
-  - src/MapEditor.App.Avalonia/Views/AvaloniaGlViewportHost.cs
-  - src/MapEditor.App.Avalonia/Views/ViewportPanel.axaml.cs
-  - src/MapEditor.App/ViewModels/MainViewModel.cs
-  - src/MapEditor.App/Services/TextureLibraryService.cs
-  - src/MapEditor.Rendering/Infrastructure/TextureCatalogContracts.cs
-  - src/MapEditor.Rendering/Infrastructure/TextureGpuCache.cs
-  - src/MapEditor.Rendering/Renderers/PerspectiveViewportRenderer.cs
-  - src/MapEditor.Rendering/Shaders/brush_solid.frag.glsl
-design:
-  close_stability:
-    - MainWindow.OnClosing cancels the first close request and awaits MainViewModel.RequestCloseAsync.
-    - Reentrant close is guarded by _closeConfirmed and _closeConfirmationPending.
-    - Viewport render handlers are detached when the panel leaves the visual tree.
-    - GL-backed renderer resources are disposed from AvaloniaGlViewportHost.OpenGlDeinitializing.
-  texture_ux:
-    - Bottom browser becomes a material library with collection list, search, type filter, animated toggle, material tiles, and inspector.
-    - Right properties panel shows selected material context and keeps Apply Brush / Apply Faces close to surface mapping controls.
-    - Animated filter is also available through a direct command from the texture panel.
-  material_model:
-    - TextureAssetDescriptor carries TextureMaterialKind and optional TextureAnimationDescriptor.
-    - TextureLibraryEntry mirrors metadata for the UI: category, kind label, animation label, usage hint, and average color.
-    - Catalog injects built-in procedural liquids/water_animated and hazards/lava_animated materials.
-  rendering:
-    - TextureGpuCache generates deterministic procedural 64x64 textures for built-in water/lava descriptors.
-    - Perspective renderer passes elapsed time, animation kind, flow speed, and pulse strength to the solid shader.
-    - Fragment shader scrolls/waves water UVs and pulses lava color.
-validation_plan:
-  - Build active solution.
-  - Launch Avalonia app from repository root and check for immediate exceptions.
-  - Manual follow-up: apply water/lava to brush/surfaces and close the window from the UI.
+id: design-shooter-v1
+title: Shooter.App + Editor Pickup/Spawn Extensions
+status: ready_for_development
+based_on: req-shooter-v1
+
+stack_decisions:
+  - .NET SDK net10.0 preview (matches global.json), C# latest, nullable enable, ImplicitUsings enable.
+  - Silk.NET 2.23.0 metapackage (already centrally pinned); use Silk.NET.Windowing + Silk.NET.Input + Silk.NET.OpenGL.
+  - No new third-party packages required. Procedural shaders embedded as string constants in Shooter.App.
+  - Reuse MapEditor.Core (entities, scene, MeshGenerator, BrushGeometryFactory) and MapEditor.Formats (MapFileService).
+  - Editor UI continues to use Avalonia + CommunityToolkit.Mvvm.
+
+solution_layout:
+  - src/MapEditor.Core/...                                # extended
+  - src/MapEditor.Formats/...                             # extended (DTO + serializer)
+  - src/MapEditor.Rendering/...                           # unchanged
+  - src/MapEditor.App/ViewModels/MainViewModel.cs         # new commands added (linked into Avalonia app)
+  - src/MapEditor.App.Avalonia/MainWindow.axaml           # new "Entity" menu
+  - src/Shooter.App/Shooter.App.csproj                    # NEW console/Exe game project
+  - src/Shooter.App/Program.cs                            # window + main loop
+  - src/Shooter.App/Game/{Player,Weapons,Pickups,World,GameLoop,BulletHoles,Decals}.cs
+  - src/Shooter.App/Physics/{CollisionWorld,RayCast}.cs
+  - src/Shooter.App/Render/{WorldRenderer,HudRenderer,DecalRenderer,Shaders,GlMesh}.cs
+  - src/Shooter.App/Input/InputState.cs
+
+format_changes:
+  format_version: 1.2.0
+  added_top_level: pickups
+  notes: >
+    Older 1.1.0 maps load fine; absent "pickups" array yields empty list (System.Text.Json default).
+
+core_entity_additions:
+  - PickupKind enum: HealthSmall, HealthLarge, AmmoPistol, AmmoShotgun, AmmoMachineGun, WeaponShotgun, WeaponMachineGun.
+  - PickupEntity { Id, Name, Transform, Kind, Amount } : IEntity.
+  - Scene gains _pickups list, IReadOnlyList<PickupEntity> Pickups, internal Add/Insert/Remove + ReplaceFrom updated.
+  - SceneCommands: CreatePickupCommand, DeletePickupCommand (mirror SpawnPoint commands).
+  - MainViewModel adds [RelayCommand] AddPlayerSpawn(), AddPickup(string kind).
+  - MainWindow.axaml gets an "_Entity" menu in the menubar.
+
+game_modules:
+  player:
+    capsule_radius: 0.4
+    capsule_half_height: 0.9   # total height ~1.8m
+    eye_offset: 0.7            # eye relative to capsule center
+    walk_speed: 6
+    jump_speed: 7
+    gravity: -20
+  weapons:
+    pistol:    { damage: 20, fire_rate_hz: 4,  ammo_max: 999, infinite: true }
+    shotgun:   { damage: 8,  fire_rate_hz: 1,  ammo_max: 60,  pellets: 8, spread_deg: 6 }
+    machinegun:{ damage: 10, fire_rate_hz: 10, ammo_max: 200 }
+  bullet_holes:
+    cap: 256
+    quad_size: 0.16
+    z_offset: 0.005
+  pickups:
+    overlap_radius: 0.7
+    rotate_speed_deg_per_sec: 90
+
+collision:
+  broad_phase: per-brush AABB precomputed at load using BrushBounds.TryGetWorldBounds.
+  narrow_phase: sphere-vs-triangle (Möller-Trumbore-style closest-point on triangle) with 3 push-out iterations per move.
+  ground_test: last accepted contact normal y > 0.7 ⇒ grounded (enables jump).
+
+raycasting:
+  ray_vs_triangle: Möller-Trumbore, returns nearest hit (point, normal, distance).
+  scope: all world triangles (linear scan). Acceptable for v1 map sizes.
+
+rendering:
+  shaders:
+    world: simple Lambert with ambient + directional fallback derived from scene (color encoded from brush MaterialName hash if not "default", else palette).
+    decal: flat color, alpha pre-mul; tiny black quad oriented to surface normal.
+    hud:   2D ortho, solid color quads + crosshair lines.
+    pickup: same world shader with per-instance color uniform.
+  vertex_layout: matches Mesh.FloatsPerVertex = 8 (pos3, normal3, uv2).
+
+editor_ui:
+  - MainWindow.axaml adds:
+      <MenuItem Header="_Entity">
+        <MenuItem Header="Add Player _Spawn" Command="{Binding AddPlayerSpawnCommand}" />
+        <MenuItem Header="Add Pickup">
+          <MenuItem Header="Health (Small)"  Command="{Binding AddPickupCommand}" CommandParameter="HealthSmall" />
+          ... (one per kind)
+        </MenuItem>
+      </MenuItem>
+  - New entities placed at scene origin; user moves via existing transform tooling / properties panel.
+
 risks:
-  - Manual UI close cannot be fully exercised by terminal-only tooling.
-  - Built-in water/lava are procedural placeholders until dedicated art assets or spritesheets are supplied.
-non_goals:
-  - Automated regression tests.
-  - Full texture import/authoring UI.
-  - Bundled online texture packs.
+  - Scene Outliner / Properties panel may not yet enumerate Pickup entities — acceptable for v1 since menu commands + serialization are the primary acceptance bar; can be iterated later.
+  - Silk.NET windowing on macOS requires running on the main thread — Program.cs uses default Window.Create which handles this on macOS.
+  - Sphere-triangle slide can hitch on concave seams; mitigated by 3 push-out iterations and small per-step substepping.
+
+out_of_scope:
+  - Audio, AI, networking, weapon view-models, reload anims, in-viewport gizmos for spawn/pickup.
+
+work_items:
+  - W1 Core: add PickupKind + PickupEntity + Scene plumbing.
+  - W2 Formats: add PickupDto, bump format_version 1.2.0, round-trip in MapSerializer.
+  - W3 Core.Commands: CreatePickupCommand / DeletePickupCommand.
+  - W4 ViewModel: AddPlayerSpawn, AddPickup commands.
+  - W5 Avalonia: Entity menu in MainWindow.axaml.
+  - W6 New project Shooter.App with full game loop, world load, render, input, weapons, pickups, HUD.
+  - W7 slnx: register Shooter.App.
+  - W8 dotnet build clean.

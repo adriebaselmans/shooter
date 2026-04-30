@@ -257,43 +257,43 @@ public static class ResizeHandleMath
             float maxPrimary,
             float minSecondary,
             float maxSecondary) => Axis switch
-        {
-            ViewAxis.Top => new Transform
             {
-                Position = new Vector3(
-                    (minPrimary + maxPrimary) * 0.5f,
-                    HiddenCenter,
-                    (minSecondary + maxSecondary) * 0.5f),
-                EulerDegrees = Vector3.Zero,
-                Scale = new Vector3(
-                    maxPrimary - minPrimary,
-                    HiddenScale,
-                    maxSecondary - minSecondary)
-            },
-            ViewAxis.Front => new Transform
-            {
-                Position = new Vector3(
-                    (minPrimary + maxPrimary) * 0.5f,
-                    (minSecondary + maxSecondary) * 0.5f,
-                    HiddenCenter),
-                EulerDegrees = Vector3.Zero,
-                Scale = new Vector3(
-                    maxPrimary - minPrimary,
-                    maxSecondary - minSecondary,
-                    HiddenScale)
-            },
-            _ => new Transform
-            {
-                Position = new Vector3(
-                    HiddenCenter,
-                    (minSecondary + maxSecondary) * 0.5f,
-                    (minPrimary + maxPrimary) * 0.5f),
-                EulerDegrees = Vector3.Zero,
-                Scale = new Vector3(
-                    HiddenScale,
-                    maxSecondary - minSecondary,
-                    maxPrimary - minPrimary)
-            }
-        };
+                ViewAxis.Top => new Transform
+                {
+                    Position = new Vector3(
+                        (minPrimary + maxPrimary) * 0.5f,
+                        HiddenCenter,
+                        (minSecondary + maxSecondary) * 0.5f),
+                    EulerDegrees = Vector3.Zero,
+                    Scale = new Vector3(
+                        maxPrimary - minPrimary,
+                        HiddenScale,
+                        maxSecondary - minSecondary)
+                },
+                ViewAxis.Front => new Transform
+                {
+                    Position = new Vector3(
+                        (minPrimary + maxPrimary) * 0.5f,
+                        (minSecondary + maxSecondary) * 0.5f,
+                        HiddenCenter),
+                    EulerDegrees = Vector3.Zero,
+                    Scale = new Vector3(
+                        maxPrimary - minPrimary,
+                        maxSecondary - minSecondary,
+                        HiddenScale)
+                },
+                _ => new Transform
+                {
+                    Position = new Vector3(
+                        HiddenCenter,
+                        (minSecondary + maxSecondary) * 0.5f,
+                        (minPrimary + maxPrimary) * 0.5f),
+                    EulerDegrees = Vector3.Zero,
+                    Scale = new Vector3(
+                        HiddenScale,
+                        maxSecondary - minSecondary,
+                        maxPrimary - minPrimary)
+                }
+            };
     }
 }

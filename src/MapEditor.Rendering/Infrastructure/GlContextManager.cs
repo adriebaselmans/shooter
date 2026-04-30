@@ -16,7 +16,7 @@ public sealed class GlContextManager : IDisposable
     private IntPtr _resourceHwnd;
     private IntPtr _resourceHdc;
     private IntPtr _resourceHrc;
-    private GL?    _gl;
+    private GL? _gl;
 
     public IntPtr SharedHrc => _resourceHrc;
 

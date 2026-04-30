@@ -204,7 +204,7 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
 
     private void UpdateTitle()
     {
-        var name  = _filePath != null ? System.IO.Path.GetFileName(_filePath) : "Untitled";
+        var name = _filePath != null ? System.IO.Path.GetFileName(_filePath) : "Untitled";
         var dirty = _isDirty ? "*" : string.Empty;
         WindowTitle = $"MapEditor — {dirty}{name}";
     }
@@ -220,7 +220,7 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         _surfaceSelectionService.Clear();
         _activeToolService.SetTool(EditorToolKind.Select);
         _filePath = null;
-        _isDirty  = false;
+        _isDirty = false;
         UpdateTitle();
     }
 
@@ -239,7 +239,7 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
             _surfaceSelectionService.Clear();
             _activeToolService.SetTool(EditorToolKind.Select);
             _filePath = filePath;
-            _isDirty  = false;
+            _isDirty = false;
             UpdateTitle();
             _statusBarVm.Message = $"Opened {System.IO.Path.GetFileName(_filePath)}";
         }
@@ -364,6 +364,34 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         _activeToolService.SetBrushPrimitive(NewBrushPrimitive);
         _activeToolService.SetTool(EditorToolKind.CreateBrush);
         _statusBarVm.Message = $"Click-drag in Top, Front, or Side viewport to create a {NewBrushPrimitive} brush.";
+    }
+
+    // ── Spawn point / pickup creation ──────────────────────────────────────────
+
+    [RelayCommand]
+    private void AddPlayerSpawn()
+    {
+        var sp = new SpawnPoint(Guid.NewGuid(), "PlayerSpawn") { SpawnType = "player" };
+        _sceneService.Execute(new CreateSpawnPointCommand(_sceneService.Scene, sp));
+        _selectionService.SetSingle(sp.Id);
+        _statusBarVm.Message = "Player spawn added at origin.";
+    }
+
+    [RelayCommand]
+    private void AddPickup(string? kind)
+    {
+        if (!Enum.TryParse<PickupKind>(kind, ignoreCase: true, out var pickupKind))
+        {
+            pickupKind = PickupKind.HealthSmall;
+        }
+
+        var pickup = new PickupEntity(Guid.NewGuid(), pickupKind.ToString())
+        {
+            Kind = pickupKind
+        };
+        _sceneService.Execute(new CreatePickupCommand(_sceneService.Scene, pickup));
+        _selectionService.SetSingle(pickup.Id);
+        _statusBarVm.Message = $"Pickup '{pickupKind}' added at origin.";
     }
 
     [RelayCommand]

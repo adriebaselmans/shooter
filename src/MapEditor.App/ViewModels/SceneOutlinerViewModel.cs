@@ -9,9 +9,9 @@ namespace MapEditor.App.ViewModels;
 /// <summary>Represents one row in the scene outliner tree.</summary>
 public sealed class OutlinerItemViewModel
 {
-    public Guid Id       { get; init; }
-    public string Name   { get; init; } = string.Empty;
-    public string Kind   { get; init; } = string.Empty;
+    public Guid Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string Kind { get; init; } = string.Empty;
 }
 
 /// <summary>Drives the scene outliner panel.</summary>

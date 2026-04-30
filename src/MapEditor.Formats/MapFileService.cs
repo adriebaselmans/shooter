@@ -16,7 +16,7 @@ public sealed class MapFileService
 {
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
-        WriteIndented       = true,
+        WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
     };
 

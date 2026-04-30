@@ -1,14 +1,29 @@
-feature: avalonia-production-texture-browser-and-close-stability
-decision: approved
+id: review-shooter-v1
+status: approved
+based_on_design: design-shooter-v1
+summary: |
+  Implementation reviewed against the design for Shooter.App and editor extensions.
+checks:
+  - id: build
+    result: pass
+    detail: dotnet build shooter.slnx → 0 warnings, 0 errors.
+  - id: lint
+    result: pass
+    detail: dotnet format --verify-no-changes (severity warn) → clean after auto-format.
+  - id: scope_match
+    result: pass
+    detail: All work items W1–W8 implemented; PickupEntity round-trip; commands; ViewModel + Avalonia menu; new Shooter.App with weapons, pickups, decals, HUD, FPS controls.
+  - id: format_compat
+    result: pass
+    detail: format_version bumped to 1.2.0; ValidateVersion accepts any 1.x; older 1.1.0 maps load with empty pickups list.
+  - id: separation_of_concerns
+    result: pass
+    detail: Game logic, physics, rendering, and input split into namespaces; no GL leaks into Game/* layer.
+findings:
+  blocking: []
+  non_blocking:
+    - SceneOutliner / Properties panel does not yet enumerate Pickup entities; menu adds work and serialization round-trip works, but in-editor reposition currently must go via JSON or manual property editing. Acceptable for v1; queued for follow-up.
+    - In-viewport gizmo rendering for spawns/pickups deferred — markers not visible in the editor 2D/3D viewports (also a follow-up).
+    - Sphere-only collision for the player (no capsule), so very tall thin geometry could clip near top/bottom; sufficient for typical Quake-scale rooms.
+rework_target: none
 approved: true
-summary: >
-  Review found the implementation aligned with the requested native Avalonia
-  texture workflow and shutdown fix. The material metadata path is shared by UI
-  and renderer, avoiding a UI-only animation flag.
-findings: []
-blocking_findings: []
-residual_risks:
-  - Terminal tooling can verify startup but cannot physically click the window close button.
-  - Dedicated imported animation frame support is not included in this slice.
-test_readiness: ready
-rework_target: null

@@ -19,6 +19,7 @@ public sealed class Scene
     private readonly List<Brush> _brushes = [];
     private readonly List<LightEntity> _lights = [];
     private readonly List<SpawnPoint> _spawnPoints = [];
+    private readonly List<PickupEntity> _pickups = [];
 
     public WorldSettings WorldSettings { get; set; } = new();
     public Dictionary<string, JsonElement>? AdditionalData { get; set; }
@@ -26,6 +27,7 @@ public sealed class Scene
     public IReadOnlyList<Brush> Brushes => _brushes;
     public IReadOnlyList<LightEntity> Lights => _lights;
     public IReadOnlyList<SpawnPoint> SpawnPoints => _spawnPoints;
+    public IReadOnlyList<PickupEntity> Pickups => _pickups;
 
     /// <summary>Fired whenever the scene content changes.</summary>
     public event EventHandler<SceneChangedEventArgs>? SceneChanged;
@@ -84,6 +86,24 @@ public sealed class Scene
         RaiseChanged();
     }
 
+    internal void AddPickup(PickupEntity pickup)
+    {
+        _pickups.Add(pickup);
+        RaiseChanged();
+    }
+
+    internal void InsertPickup(int index, PickupEntity pickup)
+    {
+        _pickups.Insert(index, pickup);
+        RaiseChanged();
+    }
+
+    internal void RemovePickup(PickupEntity pickup)
+    {
+        _pickups.Remove(pickup);
+        RaiseChanged();
+    }
+
     internal void RaiseChanged() =>
         SceneChanged?.Invoke(this, SceneChangedEventArgs.Default);
 
@@ -96,6 +116,8 @@ public sealed class Scene
         _lights.AddRange(other._lights);
         _spawnPoints.Clear();
         _spawnPoints.AddRange(other._spawnPoints);
+        _pickups.Clear();
+        _pickups.AddRange(other._pickups);
         WorldSettings = other.WorldSettings;
         AdditionalData = other.AdditionalData;
         RaiseChanged();
