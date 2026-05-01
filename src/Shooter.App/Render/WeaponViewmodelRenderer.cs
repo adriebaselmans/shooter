@@ -48,7 +48,8 @@ public sealed class WeaponViewmodelRenderer : IDisposable
 
     public bool HasModel(WeaponKind kind) => _models.ContainsKey(kind);
 
-    public void Draw(int fbWidth, int fbHeight, WeaponSystem weapons)
+    public void Draw(int fbWidth, int fbHeight, WeaponSystem weapons,
+        LightingEnvironment env, ShadowMap shadow, IblProbe ibl, WorldRenderer worldRen)
     {
         var w = weapons.Current;
         if (!_models.TryGetValue(w.Def.Kind, out var model)) return;
@@ -68,7 +69,12 @@ public sealed class WeaponViewmodelRenderer : IDisposable
         var rot = Matrix4x4.CreateFromYawPitchRoll(0f, kick * 0.25f, 0f);
         var modelMat = rot * Matrix4x4.CreateTranslation(pos);
 
-        _modelRen.BeginPass(proj, clearDepthFirst: true);
+        // View-space rendering: shadow map lookups are nonsense here, so disable receive.
+        // The view-space normal is also wrong for SSAO (the viewmodel lives in a different
+        // projection), so writeNormal=false makes the shader emit 0 to leave the normal buffer
+        // intact.
+        _modelRen.BeginPass(Matrix4x4.Identity, proj, clearDepthFirst: true, env, shadow, ibl, worldRen,
+            receiveShadows: false, writeNormal: false);
         _modelRen.DrawModel(model, modelMat);
     }
 

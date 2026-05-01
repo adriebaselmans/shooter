@@ -1,107 +1,46 @@
-id: req-shooter-v1
-title: 3D Quake-like Shooter Game + Editor Spawn/Pickup Support
-status: ready_for_architecture
-summary: >
-  Add a new project "Shooter.App" — a first-person 3D shooter that consumes
-  .shmap files produced by the existing MapEditor. Extend the editor to
-  author player spawn points and upgrade pickups (health / ammo / weapon)
-  that the game consumes. No automated tests; rely on linters and build.
+id: req-shooter-dust-final-polish
+title: Shooter.App Dust Map — Final Cleanup, Balance, and Visual Polish
+status: approved
+parent: req-shooter-dust-polish
+created_at: 2026-04-29T22:10:00Z
 
-scope:
-  in:
-    - New Shooter.App executable (Silk.NET + OpenGL, cross-platform).
-    - Reuse MapEditor.Core, MapEditor.Formats, MapEditor.Rendering as libraries.
-    - Editor UI affordances to create SpawnPoints and Pickups.
-    - .shmap format extended (v1.2.0) with Pickup entities; spawn points already exist.
-    - In-game hit-scan weapons, bullet-hole decals, HUD, health/ammo pickups, weapon pickups.
-  out:
-    - Multiplayer / networking.
-    - AI enemies / NPCs.
-    - Audio.
-    - Reload animations, weapon view models (use simple muzzle/crosshair only).
-    - In-editor 3D gizmos for spawns/pickups (basic wireframe markers acceptable, can be deferred).
-    - Automated tests.
+context: >
+  The core floor/wall disconnection issue is now fixed at the engine level: box top/bottom face
+  winding in MeshGenerator was wrong. With the root cause removed, the user wants a proper final
+  polish pass: simplify temporary debugging or workaround changes that are no longer needed,
+  rebalance route pickups a bit, and make the Dust-inspired map cleaner and more attractive.
 
-functional_requirements:
-  # --- Game ---
-  - id: G1
-    text: Game loads a .shmap given on the command line; falls back to a default test map if none.
-  - id: G2
-    text: Player spawns at a SpawnPoint with SpawnType="player". If multiple, one is chosen at random.
-  - id: G3
-    text: First-person camera at eye height with mouse-look (yaw/pitch, pitch clamped ±89°).
-  - id: G4
-    text: WASD ground movement, Space to jump, gravity applied each tick.
-  - id: G5
-    text: Player capsule collides against world brush triangles (move-and-slide); cannot leave solid hull.
-  - id: G6
-    text: Player has Health (default 100, max 100 from small kits, max 200 from large kits), starts full.
-  - id: G7
-    text: At least three weapons implemented — Pistol (default, infinite ammo or 50 rounds), Shotgun (8 pellets spread, hit-scan), MachineGun (auto-fire, hit-scan).
-  - id: G8
-    text: Weapon switching with number keys 1/2/3 and mouse wheel.
-  - id: G9
-    text: Left mouse fires the current weapon respecting fire-rate cooldown and ammo.
-  - id: G10
-    text: Bullets are hit-scan rays from camera origin through screen-center crosshair; first triangle hit determines impact point and surface normal.
-  - id: G11
-    text: Each impact spawns a "bullet hole" decal (small quad oriented to surface normal, slight offset to avoid z-fighting); FIFO cap (≥256), oldest discarded when full.
-  - id: G12
-    text: HUD always visible — crosshair (screen center), health bar, current ammo, weapon name, FPS.
-  - id: G13
-    text: Pickup types — HealthSmall (+25 hp, cap 100), HealthLarge (+50 hp, cap 200), AmmoPistol (+30), AmmoShotgun (+10), AmmoMachineGun (+50), WeaponShotgun, WeaponMachineGun.
-  - id: G14
-    text: Picking up an item when player capsule overlaps its trigger radius applies the effect and removes the pickup from the world (no respawn in v1).
-  - id: G15
-    text: Pickups render as colored, slowly-rotating cubes (no external assets required).
-  - id: G16
-    text: World mesh built from CSG-resolved brush geometry using existing MeshGenerator pipeline.
-  - id: G17
-    text: World rendering uses ambient color + a simple directional fallback light (or first scene point/spot light direction) — sufficient to read geometry.
-  - id: G18
-    text: ESC quits, F1 toggles a small debug overlay (position, fps, triangle count).
+functional:
+  - id: L46
+    text: "Remove temporary debugging/runtime instrumentation added only for seam diagnosis when it is no longer needed for the shipped map experience."
+  - id: L47
+    text: "Simplify map hacks that were introduced while chasing the old seam bug if they are no longer necessary after the MeshGenerator fix."
+  - id: L48
+    text: "dust.shmap receives a final visual polish pass that improves route landmarking, facade variety, and overall Dust-like readability without regressing the fixed geometry connections."
+  - id: L49
+    text: "Pickups are rebalanced so each major route offers a meaningful incentive while the strongest rewards remain contestable rather than stacked in one area."
+  - id: L50
+    text: "The final polished map still preserves the three-route identity: long/open lane, mid route, tunnel/interior route."
 
-  # --- Editor extensions ---
-  - id: E1
-    text: Editor adds an "Entity" menu with "Add Player Spawn" and "Add Pickup ▸" with sub-items for each pickup kind.
-  - id: E2
-    text: New entity inserts at world origin (0,0,0); user repositions via existing Properties / Transform panel.
-  - id: E3
-    text: New "Pickup" entity in MapEditor.Core with fields { Id, Name, Transform, Kind: enum, Amount: int }.
-  - id: E4
-    text: Scene serializer round-trips Pickup entities and SpawnPoints; format_version bumped to 1.2.0; older 1.1.0 files load (pickups absent → empty list).
-  - id: E5
-    text: New SceneCommands — CreatePickupCommand, DeletePickupCommand — undoable via existing CommandHistory.
-  - id: E6
-    text: Pickups and SpawnPoints appear in the Scene Outliner (if outliner enumerates entities; otherwise deferred — see notes).
-
-non_functional_requirements:
-  - id: N1
-    text: Targets net10.0, nullable enable, ImplicitUsings enable, LangVersion latest — matching existing projects.
-  - id: N2
-    text: Cross-platform (Windows/macOS/Linux) via Silk.NET + Silk.NET.Windowing + Silk.NET.Input.
-  - id: N3
-    text: `dotnet build shooter.slnx` succeeds with no new warnings; analyzers/lints clean.
-  - id: N4
-    text: No new external runtime asset files required (procedural / solid-color rendering acceptable for v1).
-  - id: N5
-    text: Frame budget target 60 FPS on a small map (~hundreds of brushes) on a typical dev laptop.
-  - id: N6
-    text: All file I/O goes through MapEditor.Formats; no parallel JSON parsing path in the game.
+non_functional:
+  - id: NL17
+    text: "No new package references. Prefer content cleanup and small code cleanup only."
+  - id: NL18
+    text: "Any code cleanup must preserve the now-correct box mesh winding behavior and must not reintroduce floor/wall seam artifacts."
+  - id: NL19
+    text: "Build + format clean and smoke-run clean on dust.shmap."
 
 acceptance_criteria:
-  - id: AC1
-    text: Solution builds clean.
-  - id: AC2
-    text: Editor exposes "Entity ▸ Add Player Spawn" and "Entity ▸ Add Pickup ▸ …" menu commands; both round-trip through save/load.
-  - id: AC3
-    text: Running `Shooter.App path/to/map.shmap` opens a window, spawns the player at a SpawnPoint, and renders the brush world with HUD and crosshair.
-  - id: AC4
-    text: Firing a weapon spawns a bullet-hole decal at the aimed surface; ammo decrements; out-of-ammo dry-fires.
-  - id: AC5
-    text: Walking over a pickup applies its effect and removes the pickup from the world.
-  - id: AC6
-    text: Health and ammo HUD reflect runtime state.
+  - id: AC26
+    text: "`dotnet run --project src/Shooter.App -- dust.shmap` loads the final polished map successfully with the floor/wall connection issue still fixed."
+  - id: AC27
+    text: "Temporary seam-debug controls or toggles are removed unless they remain intentionally supported as a permanent debug feature with clear justification."
+  - id: AC28
+    text: "The map looks cleaner and more deliberate than the bug-hunt version: no obvious patch geometry, clearer landmarks, and improved pickup distribution."
+  - id: AC29
+    text: "Build + format clean."
 
-open_questions:
-  - Should SpawnPoints/Pickups be selectable/movable in the editor viewports immediately, or is property-panel editing sufficient for v1? (Assumed: property-panel sufficient; viewport gizmos deferred unless trivial.)
+out_of_scope:
+  - "A completely new map layout from scratch."
+  - "Advanced scripted objectives, bots, or game-mode-specific logic."
+  - "PBR/normal-map work for brush geometry."

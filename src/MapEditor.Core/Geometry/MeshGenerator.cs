@@ -61,7 +61,7 @@ public static class MeshGenerator
             Vector3.UnitZ,
             size.X,
             size.Z,
-            [new(-0.5f, 0.5f, -0.5f), new(0.5f, 0.5f, -0.5f), new(0.5f, 0.5f, 0.5f), new(-0.5f, 0.5f, 0.5f)]);
+            [new(-0.5f, 0.5f, 0.5f), new(0.5f, 0.5f, 0.5f), new(0.5f, 0.5f, -0.5f), new(-0.5f, 0.5f, -0.5f)]);
 
         AddQuad(
             builder,
@@ -72,7 +72,7 @@ public static class MeshGenerator
             -Vector3.UnitZ,
             size.X,
             size.Z,
-            [new(-0.5f, -0.5f, 0.5f), new(0.5f, -0.5f, 0.5f), new(0.5f, -0.5f, -0.5f), new(-0.5f, -0.5f, -0.5f)]);
+            [new(-0.5f, -0.5f, -0.5f), new(0.5f, -0.5f, -0.5f), new(0.5f, -0.5f, 0.5f), new(-0.5f, -0.5f, 0.5f)]);
 
         AddQuad(
             builder,

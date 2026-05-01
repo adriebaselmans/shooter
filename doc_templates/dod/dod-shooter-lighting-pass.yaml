@@ -1,0 +1,131 @@
+id: dod-shooter-lighting-pass
+status: approved_pending_visual_verification
+parent: req-shooter-lighting-pass
+reviewed_at: 2026-04-29T17:35:00Z
+reviewer_role: dod-reviewer
+
+summary: >
+  All requirements (L1..L23) and non-functional requirements (NL1..NL6) are
+  implemented. The build is clean with zero warnings, format is clean, and
+  the smoke run loads all assets and pipelines without error. Acceptance
+  criteria covering build, format, HUD isolation, and resource lifecycle
+  are deterministically met. The remaining acceptance criteria are visual
+  in nature (shadow appearance, sky gradient, bloom on flash, no blowout,
+  perf) and are gated on the next user-driven session in front of the
+  running game.
+
+acceptance_criteria_results:
+  - id: AC1
+    text: "Visible PCF shadow cast by central platform onto floor."
+    result: pending_visual
+    evidence: "Architecture and code reviewed; depth-only pass + 3×3 sampler2DShadow PCF + biases in place. Visual run required."
+  - id: AC2
+    text: "Sky changes color across the dome and recolors with sun direction."
+    result: pending_visual
+    evidence: "SkyFrag computes blue-zenith / warm-horizon / Mie sun glow gradient from uToSun. Code path verified; visual run required."
+  - id: AC3
+    text: "Shaded surfaces read as cool sky-blue ambient, not flat gray."
+    result: pending_visual
+    evidence: "IBL irradiance cube convolved from analytic sky; lit shaders sample iblAmbient(N). Visual run required."
+  - id: AC4
+    text: "Muzzle flash and scorch core bloom; non-emissive surfaces do not."
+    result: pending_visual
+    evidence: "Muzzle flash multiplied by HDR_BOOST=6.0; bloom threshold at 0.9 with knee. Code path verified; visual run required."
+  - id: AC5
+    text: "No blow-out at default exposure; ACES preserves color separation."
+    result: pending_visual
+    evidence: "Narkowicz ACES + gamma 1/2.2; Exposure default 1.0; SunIntensity 4.0 chosen so unshadowed surfaces sit ~0.6..0.9 post-tonemap."
+  - id: AC6
+    text: "HUD crisp and unaffected by exposure / bloom."
+    result: pass
+    evidence: "HudRenderer.Draw runs after PostFx.Draw, against default framebuffer with own blend state. Code path direct."
+  - id: AC7
+    text: "Frame rate ≥60 fps in fallback arena."
+    result: pending_visual
+    evidence: "Frame budget: 1× 2048² shadow pass on 240 tris; 1× HDR scene; 10× small fullscreen bloom passes; 1× post; 1× HUD. Architecturally well below budget; user to confirm."
+  - id: AC8
+    text: "Build + format pass."
+    result: pass
+    evidence: |
+      dotnet build src/Shooter.App/Shooter.App.csproj -nologo
+        → 0 Warning(s), 0 Error(s)
+      dotnet format shooter.slnx --verify-no-changes --severity warn -v minimal
+        → clean (no output)
+  - id: AC9
+    text: "Clean GL resource disposal on close."
+    result: pass
+    evidence: "All new renderers IDisposable. Program.OnClosing chains Dispose() in reverse-construction order. Smoke run terminated cleanly."
+
+non_functional_check:
+  NL1_no_new_native_deps:
+    result: pass
+    evidence: "No new NuGet packages, no new native assets. Only new code under src/Shooter.App."
+  NL2_zero_warnings:
+    result: pass
+    evidence: "0 warnings in dotnet build."
+  NL3_dotnet_format:
+    result: pass
+    evidence: "verify-no-changes --severity warn → clean."
+  NL4_perf_target:
+    result: pending_visual
+    evidence: "Architecturally sized for ≥60 fps; user to confirm in front of the running game."
+  NL5_disposal:
+    result: pass
+    evidence: "All FBOs, textures, renderbuffers, shaders, VAOs/VBOs deleted in Dispose() of owning renderer; OnClosing chain verified by reading."
+  NL6_gl_feature_floor:
+    result: pass
+    evidence: "GL 3.3 core only; sampler2DShadow + RGBA16F + depth FBO are core baseline. No compute, no bindless."
+
+scope_compliance:
+  in_scope_delivered:
+    - HDR FP16 main color buffer (HdrTarget)
+    - Procedural analytic sky (SkyRenderer)
+    - IBL ambient via convolved sky cube (IblProbe)
+    - Single-cascade 2048² PCF shadow map (ShadowMap)
+    - Lambert direct lighting in lit shaders
+    - 5-mip Gaussian bloom (Bloom)
+    - ACES filmic + gamma post (PostFx)
+    - LightingEnvironment as single source of truth
+    - Pass order canonical in Program.OnRender
+  out_of_scope_respected:
+    - PBR materials / textured world brushes — not touched
+    - CSM split — single cascade only
+    - SSAO — not touched
+    - Particles — not touched
+    - Auto-exposure — manual exposure constant only
+    - Editor changes — none
+    - Map format changes — none
+    - Audio — none
+
+risks_resolved:
+  R1_shadow_acne:
+    status: mitigated
+    note: "Front-face culling during shadow pass + slope-scaled depth bias glPolygonOffset(2.0, 4.0) + shader-side bias 0.0008. Visual tuning may follow."
+  R2_ibl_one_shot_cost:
+    status: accepted
+    note: "One-shot at startup; ~98K samples spread over 6 face draws of 16² = 1536 fragments each. Trivial."
+  R3_aces_color_crush:
+    status: mitigated
+    note: "Defaults tuned (Exposure 1.0, SunIntensity 4.0)."
+  R4_macos_cubemap:
+    status: accepted
+    note: "Used standard ClampToEdge wrap on R/S/T; no seamless-cubemap requirement. Apple Silicon GL 4.1 superset is fine."
+
+memory_updates_required:
+  wiki_pages:
+    - architecture/shooter-runtime  # update with new pipeline pass order
+    - architecture/lighting-pipeline # NEW: HDR + sky + IBL + shadow + bloom + ACES details
+    - decisions/lighting-pipeline    # NEW: Q1..Q4 resolutions
+    - context/implementation-history # add lighting pass milestone
+    - context/current-behavior       # add lit-pipeline invariants
+    - incidents/known-gotchas        # depth=1 sky trick, sampler2DShadow, etc.
+
+handoff:
+  next_owner: coordinator
+  pending_user_visual_verification:
+    - "Run `dotnet run --project src/Shooter.App` and visually confirm AC1..AC5, AC7."
+    - "If shadow acne is visible: bump shader-side bias by 0.0005 increments, or increase glPolygonOffset slope from 2.0 toward 3.0."
+    - "If sky too saturated/desaturated: tune LightingEnvironment.Turbidity (2..10)."
+    - "If overall image too bright/dim: tune LightingEnvironment.Exposure."
+
+decision: approved_pending_visual_verification

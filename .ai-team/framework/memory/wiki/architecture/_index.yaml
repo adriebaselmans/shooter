@@ -1,11 +1,16 @@
 category: architecture
-updated: 2026-04-29T16:00:00Z
+updated: 2026-04-29T19:55:00Z
 pages:
+  - id: lighting-pipeline
+    summary: "Shooter.App HDR-linear lighting pipeline: sky, IBL, shadows, bloom, ACES."
+    tags: [lighting, hdr, shadow, ibl, bloom, aces, postfx, gl, shooter]
+    rev: 1
+    updated: 2026-04-29T17:40:00Z
   - id: shooter-runtime
     summary: "Shooter.App game runtime: physics, weapons, rendering, asset pipeline."
-    tags: [shooter, runtime, opengl, silk-net, gameplay, weapons, rendering]
-    rev: 1
-    updated: 2026-04-29T16:00:00Z
+    tags: [shooter, runtime, opengl, silk-net, gameplay, weapons, rendering, textures]
+    rev: 2
+    updated: 2026-04-29T19:55:00Z
   - id: material-browser-and-animation
     summary: "Avalonia material browser and shader-driven animated texture metadata."
     tags: [avalonia, materials, textures, animation, water, lava]

@@ -4,8 +4,9 @@ using Silk.NET.OpenGL;
 
 namespace Shooter.Render;
 
-/// <summary>Renders an aligned, textured GLB model with a Phong+baseColor shader.
-/// Used by both the held weapon viewmodel and rocket projectiles.</summary>
+/// <summary>Renders an aligned, textured GLB model with HDR-linear lit shading.
+/// Used by the held weapon viewmodel (no shadows — view-space lookups are wrong) and rocket
+/// projectiles (shadowed). Lighting uniforms are bound via <see cref="WorldRenderer.BindLighting"/>.</summary>
 public sealed class TexturedModelRenderer : IDisposable
 {
     private readonly GL _gl;
@@ -17,18 +18,21 @@ public sealed class TexturedModelRenderer : IDisposable
         Shader = new ShaderProgram(gl, Shaders.WorldVert, Shaders.TexturedModelFrag);
     }
 
-    /// <summary>Begins a draw pass with the textured shader bound and lighting uniforms set.
-    /// Caller is expected to follow up with one or more <see cref="DrawModel"/> calls.</summary>
-    public void BeginPass(Matrix4x4 viewProj, bool clearDepthFirst)
+    /// <summary>Begins a draw pass with the textured shader bound, lighting/shadow/IBL uniforms
+    /// configured. <paramref name="receiveShadows"/> = false disables shadow lookup entirely
+    /// for this pass (used by the view-space weapon viewmodel).</summary>
+    public void BeginPass(Matrix4x4 view, Matrix4x4 viewProj, bool clearDepthFirst, LightingEnvironment env,
+        ShadowMap shadow, IblProbe ibl, WorldRenderer worldRen, bool receiveShadows, bool writeNormal)
     {
         if (clearDepthFirst) _gl.Clear(ClearBufferMask.DepthBufferBit);
         _gl.Disable(EnableCap.CullFace);
         _gl.Enable(EnableCap.DepthTest);
         Shader.Use();
+        worldRen.BindLighting(Shader, env, shadow, ibl);
         UploadMatrix(Shader.U("uViewProj"), viewProj);
-        _gl.Uniform3(Shader.U("uAmbient"), 0.45f, 0.45f, 0.50f);
-        _gl.Uniform3(Shader.U("uSunDir"), -0.3f, -1.0f, -0.4f);
-        _gl.Uniform3(Shader.U("uSunColor"), 1.0f, 0.95f, 0.85f);
+        UploadMatrix(Shader.U("uView"), view);
+        _gl.Uniform1(Shader.U("uReceiveShadows"), receiveShadows ? 1 : 0);
+        _gl.Uniform1(Shader.U("uWriteNormal"), writeNormal ? 1 : 0);
         _gl.Uniform1(Shader.U("uBaseColor"), 0); // texture unit 0
     }
 

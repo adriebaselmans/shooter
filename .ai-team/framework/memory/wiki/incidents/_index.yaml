@@ -1,8 +1,8 @@
 category: incidents
-updated: 2026-04-26T12:00:00Z
+updated: 2026-04-29T20:45:00Z
 pages:
   - id: known-gotchas
-    summary: "Known recurring pitfalls in the shooter map editor codebase."
-    tags: [gotchas, wpf, hwndhost, keyboard, axis-colors, shader, mvvm-toolkit]
-    rev: 1
-    updated: 2026-04-26T12:00:00Z
+    summary: "Known recurring pitfalls in the shooter map editor and game runtime."
+    tags: [gotchas, wpf, hwndhost, keyboard, axis-colors, shader, mvvm-toolkit, shooter, physics, glb, lighting, hdr, shadow, textures]
+    rev: 5
+    updated: 2026-04-29T20:45:00Z

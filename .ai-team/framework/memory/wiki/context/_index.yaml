@@ -1,5 +1,5 @@
 category: context
-updated: 2026-04-26T18:45:00Z
+updated: 2026-04-29T20:45:00Z
 pages:
   - id: active-editor-runtime
     summary: "Current active editor runtime is the Avalonia app in the main solution."
@@ -7,12 +7,12 @@ pages:
     rev: 1
     updated: 2026-04-26T18:45:00Z
   - id: implementation-history
-    summary: "Completed implementation milestones for the shooter map editor and shell migration."
-    tags: [history, implemented, editor, viewports, brushes, gl, wpf, avalonia]
-    rev: 2
-    updated: 2026-04-26T18:45:00Z
+    summary: "Completed implementation milestones for the shooter map editor and game runtime."
+    tags: [history, implemented, editor, viewports, brushes, gl, wpf, avalonia, shooter, weapons, glb, lighting, hdr, shadows, textures]
+    rev: 6
+    updated: 2026-04-29T20:45:00Z
   - id: current-behavior
     summary: "Stable user-facing behaviors that must not regress."
-    tags: [behavior, ux, editor, viewports, shortcuts, primitives]
-    rev: 1
-    updated: 2026-04-26T12:00:00Z
+    tags: [behavior, ux, editor, viewports, shortcuts, primitives, shooter, gameplay, lighting, textures]
+    rev: 4
+    updated: 2026-04-29T19:55:00Z

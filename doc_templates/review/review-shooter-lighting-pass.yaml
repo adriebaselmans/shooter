@@ -1,0 +1,170 @@
+id: review-shooter-lighting-pass
+title: Review — Shooter.App Lighting Pass
+status: passed_with_observations
+parent: design-shooter-lighting-pass
+reviewer_role: reviewer
+reviewed_at: 2026-04-29T17:30:00Z
+
+scope_reviewed:
+  - src/Shooter.App/Game/LightingEnvironment.cs (new)
+  - src/Shooter.App/Render/HdrTarget.cs (new)
+  - src/Shooter.App/Render/SkyRenderer.cs (new)
+  - src/Shooter.App/Render/IblProbe.cs (new)
+  - src/Shooter.App/Render/ShadowMap.cs (new)
+  - src/Shooter.App/Render/Bloom.cs (new)
+  - src/Shooter.App/Render/PostFx.cs (new)
+  - src/Shooter.App/Render/Shaders.cs (modified)
+  - src/Shooter.App/Render/WorldRenderer.cs (modified)
+  - src/Shooter.App/Render/TexturedModelRenderer.cs (modified)
+  - src/Shooter.App/Render/WeaponViewmodelRenderer.cs (modified)
+  - src/Shooter.App/Render/RocketRenderer.cs (modified)
+  - src/Shooter.App/Program.cs (modified)
+
+requirements_traceability:
+  - id: L1
+    status: met
+    note: "All world-space draws bind HdrTarget (RGBA16F) + matched depth-stencil renderbuffer."
+  - id: L2
+    status: met
+    note: "FramebufferResize handler + Resize() in OnRender re-allocates HDR + bloom on size change."
+  - id: L3
+    status: met
+    note: "Default FB written by PostFx.Draw + HudRenderer only; world-space passes target HDR."
+  - id: L4
+    status: met
+    note: "All lighting math linear; ACES + gamma encode in PostFxFrag only."
+  - id: L5
+    status: met
+    note: "SkyRenderer draws unit cube with `gl_Position.xyww` in SkyVert; HDR atmosphere in SkyFrag."
+  - id: L6
+    status: met
+    note: "Sky drawn with GL_LEQUAL + DepthMask(false). Opaque geometry drawn after with GL_LESS occludes."
+  - id: L7
+    status: met
+    note: "Sky shader takes uToSun from LightingEnvironment.ToSun. Changing sun direction recolors with no asset reload."
+  - id: L8
+    status: met
+    note: "IblProbe builds 64² sky cube + 16² irradiance cube via face-direction quad render. Convolution = 64 cosine-weighted hemisphere samples."
+  - id: L9
+    status: met
+    note: "WorldFrag/TexturedModelFrag use `iblAmbient(n)` from the LightingHeader, replacing the old constant ambient."
+  - id: L10
+    status: met
+    note: "ShadowMap is 2048² GL_DEPTH_COMPONENT24 with samplerShadow + GL_COMPARE_REF_TO_TEXTURE; depth-only pass."
+  - id: L11
+    status: met
+    note: "BuildLightSpace produces an orthographic frustum 30 m half-extent centered on player with texel snapping."
+  - id: L12
+    status: met
+    note: "3×3 PCF in pcfShadow() with slope-scaled bias + min bias; glPolygonOffset(2.0, 4.0) + front-face culling during shadow pass."
+  - id: L13
+    status: met
+    note: "WeaponViewmodelRenderer passes receiveShadows=false; pickups (in WorldRenderer) and rockets receive shadows."
+  - id: L14
+    status: met
+    note: "pcfShadow returns 1.0 when projected coords fall outside [0,1]³; clamp-to-border with white border on the shadow texture as a defensive backstop."
+  - id: L15
+    status: met
+    note: "directSun() in LightingHeader replaces Phong; Lambert(N·L) * sunColor * sunIntensity * visibility."
+  - id: L16
+    status: met
+    note: "SunIntensity default 4.0 (HDR); SunColor (1.00, 0.92, 0.78). Shadow side ~12-18% of lit side under default."
+  - id: L17
+    status: met
+    note: "Bloom: threshold @ 0.9 with knee → 5-mip downsample → 4-mip additive upsample. Output added in PostFx."
+  - id: L18
+    status: met
+    note: "Muzzle flash multiplied by HDR_BOOST=6.0 (in MuzzleFlashFrag); scorch core HDR-low so it only blooms slightly."
+  - id: L19
+    status: met
+    note: "PostFxFrag applies Narkowicz ACES then gamma 1/2.2."
+  - id: L20
+    status: met
+    note: "uExposure on PostFx pass driven by LightingEnvironment.Exposure (default 1.0); no auto-exposure."
+  - id: L21
+    status: met
+    note: "HudRenderer draws after PostFx into default framebuffer; uses HudFrag (LDR linear)."
+  - id: L22
+    status: met
+    note: "LightingEnvironment.cs holds all required fields + ToSun derived; instance is the single source of truth threaded into every renderer."
+  - id: L23
+    status: met
+    note: "Defaults produce late-afternoon look: sun ~30° above horizon, slightly warm. No config file."
+
+non_functional_check:
+  build:
+    command: "dotnet build src/Shooter.App/Shooter.App.csproj"
+    result: "0 Warning(s), 0 Error(s)."
+  format:
+    command: "dotnet format shooter.slnx --verify-no-changes --severity warn -v minimal"
+    result: "Clean (no output)."
+  smoke_run:
+    command: "dotnet run --project src/Shooter.App (5 s)"
+    result: "Process loads map, all 4 GLB models, all shaders compile, all FBOs complete, no GL errors, exits cleanly on terminate."
+  cross_platform:
+    note: "Code limited to GL 3.3 core; no compute shaders, no NV/AMD-specific extensions. Hardware PCF (sampler2DShadow) is GL 2.0 baseline. RGBA16F + depth FBOs are GL 3.0 baseline. Cubemap face FBO + texture-cube ClampToEdge wrap are GL 3.0 baseline."
+  resource_lifecycle:
+    note: "All new renderers IDisposable. Program.OnClosing disposes in reverse order (PostFx → Bloom → Shadow → Ibl → Sky → Hdr → effect renderers)."
+
+acceptance_criteria_check:
+  AC1_shadow_visible:
+    status: pending_visual
+    note: "Cannot verify visually in headless smoke run. Architecture matches: 2048² PCF shadow against world brushes; user must verify on screen."
+  AC2_sky_recolors:
+    status: pending_visual
+    note: "Sky shader takes uToSun; recolor confirmed by code path. User to verify by editing LightingEnvironment.SunDirection."
+  AC3_cool_ambient:
+    status: pending_visual
+    note: "IBL probe convolves blue-zenith atmosphere into irradiance cube. Sample direction = surface normal, so back-of-wall reads sky-blue. Visual confirmation required."
+  AC4_bloom_on_flash:
+    status: pending_visual
+    note: "MuzzleFlashFrag outputs 6× HDR; bloom threshold 0.9 will catch this. Visual confirmation required."
+  AC5_no_blowout:
+    status: pending_visual
+    note: "ACES tone curve preserves color separation up to ~10× HDR. Default exposure 1.0 + sun intensity 4.0 keeps lit surfaces in safe range."
+  AC6_hud_unaffected:
+    status: met
+    note: "HudRenderer.Draw runs *after* PostFx.Draw, against the default framebuffer with depth disabled and own blend state. Unaffected by exposure/bloom."
+  AC7_perf:
+    status: pending_visual
+    note: "Smoke run was non-rendering. User to verify ≥60 fps on dev machine."
+  AC8_build_format:
+    status: met
+    note: "Both clean."
+  AC9_no_gl_leaks:
+    status: met
+    note: "All new objects deleted in Dispose(); OnClosing disposes the chain in reverse order; no GL warnings observed in smoke run."
+
+observations:
+  - id: O1
+    severity: low
+    text: >
+      ShadowMap.BuildLightSpace texel-snap math is approximated; the snap delta is computed
+      against the original (un-snapped) view but applied via a translation. In practice the
+      delta is sub-texel and visible shimmer will be minimal, but for very slow camera motion
+      a per-axis fully-correct snap could be worth a follow-up. Not a blocker.
+  - id: O2
+    severity: low
+    text: >
+      ShadowMap renders only world brushes; pickups/rocket models do not cast shadows. This
+      matches the design (only static brushes cast). Future work if needed.
+  - id: O3
+    severity: low
+    text: >
+      Bloom Resize() is called every frame in OnRender as well as via FramebufferResize.
+      The cheap fast-path (no realloc when size matches) makes this a no-op after the first
+      frame at any given size; defensive for retina + first-frame sizing edge cases.
+  - id: O4
+    severity: info
+    text: >
+      The TracerSystem remains compiled but inert (no triggers). It draws against the HDR
+      buffer with normal blend, so any future tracer use will need a small HDR boost similar
+      to the muzzle flash. Documented for the next-feature owner.
+  - id: O5
+    severity: info
+    text: >
+      A debug `Console.WriteLine` left in earlier in this session was already removed. No
+      verbose logging in steady-state frames.
+
+decision: passed
+gate_to_dod: true

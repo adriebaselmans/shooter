@@ -18,6 +18,8 @@ public sealed class WorldBrush
     public required Vector3 BoundsMin { get; init; }
     public required Vector3 BoundsMax { get; init; }
     public required IReadOnlyList<WorldTriangle> Triangles { get; init; }
+    public string MaterialName { get; init; } = "default";
+    public string? TexturePath { get; init; }
     public Vector3 TintColor { get; init; } = new(0.75f, 0.75f, 0.78f);
 }
 
@@ -68,6 +70,7 @@ public sealed class GameWorld
             var tris = ExtractWorldTriangles(mesh, model, normalMat);
             var (bmin, bmax) = ComputeBounds(tris);
 
+            var texturePath = ResolveMaterialTexturePath(brush.MaterialName);
             var wb = new WorldBrush
             {
                 BrushId = brush.Id,
@@ -77,7 +80,9 @@ public sealed class GameWorld
                 BoundsMin = bmin - new Vector3(0.01f),
                 BoundsMax = bmax + new Vector3(0.01f),
                 Triangles = tris,
-                TintColor = ColorFromMaterial(brush.MaterialName),
+                MaterialName = brush.MaterialName,
+                TexturePath = texturePath,
+                TintColor = ColorFromMaterial(brush.MaterialName, texturePath),
             };
             brushes.Add(wb);
             allTris.AddRange(tris);
@@ -146,8 +151,37 @@ public sealed class GameWorld
         return (min, max);
     }
 
-    private static Vector3 ColorFromMaterial(string name)
+    private static string? ResolveMaterialTexturePath(string materialName)
     {
+        if (string.IsNullOrWhiteSpace(materialName)) return null;
+        string ext = Path.GetExtension(materialName);
+        if (!IsImageExtension(ext)) return null;
+
+        // Absolute path explicitly embedded in the map.
+        if (Path.IsPathRooted(materialName) && File.Exists(materialName))
+            return materialName;
+
+        // Repo assets-relative path, e.g. textures/dust/ground_sand_1k.jpg.
+        string assetRelative = Path.Combine(global::Shooter.AssetLocator.Root, materialName);
+        if (File.Exists(assetRelative)) return assetRelative;
+
+        // Map-relative / cwd-relative path for portability when launching from repo root.
+        string cwdRelative = Path.GetFullPath(materialName, Directory.GetCurrentDirectory());
+        if (File.Exists(cwdRelative)) return cwdRelative;
+
+        return null;
+    }
+
+    private static bool IsImageExtension(string ext) =>
+        ext.Equals(".png", StringComparison.OrdinalIgnoreCase) ||
+        ext.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
+        ext.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) ||
+        ext.Equals(".bmp", StringComparison.OrdinalIgnoreCase);
+
+    private static Vector3 ColorFromMaterial(string name, string? texturePath)
+    {
+        if (!string.IsNullOrWhiteSpace(texturePath))
+            return Vector3.One; // textured brushes should show their imported albedo unchanged
         if (string.IsNullOrEmpty(name) || name == "default")
             return new Vector3(0.78f, 0.78f, 0.82f);
         unchecked

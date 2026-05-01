@@ -10,11 +10,11 @@ roles:
     inherit_picker: true
   requirements-engineer:
     model:
-      - GPT-5.4 (copilot)
+      - GPT-5.5 (copilot)
       - Claude Sonnet 4.5 (copilot)
   ux-ui-designer:
     model:
-      - GPT-5.4 (copilot)
+      - GPT-5.5 (copilot)
       - Claude Sonnet 4.5 (copilot)
   explorer:
     model:
@@ -28,7 +28,7 @@ roles:
       - Claude Sonnet 4.5 (copilot)
   developer:
     model:
-      - GPT-5.4 (copilot)
+      - GPT-5.5 (copilot)
       - Claude Sonnet 4.5 (copilot)
     reasoning_note: Copilot custom-agent frontmatter does not expose a verified per-agent reasoning-effort setting.
   reviewer:

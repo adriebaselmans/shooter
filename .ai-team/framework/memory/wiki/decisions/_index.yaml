@@ -1,6 +1,16 @@
 category: decisions
-updated: 2026-04-29T16:00:00Z
+updated: 2026-04-29T19:55:00Z
 pages:
+  - id: lighting-pipeline
+    summary: "Resolutions of Q1..Q4 from req-shooter-lighting-pass: sky model, bloom kernel, IBL sizes, muzzle-flash HDR boost."
+    tags: [lighting, hdr, sky, bloom, ibl, aces, decisions]
+    rev: 1
+    updated: 2026-04-29T17:40:00Z
+  - id: brush-texture-integration
+    summary: "Shooter.App world brushes use image-backed material_name paths for diffuse-only texture sampling with tint fallback."
+    tags: [textures, shooter, brushes, cc0, polyhaven, rendering, assets, decisions]
+    rev: 1
+    updated: 2026-04-29T19:55:00Z
   - id: glb-asset-pipeline
     summary: "Shooter.App uses SharpGLTF/GLB for weapons; FBX/Assimp dropped."
     tags: [assets, glb, gltf, sharpgltf, fbx, assimp, decision]

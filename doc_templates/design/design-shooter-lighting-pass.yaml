@@ -1,0 +1,203 @@
+id: design-shooter-lighting-pass
+title: Shooter.App Lighting Pass — Architecture
+status: ready_for_development
+parent: req-shooter-lighting-pass
+summary: >
+  HDR-linear forward pipeline with analytic procedural sky, a single-cascade
+  directional shadow map, image-based ambient from a convolved sky cubemap,
+  Lambert direct lighting, mip-chain bloom, and ACES tone mapping. All
+  subsystems land together; pass order is canonical.
+
+# --- Open question resolutions (Q1..Q4 from requirements) ---
+decisions:
+  Q1_sky_model:
+    choice: "Hand-tuned analytic atmosphere (zenith/horizon gradient + Mie sun glow + ground)"
+    rationale: >
+      A full Preetham/Hosek-Wilkie implementation requires turbidity-dependent
+      coefficient tables and tan/exp branches that are easy to get wrong in
+      portable GLSL, for visual gain that is not perceivable in a fast 60×60 m
+      arena. A 30-line analytic model with a blue zenith, warm horizon, Mie
+      sun glow, and below-horizon ground gives the same perceptual result and
+      is trivially debuggable. Driven by SunDirection + Turbidity uniforms.
+  Q2_bloom_kernel:
+    choice: "Five-mip Gaussian downsample/upsample chain"
+    rationale: >
+      Standard, robust, easy to debug. Dual-Kawase saves ~0.3 ms which is
+      irrelevant at our scene complexity. Threshold pass at 1.0 + 5 down + 4
+      up + composite = 10 fullscreen passes on shrinking targets. Cheap.
+  Q3_ibl_probe_sizes:
+    choice: "Sky cubemap 64², irradiance cubemap 16², 64 hemisphere samples per output texel"
+    rationale: >
+      Diffuse irradiance is band-limited; 16² is more than sufficient as the
+      data is also bilinearly + cubemap-filtered when sampled. 64 stratified
+      samples with cosine weighting converges visually. Built once at startup
+      against the LightingEnvironment defaults; rebuild on sun change.
+  Q4_muzzle_flash_hdr_boost:
+    choice: "Multiply final muzzle-flash color by 6.0; multiply scorch core by 1.8 during the flash window"
+    rationale: >
+      ACES filmic tone curve compresses high values toward white but preserves
+      brightness ordering, so an HDR boost at the source survives tone mapping
+      with a clean bloom halo, instead of clamping the additive blend at 1.0
+      pre-tonemap and producing a flat white smear.
+
+# --- Subsystem design ---
+subsystems:
+  lighting_environment:
+    file: src/Shooter.App/Game/LightingEnvironment.cs
+    purpose: "Single source of truth for sun, sky, exposure parameters."
+    fields:
+      - SunDirection: "Vector3, direction the sun's light travels (i.e. -toSun). Normalized."
+      - SunColor: "Vector3 linear, ~(1.00, 0.92, 0.78)."
+      - SunIntensity: "float, HDR multiplier applied to SunColor in lit shaders. Default 4.0."
+      - Turbidity: "float, sky atmosphere thickness, 2..10. Default 3.0."
+      - GroundAlbedo: "Vector3, ground tint visible below horizon. Default (0.18, 0.16, 0.14)."
+      - Exposure: "float, post-pass exposure scalar. Default 1.0."
+      - IrradianceIntensity: "float, scales irradiance cube ambient. Default 1.0."
+    derived:
+      ToSun: "Vector3 = -SunDirection (read by sky shader and direct-light dot product)."
+
+  hdr_target:
+    file: src/Shooter.App/Render/HdrTarget.cs
+    color_format: RGBA16F
+    depth_format: DEPTH24_STENCIL8 (renderbuffer; not sampled)
+    api:
+      - "Resize(w, h): allocate or re-allocate matching framebuffer size."
+      - "Bind(): glBindFramebuffer + glViewport."
+      - "BindDefault(gl, w, h) static: rebind the system framebuffer."
+    lifecycle: "Created in OnLoad; resized on FramebufferResize; disposed in OnClosing."
+
+  sky:
+    file: src/Shooter.App/Render/SkyRenderer.cs
+    technique: >
+      Unit cube around camera at far plane (`gl_Position = pos.xyww` trick so
+      depth=1 always). Vertex passes the world-space view direction as a vec3.
+      Fragment evaluates `atmosphereColor(dir, toSun, turbidity)` and outputs
+      HDR radiance.
+    depth_state: "GL_LEQUAL, depth-write OFF (so opaque scene depth-tests against far)."
+    cull: "OFF (we want both sides visible from inside the cube)."
+
+  ibl_probe:
+    file: src/Shooter.App/Render/IblProbe.cs
+    technique: >
+      Step 1: render a 64² HDR cubemap of the procedural sky by drawing a
+      fullscreen quad into each of 6 faces, using a per-face direction-basis
+      uniform (rather than full cube geometry). Step 2: convolve into a 16²
+      irradiance cubemap by sampling 64 cosine-weighted directions in the
+      hemisphere of the output texel's normal and accumulating into a single
+      averaged radiance.
+    api:
+      - "Build(GL, LightingEnvironment): one-shot build."
+      - "IrradianceCube: uint cube texture handle (TextureCubeMap)."
+    rebuild_trigger: "Manual; called once at startup. Hooks for sun-change rebuild are present but unused."
+
+  shadow_map:
+    file: src/Shooter.App/Render/ShadowMap.cs
+    size: "2048×2048, GL_DEPTH_COMPONENT24, GL_TEXTURE_2D."
+    sampler_state: "GL_LINEAR + GL_COMPARE_REF_TO_TEXTURE for hardware PCF."
+    technique: >
+      Each frame: build an orthographic light-space matrix centered on the
+      player, looking along SunDirection. Frustum half-extent 30 m, near -40 m,
+      far +40 m relative to player center. Snap the light-space origin to the
+      nearest texel to eliminate shimmer when the player moves.
+      Render world brushes only with a depth-only shader (`ShadowDepthVert`,
+      no fragment writes). Front-face culling during shadow pass to reduce
+      acne ("peter-panning" risk accepted; thin walls in this arena are not an
+      issue).
+    bias: "Slope-scaled depth bias via glPolygonOffset(2.0, 4.0); a small
+      shader-side bias of 0.0008 added to comparison depth."
+    sampling: "3×3 PCF in lit shaders using `samplerShadow` + `textureProj`,
+      averaged."
+    api:
+      - "RenderPass(GL, IReadOnlyList<WorldBrush>, lightSpace, shaderProgram)"
+      - "DepthTexture: uint"
+      - "LightSpaceMatrix: Matrix4x4"
+
+  bloom:
+    file: src/Shooter.App/Render/Bloom.cs
+    pipeline:
+      - "Threshold pass: HDR > 1.0 with knee, output to Mip0."
+      - "Down chain: Mip0→Mip1→Mip2→Mip3→Mip4 with 13-tap downsample (Karis-ish average)."
+      - "Up chain: Mip4 added to Mip3, ..., back to Mip0 with tent filter."
+      - "Composite: Mip0 added to HDR in PostFx pass (not here)."
+    formats: "All bloom mips RGBA16F."
+    smallest_mip: "ceil(width/16) × ceil(height/16) clamped to ≥1."
+
+  post_fx:
+    file: src/Shooter.App/Render/PostFx.cs
+    technique: >
+      Fullscreen triangle. Sample HDR + bloom mip0 (additive composite at
+      0.04 strength), apply ACES filmic curve, gamma-encode to sRGB, write to
+      default framebuffer.
+    aces: "Narkowicz ACES-fitted approximation (5 constants, no tables)."
+    gamma: "pow(linear, 1.0/2.2). No sRGB FBO; we encode manually."
+    uniforms: "uExposure, uBloomStrength, uHdr (unit 0), uBloom (unit 1)."
+
+# --- Modified shaders ---
+shaders_modified:
+  WorldFrag:
+    new_uniforms:
+      - "uLightSpaceMatrix: mat4"
+      - "uShadowMap: sampler2DShadow (unit 4)"
+      - "uIrradiance: samplerCube (unit 5)"
+      - "uSunDir, uSunColor, uSunIntensity"
+      - "uIrradianceIntensity"
+      - "uReceiveShadows: int (0 disables shadow lookup)"
+    body: >
+      ambient = texture(uIrradiance, n).rgb * uIrradianceIntensity;
+      visibility = uReceiveShadows == 1 ? PCF(...) : 1.0;
+      ndl = max(dot(n, -uSunDir), 0.0);
+      lit = albedo * (ambient + uSunColor * uSunIntensity * ndl * visibility);
+      output linear HDR.
+  TexturedModelFrag:
+    same_changes_as: WorldFrag
+    extras: "Keeps alpha cutout 0.05; receives uReceiveShadows=0 for viewmodel, 1 for rocket."
+  PickupFrag: "Folded into WorldFrag with a uSelfIllum uniform."
+  Existing flash/scorch: "Output values multiplied by HDR boost (6.0 / 1.8) so they punch through tone mapping."
+
+# --- Pass order in Program.OnRender ---
+render_pass_order:
+  - "1. ShadowMap pass: world brushes only (depth-only)."
+  - "2. Bind HDR target, clear color+depth."
+  - "3. SkyRenderer.Draw."
+  - "4. WorldRenderer.Draw (brushes + pickups, with shadow + IBL)."
+  - "5. DecalRenderer.Draw (bullet holes)."
+  - "6. ScorchRenderer.Draw."
+  - "7. RocketRenderer.Draw (lit, with shadow)."
+  - "8. WeaponViewmodelRenderer.Draw (lit, NO shadow, additive view-space)."
+  - "9. MuzzleFlashRenderer.Draw (additive HDR boosted)."
+  - "10. Bloom.Run on HDR color."
+  - "11. PostFx.Draw to default framebuffer (tone-mapped LDR)."
+  - "12. HudRenderer.Draw (default FB, LDR)."
+
+resource_lifecycle:
+  - "All new renderers IDisposable, owned by Program.cs static fields."
+  - "Program.OnClosing disposes in reverse order; HdrTarget recreated on FramebufferResize."
+
+risks:
+  - id: R1
+    text: "Shadow acne on the test arena. Mitigated by front-face culling during shadow pass + slope-scaled bias + small constant bias. If still visible, increase bias by 0.0005 increments."
+  - id: R2
+    text: "IBL convolution shader hot-loop slowness on intel iGPUs at 16²×6×64=98K samples one-shot. One-shot at startup makes this acceptable — only impacts initial load by tens of ms, not steady-state frame time."
+  - id: R3
+    text: "ACES tone curve crushing colors. We tune Exposure default to 1.0 and SunIntensity to 4.0 so unshadowed surfaces sit around 0.6..0.9 post-tonemap on the test arena."
+  - id: R4
+    text: "Cubemap sampling on macOS/Apple Silicon under GL 3.3 — confirmed to work with seamless-cubemap-not-required code paths (we use cubemap face filtering naturally bilinear)."
+
+deliverables:
+  new_files:
+    - src/Shooter.App/Game/LightingEnvironment.cs
+    - src/Shooter.App/Render/HdrTarget.cs
+    - src/Shooter.App/Render/SkyRenderer.cs
+    - src/Shooter.App/Render/IblProbe.cs
+    - src/Shooter.App/Render/ShadowMap.cs
+    - src/Shooter.App/Render/Bloom.cs
+    - src/Shooter.App/Render/PostFx.cs
+  modified_files:
+    - src/Shooter.App/Render/Shaders.cs        # major: rewrite WorldFrag/TexturedModelFrag, add 8+ new shaders
+    - src/Shooter.App/Render/WorldRenderer.cs  # take LightingEnvironment, ShadowMap, IblProbe
+    - src/Shooter.App/Render/TexturedModelRenderer.cs  # same + receiveShadows
+    - src/Shooter.App/Render/WeaponViewmodelRenderer.cs  # thread lighting
+    - src/Shooter.App/Render/RocketRenderer.cs           # thread lighting
+    - src/Shooter.App/Render/MuzzleFlashRenderer.cs      # HDR boost
+    - src/Shooter.App/Render/ScorchRenderer.cs           # HDR-friendly output
+    - src/Shooter.App/Program.cs                         # new pass order + lifecycle

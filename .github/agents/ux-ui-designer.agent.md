@@ -3,7 +3,7 @@ name: UX UI Designer
 description: Optional support agent for UX, interaction, accessibility, and visual clarity.
 target: vscode
 model:
-  - GPT-5.4 (copilot)
+  - GPT-5.5 (copilot)
   - Claude Sonnet 4.5 (copilot)
 tools: [read, search, web]
 user-invocable: false

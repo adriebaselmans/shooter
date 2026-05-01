@@ -123,3 +123,75 @@
   action: updated
   target: wiki/incidents/known-gotchas
   summary: "Added sphere-vs-capsule, first-frame dt, view-space anchor, GLB filename gotchas"
+
+- ts: 2026-04-29T17:40:00Z
+  role: architect
+  action: created
+  target: wiki/architecture/lighting-pipeline
+  summary: "Recorded Shooter.App HDR lighting pipeline (sky, IBL, shadow, bloom, ACES)"
+
+- ts: 2026-04-29T17:40:00Z
+  role: architect
+  action: created
+  target: wiki/decisions/lighting-pipeline
+  summary: "Recorded Q1..Q4 resolutions: analytic sky, 5-mip Gaussian bloom, 64²/16² IBL, flash HDR×6"
+
+- ts: 2026-04-29T17:40:00Z
+  role: developer
+  action: implemented
+  target: src/Shooter.App/Render/{HdrTarget,SkyRenderer,IblProbe,ShadowMap,Bloom,PostFx}.cs
+  summary: "Lighting Pass: HDR target, procedural sky, IBL probe, shadow map, bloom, ACES post"
+
+- ts: 2026-04-29T17:40:00Z
+  role: developer
+  action: modified
+  target: src/Shooter.App/Render/{Shaders,WorldRenderer,TexturedModelRenderer,WeaponViewmodelRenderer,RocketRenderer}.cs and Program.cs
+  summary: "Lit shaders use IBL ambient + Lambert + PCF shadow; canonical pass order in OnRender"
+
+- ts: 2026-04-29T17:40:00Z
+  role: coordinator
+  action: updated
+  target: wiki/{context/implementation-history,context/current-behavior,incidents/known-gotchas,architecture/shooter-runtime}
+  summary: "Recorded lighting-pass milestones, invariants, and new gotchas (HDR, sky LEQUAL, sampler2DShadow, view-space)"
+
+- ts: 2026-04-29T19:55:00Z
+  role: architect
+  action: created
+  target: wiki/decisions/brush-texture-integration
+  summary: "Recorded image-backed material_name path strategy for Shooter.App brush textures"
+
+- ts: 2026-04-29T19:55:00Z
+  role: coordinator
+  action: updated
+  target: wiki/architecture/shooter-runtime
+  summary: "Added world-brush texture resolution, TextureCache, and one-texture-per-brush scope"
+
+- ts: 2026-04-29T19:55:00Z
+  role: coordinator
+  action: updated
+  target: wiki/context/implementation-history
+  summary: "Added Dust map texturing milestone and Poly Haven CC0 asset import record"
+
+- ts: 2026-04-29T19:55:00Z
+  role: coordinator
+  action: updated
+  target: wiki/context/current-behavior
+  summary: "Added textured-brush fallback invariant and auto-exposure wording refresh"
+
+- ts: 2026-04-29T19:55:00Z
+  role: coordinator
+  action: updated
+  target: wiki/incidents/known-gotchas
+  summary: "Added image-backed material_name semantics and non-fatal missing-texture guidance"
+
+- ts: 2026-04-29T20:45:00Z
+  role: coordinator
+  action: updated
+  target: wiki/context/implementation-history
+  summary: "Recorded Dust map polish pass: three-route layout, UV surface mappings, stronger outer walls, and added CC0 detail textures"
+
+- ts: 2026-04-29T20:45:00Z
+  role: coordinator
+  action: updated
+  target: wiki/incidents/known-gotchas
+  summary: "Added guidance for large-brush surface_mappings and sinking tall walls slightly into the ground"

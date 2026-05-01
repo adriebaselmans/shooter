@@ -6,33 +6,38 @@ using Silk.NET.OpenGL;
 
 namespace Shooter.Render;
 
-/// <summary>Renders the static world brushes plus pickup markers.</summary>
+/// <summary>Renders the static world brushes plus pickup markers using HDR-linear lit shaders
+/// with PCF-shadowed Lambert direct lighting and IBL ambient.</summary>
 public sealed class WorldRenderer : IDisposable
 {
     private readonly GL _gl;
     private readonly ShaderProgram _shader;
-    private readonly ShaderProgram _pickupShader;
+    private readonly TextureCache _textures;
     private readonly GlMesh _pickupCube;
     private readonly Dictionary<Guid, GlMesh> _brushMeshes = new();
     private readonly GameWorld _world;
+
+    /// <summary>Exposed so the shadow pass can re-bind the same VBO/VAO as the lit pass.</summary>
+    public IReadOnlyDictionary<Guid, GlMesh> BrushMeshes => _brushMeshes;
 
     public WorldRenderer(GL gl, GameWorld world)
     {
         _gl = gl;
         _world = world;
+        // World brushes and pickups use the same lit shader. Pickup pass sets uSelfIllum > 0.
         _shader = new ShaderProgram(gl, Shaders.WorldVert, Shaders.WorldFrag);
-        _pickupShader = new ShaderProgram(gl, Shaders.PickupVert, Shaders.PickupFrag);
+        _textures = new TextureCache(gl);
 
         foreach (var wb in world.Brushes)
             _brushMeshes[wb.BrushId] = new GlMesh(gl, wb.Mesh);
 
-        // Unit cube mesh for pickups (scaled in shader via uModel).
         var cubeBrush = new Brush { Primitive = BrushPrimitive.Box, Transform = Transform.Identity };
         var cubeMesh = MeshGenerator.GenerateMesh(cubeBrush);
         _pickupCube = new GlMesh(gl, cubeMesh);
     }
 
-    public unsafe void Draw(Matrix4x4 viewProj, GameWorld world, PickupSystem pickups)
+    public unsafe void Draw(Matrix4x4 view, Matrix4x4 viewProj, GameWorld world, PickupSystem pickups,
+        LightingEnvironment env, ShadowMap shadow, IblProbe ibl)
     {
         _gl.Enable(EnableCap.DepthTest);
         _gl.Enable(EnableCap.CullFace);
@@ -40,20 +45,31 @@ public sealed class WorldRenderer : IDisposable
         _gl.FrontFace(FrontFaceDirection.Ccw);
 
         _shader.Use();
-        SetSceneUniforms(_shader, viewProj, world);
+        BindLighting(_shader, env, shadow, ibl);
+        UploadMatrix(_shader.U("uViewProj"), viewProj);
+        UploadMatrix(_shader.U("uView"), view);
+        _gl.Uniform1(_shader.U("uReceiveShadows"), 1);
+        _gl.Uniform1(_shader.U("uBaseColor"), 0);
+        _gl.Uniform1(_shader.U("uSelfIllum"), 0f);
+
         foreach (var wb in world.Brushes)
         {
             var glMesh = _brushMeshes[wb.BrushId];
             UploadMatrix(_shader.U("uModel"), wb.Model);
             UploadMatrix(_shader.U("uNormalMat"), wb.NormalMatrix);
             _gl.Uniform3(_shader.U("uTint"), wb.TintColor.X, wb.TintColor.Y, wb.TintColor.Z);
+            _gl.ActiveTexture(TextureUnit.Texture0);
+            _gl.BindTexture(TextureTarget.Texture2D, _textures.GetOrWhite(wb.TexturePath));
+            _gl.Uniform1(_shader.U("uHasTexture"), _textures.HasTexture(wb.TexturePath) ? 1 : 0);
             glMesh.Bind();
             _gl.DrawElements(PrimitiveType.Triangles, (uint)glMesh.IndexCount, DrawElementsType.UnsignedInt, (void*)0);
         }
 
-        // Pickups
-        _pickupShader.Use();
-        SetSceneUniforms(_pickupShader, viewProj, world);
+        // Pickups: same shader, bumped self-illum so they read as "objects of interest".
+        _gl.Uniform1(_shader.U("uSelfIllum"), 0.45f);
+        _gl.Uniform1(_shader.U("uHasTexture"), 0);
+        _gl.ActiveTexture(TextureUnit.Texture0);
+        _gl.BindTexture(TextureTarget.Texture2D, _textures.GetOrWhite(null));
         _pickupCube.Bind();
         float baseY = MathF.Sin((float)Environment.TickCount / 600f) * 0.08f;
         foreach (var p in pickups.Active)
@@ -62,22 +78,38 @@ public sealed class WorldRenderer : IDisposable
             var color = PickupSystem.ColorFor(p.Kind);
             var pos = p.Position + new Vector3(0, baseY + 0.5f, 0);
             var model = Matrix4x4.CreateScale(0.4f) * Matrix4x4.CreateRotationY(pickups.SpinAngle) * Matrix4x4.CreateTranslation(pos);
-            UploadMatrix(_pickupShader.U("uModel"), model);
+            UploadMatrix(_shader.U("uModel"), model);
             Matrix4x4.Invert(model, out var inv);
-            UploadMatrix(_pickupShader.U("uNormalMat"), Matrix4x4.Transpose(inv));
-            _gl.Uniform3(_pickupShader.U("uTint"), color.X, color.Y, color.Z);
+            UploadMatrix(_shader.U("uNormalMat"), Matrix4x4.Transpose(inv));
+            _gl.Uniform3(_shader.U("uTint"), color.X, color.Y, color.Z);
             _gl.DrawElements(PrimitiveType.Triangles, (uint)_pickupCube.IndexCount, DrawElementsType.UnsignedInt, (void*)0);
         }
 
         _gl.BindVertexArray(0);
     }
 
-    private void SetSceneUniforms(ShaderProgram s, Matrix4x4 vp, GameWorld w)
+    /// <summary>Binds shadow map and irradiance cube + uploads lighting uniforms onto the
+    /// supplied shader. Reused by other lit renderers (textured model) so the call site stays
+    /// in one place.</summary>
+    public void BindLighting(ShaderProgram s, LightingEnvironment env, ShadowMap shadow, IblProbe ibl)
     {
-        UploadMatrix(s.U("uViewProj"), vp);
-        _gl.Uniform3(s.U("uAmbient"), w.AmbientColor.X, w.AmbientColor.Y, w.AmbientColor.Z);
-        _gl.Uniform3(s.U("uSunDir"), w.SunDirection.X, w.SunDirection.Y, w.SunDirection.Z);
-        _gl.Uniform3(s.U("uSunColor"), w.SunColor.X, w.SunColor.Y, w.SunColor.Z);
+        // Texture unit 4 = shadow map, unit 5 = irradiance cube.
+        _gl.ActiveTexture(TextureUnit.Texture4);
+        _gl.BindTexture(TextureTarget.Texture2D, shadow.DepthTex);
+        _gl.Uniform1(s.U("uShadowMap"), 4);
+
+        _gl.ActiveTexture(TextureUnit.Texture5);
+        _gl.BindTexture(TextureTarget.TextureCubeMap, ibl.IrradianceCube);
+        _gl.Uniform1(s.U("uIrradiance"), 5);
+
+        UploadMatrix(s.U("uLightSpace"), shadow.LightSpace);
+        var d = Vector3.Normalize(env.SunDirection);
+        _gl.Uniform3(s.U("uSunDir"), d.X, d.Y, d.Z);
+        _gl.Uniform3(s.U("uSunColor"), env.SunColor.X, env.SunColor.Y, env.SunColor.Z);
+        _gl.Uniform1(s.U("uSunIntensity"), env.SunIntensity);
+        _gl.Uniform1(s.U("uIrradianceIntensity"), env.IrradianceIntensity);
+
+        _gl.ActiveTexture(TextureUnit.Texture0); // leave unit 0 active for downstream textures
     }
 
     private unsafe void UploadMatrix(int loc, Matrix4x4 m)
@@ -97,7 +129,7 @@ public sealed class WorldRenderer : IDisposable
     {
         foreach (var m in _brushMeshes.Values) m.Dispose();
         _pickupCube.Dispose();
+        _textures.Dispose();
         _shader.Dispose();
-        _pickupShader.Dispose();
     }
 }

@@ -24,11 +24,14 @@ public sealed class RocketRenderer : IDisposable
         Console.WriteLine($"[Rocket] Loaded quadrocket.glb ({_model.Primitives.Count} prims).");
     }
 
-    public void Draw(Matrix4x4 viewProj, RocketSystem rockets)
+    public void Draw(Matrix4x4 view, Matrix4x4 viewProj, RocketSystem rockets,
+        LightingEnvironment env, ShadowMap shadow, IblProbe ibl, WorldRenderer worldRen)
     {
         if (_model is null || rockets.Active.Count == 0) return;
 
-        _modelRen.BeginPass(viewProj, clearDepthFirst: false);
+        // Rockets are world-space objects: receive shadows and write normals for SSAO.
+        _modelRen.BeginPass(view, viewProj, clearDepthFirst: false, env, shadow, ibl, worldRen,
+            receiveShadows: true, writeNormal: true);
         foreach (var r in rockets.Active)
         {
             // Build a basis aligned with the rocket's forward direction. Aligned mesh treats

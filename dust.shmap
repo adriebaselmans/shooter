@@ -1,0 +1,7785 @@
+{
+  "format_version": "1.3.0",
+  "editor_version": "shooter-handcrafted-2.0",
+  "world_settings": {
+    "ambient_color": [
+      0.12,
+      0.12,
+      0.14
+    ],
+    "sky_color": [
+      0.55,
+      0.7,
+      0.95
+    ]
+  },
+  "lights": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "name": "Sun",
+      "light_type": "point",
+      "transform": {
+        "position": [
+          0,
+          100,
+          0
+        ],
+        "rotation": [
+          55,
+          35,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "color": [
+        1.0,
+        0.96,
+        0.86
+      ],
+      "intensity": 1.0,
+      "range": 1000.0
+    }
+  ],
+  "brushes": [
+    {
+      "id": "ground",
+      "name": "Ground",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          0,
+          -0.6,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          80,
+          1.2,
+          80
+        ]
+      },
+      "material_name": "textures/dust/ground_sand_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/ground_sand_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.0,
+            4.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/ground_sand_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/ground_sand_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/ground_sand_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/ground_sand_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/ground_sand_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "perim_n",
+      "name": "Perimeter North",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          0,
+          2.5,
+          37.7
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          76,
+          5,
+          0.6
+        ]
+      },
+      "material_name": "textures/dust/outer_wall_brick_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "perim_s",
+      "name": "Perimeter South",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          0,
+          2.5,
+          -37.7
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          76,
+          5,
+          0.6
+        ]
+      },
+      "material_name": "textures/dust/outer_wall_brick_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "perim_e",
+      "name": "Perimeter East",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          37.7,
+          2.5,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.6,
+          5,
+          76
+        ]
+      },
+      "material_name": "textures/dust/outer_wall_brick_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "perim_w",
+      "name": "Perimeter West",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -37.7,
+          2.5,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.6,
+          5,
+          76
+        ]
+      },
+      "material_name": "textures/dust/outer_wall_brick_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "trim_n",
+      "name": "North Trim",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          0,
+          4.7,
+          36.9
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          76,
+          0.35,
+          0.7
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "trim_s",
+      "name": "South Trim",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          0,
+          4.7,
+          -36.9
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          76,
+          0.35,
+          0.7
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "trim_e",
+      "name": "East Trim",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          36.9,
+          4.7,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.7,
+          0.35,
+          76
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "trim_w",
+      "name": "West Trim",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -36.9,
+          4.7,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.7,
+          0.35,
+          76
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "long_wall_n",
+      "name": "A Long Inner Wall North",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          12.5,
+          2.5,
+          14
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.6,
+          5,
+          22
+        ]
+      },
+      "material_name": "textures/dust/wall_stone_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "long_wall_s",
+      "name": "A Long Inner Wall South",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          12.5,
+          2.5,
+          -19
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.6,
+          5,
+          24
+        ]
+      },
+      "material_name": "textures/dust/wall_stone_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "b_tunnel_inner",
+      "name": "B Tunnel Inner Wall",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -18.5,
+          2.5,
+          4
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.6,
+          5,
+          30
+        ]
+      },
+      "material_name": "textures/dust/wall_stone_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "b_tunnel_ceiling",
+      "name": "B Tunnel Ceiling",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -28.0,
+          4.85,
+          4
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          18.8,
+          0.3,
+          30
+        ]
+      },
+      "material_name": "textures/dust/wall_stone_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.0,
+            6
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.0,
+            6
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.0,
+            6
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.0,
+            6
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.0,
+            6
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            3.0,
+            6
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "b_market_e",
+      "name": "B Market East Wall",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -10.5,
+          2.5,
+          -21.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.6,
+          5,
+          20.5
+        ]
+      },
+      "material_name": "textures/dust/wall_stone_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "b_market_s",
+      "name": "B Market South Wall",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -20.5,
+          2.5,
+          -31.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          20.5,
+          5,
+          0.6
+        ]
+      },
+      "material_name": "textures/dust/wall_stone_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "b_market_nw",
+      "name": "B Market North West",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -27.5,
+          2.5,
+          -11.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          9.0,
+          5,
+          0.6
+        ]
+      },
+      "material_name": "textures/dust/wall_stone_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "b_market_ne",
+      "name": "B Market North East",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -13.5,
+          2.5,
+          -11.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          9.0,
+          5,
+          0.6
+        ]
+      },
+      "material_name": "textures/dust/wall_stone_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.5,
+            18
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "b_market_ceiling",
+      "name": "B Market Ceiling",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -20.5,
+          5.0,
+          -21.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          20.5,
+          0.4,
+          20.5
+        ]
+      },
+      "material_name": "textures/dust/wall_stone_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            2.4,
+            2.4
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            2.4,
+            2.4
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            2.4,
+            2.4
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            2.4,
+            2.4
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            2.4,
+            2.4
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            2.4,
+            2.4
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "mid_gate_pillar_l",
+      "name": "Mid Gate Pillar L",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -2.4,
+          1.5,
+          20.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.0,
+          3.0,
+          1.0
+        ]
+      },
+      "material_name": "textures/dust/outer_wall_brick_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "mid_gate_pillar_r",
+      "name": "Mid Gate Pillar R",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          2.4,
+          1.5,
+          20.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.0,
+          3.0,
+          1.0
+        ]
+      },
+      "material_name": "textures/dust/outer_wall_brick_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "mid_gate_lintel",
+      "name": "Mid Gate Lintel",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          0.0,
+          3.3,
+          20.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          6.8,
+          0.8,
+          1.0
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "b_entry_pillar_l",
+      "name": "B Entry Pillar L",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -31.5,
+          1.5,
+          20.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.1,
+          3.0,
+          1.0
+        ]
+      },
+      "material_name": "textures/dust/outer_wall_brick_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "b_entry_pillar_r",
+      "name": "B Entry Pillar R",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -22.0,
+          1.5,
+          20.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.1,
+          3.0,
+          1.0
+        ]
+      },
+      "material_name": "textures/dust/outer_wall_brick_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "b_entry_lintel",
+      "name": "B Entry Lintel",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -26.75,
+          3.25,
+          20.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          10.8,
+          0.7,
+          1.0
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "a_entry_pillar_l",
+      "name": "A Entry Pillar L",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          15.8,
+          1.5,
+          20.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.0,
+          3.0,
+          1.0
+        ]
+      },
+      "material_name": "textures/dust/outer_wall_brick_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "a_entry_pillar_r",
+      "name": "A Entry Pillar R",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          21.8,
+          1.5,
+          20.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.0,
+          3.0,
+          1.0
+        ]
+      },
+      "material_name": "textures/dust/outer_wall_brick_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "a_entry_lintel",
+      "name": "A Entry Lintel",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          18.8,
+          3.3,
+          20.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          7.0,
+          0.8,
+          1.0
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            14,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "mid_cover_main",
+      "name": "Mid Cover Main",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          0.0,
+          0.65,
+          9.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          8.0,
+          1.3,
+          0.9
+        ]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "mid_cover_left",
+      "name": "Mid Cover Left",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -8.0,
+          0.65,
+          2.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          5.0,
+          1.3,
+          0.9
+        ]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            7,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            7,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            7,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            7,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            7,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            7,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "mid_cover_right",
+      "name": "Mid Cover Right",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          5.5,
+          0.65,
+          -4.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          4.2,
+          1.3,
+          0.9
+        ]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            7,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            7,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            7,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            7,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            7,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            7,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "mid_box_1",
+      "name": "Mid Box 1",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -1.5,
+          0.9,
+          1.0
+        ],
+        "rotation": [
+          0,
+          10,
+          0
+        ],
+        "scale": [
+          1.8,
+          1.8,
+          1.8
+        ]
+      },
+      "material_name": "textures/dust/wood_planks_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "mid_box_2",
+      "name": "Mid Box 2",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          2.0,
+          0.9,
+          -1.8
+        ],
+        "rotation": [
+          0,
+          -12,
+          0
+        ],
+        "scale": [
+          1.8,
+          1.8,
+          1.8
+        ]
+      },
+      "material_name": "textures/dust/wood_planks_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "long_cover_n",
+      "name": "A Long Cover North",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          25.0,
+          0.75,
+          10.0
+        ],
+        "rotation": [
+          0,
+          15,
+          0
+        ],
+        "scale": [
+          2.2,
+          1.5,
+          2.2
+        ]
+      },
+      "material_name": "textures/dust/wood_planks_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            38,
+            38
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            38,
+            38
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            38,
+            38
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            38,
+            38
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            38,
+            38
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            38,
+            38
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "long_cover_m",
+      "name": "A Long Cover Mid",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          20.0,
+          0.75,
+          -6.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          2.0,
+          1.5,
+          2.0
+        ]
+      },
+      "material_name": "textures/dust/wood_planks_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            38,
+            38
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            38,
+            38
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            38,
+            38
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            38,
+            38
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            38,
+            38
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            38,
+            38
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "long_cover_s",
+      "name": "A Long Cover South",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          26.0,
+          0.75,
+          -19.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          2.6,
+          1.5,
+          1.6
+        ]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "t_crate_1",
+      "name": "T Crate 1",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -26.0,
+          0.9,
+          28.0
+        ],
+        "rotation": [
+          0,
+          12,
+          0
+        ],
+        "scale": [
+          1.8,
+          1.8,
+          1.8
+        ]
+      },
+      "material_name": "textures/dust/wood_planks_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "t_crate_2",
+      "name": "T Crate 2",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -23.8,
+          0.9,
+          29.8
+        ],
+        "rotation": [
+          0,
+          -8,
+          0
+        ],
+        "scale": [
+          1.8,
+          1.8,
+          1.8
+        ]
+      },
+      "material_name": "textures/dust/wood_planks_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "t_crate_3",
+      "name": "T Crate 3",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -13.0,
+          0.9,
+          27.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          2.0,
+          1.8,
+          2.0
+        ]
+      },
+      "material_name": "textures/dust/wood_planks_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "b_counter_w",
+      "name": "B Market Counter W",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -27.0,
+          0.65,
+          -20.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          5.0,
+          1.3,
+          1.2
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            14
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            14
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            14
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            14
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            14
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            14
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "b_counter_e",
+      "name": "B Market Counter E",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -15.0,
+          0.65,
+          -24.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          5.0,
+          1.3,
+          1.2
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            14
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            14
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            14
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            14
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            14
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            14
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "b_crate_1",
+      "name": "B Market Crate 1",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -24.0,
+          0.9,
+          -26.0
+        ],
+        "rotation": [
+          0,
+          18,
+          0
+        ],
+        "scale": [
+          1.8,
+          1.8,
+          1.8
+        ]
+      },
+      "material_name": "textures/dust/wood_planks_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "b_crate_2",
+      "name": "B Market Crate 2",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -17.5,
+          0.9,
+          -18.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.8,
+          1.8,
+          1.8
+        ]
+      },
+      "material_name": "textures/dust/wood_planks_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "a_box_1",
+      "name": "A Site Box 1",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          18.0,
+          0.9,
+          -23.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.8,
+          1.8,
+          1.8
+        ]
+      },
+      "material_name": "textures/dust/wood_planks_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "a_box_2",
+      "name": "A Site Box 2",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          21.0,
+          0.9,
+          -27.0
+        ],
+        "rotation": [
+          0,
+          -10,
+          0
+        ],
+        "scale": [
+          1.8,
+          1.8,
+          1.8
+        ]
+      },
+      "material_name": "textures/dust/wood_planks_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            40,
+            40
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "a_box_3",
+      "name": "A Site Box 3",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          28.0,
+          0.75,
+          -22.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          2.4,
+          1.5,
+          1.8
+        ]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "a_pillar_1",
+      "name": "A Site Pillar 1",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          16.0,
+          1.6,
+          -14.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.0,
+          3.2,
+          1.0
+        ]
+      },
+      "material_name": "textures/dust/outer_wall_brick_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "a_pillar_2",
+      "name": "A Site Pillar 2",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          21.0,
+          1.6,
+          -14.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.0,
+          3.2,
+          1.0
+        ]
+      },
+      "material_name": "textures/dust/outer_wall_brick_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/outer_wall_brick_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "a_lintel",
+      "name": "A Site Lintel",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          18.5,
+          3.45,
+          -14.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          6.0,
+          0.7,
+          1.0
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "awning_b_1",
+      "name": "B Market Awning 1",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -27.0,
+          3.4,
+          -14.5
+        ],
+        "rotation": [
+          0,
+          0,
+          12
+        ],
+        "scale": [
+          6.0,
+          0.18,
+          4.0
+        ]
+      },
+      "material_name": "textures/dust/awning_blue_planks_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/awning_blue_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            12
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/awning_blue_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            12
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/awning_blue_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            12
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/awning_blue_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            12
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/awning_blue_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            12
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/awning_blue_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            12
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "awning_b_2",
+      "name": "B Market Awning 2",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -15.5,
+          3.2,
+          -18.5
+        ],
+        "rotation": [
+          0,
+          0,
+          -10
+        ],
+        "scale": [
+          6.0,
+          0.18,
+          4.0
+        ]
+      },
+      "material_name": "textures/dust/awning_blue_planks_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/awning_blue_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            12
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/awning_blue_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            12
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/awning_blue_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            12
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/awning_blue_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            12
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/awning_blue_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            12
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/awning_blue_planks_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12,
+            12
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "awning_a_1",
+      "name": "A Site Awning 1",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          25.0,
+          3.3,
+          -28.5
+        ],
+        "rotation": [
+          0,
+          0,
+          -12
+        ],
+        "scale": [
+          7.0,
+          0.18,
+          4.0
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12.0,
+            12.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12.0,
+            12.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12.0,
+            12.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12.0,
+            12.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12.0,
+            12.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            12.0,
+            12.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "sign_long",
+      "name": "Long Route Sign",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          36.8,
+          2.8,
+          -14.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.2,
+          1.2,
+          4.8
+        ]
+      },
+      "material_name": "textures/dust/wall_plaster_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8.0,
+            8.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8.0,
+            8.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8.0,
+            8.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8.0,
+            8.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8.0,
+            8.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8.0,
+            8.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "sign_market",
+      "name": "Market Sign",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -11.0,
+          2.7,
+          -16.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.2,
+          1.0,
+          4.2
+        ]
+      },
+      "material_name": "textures/dust/wall_plaster_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8.0,
+            8.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8.0,
+            8.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8.0,
+            8.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8.0,
+            8.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8.0,
+            8.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8.0,
+            8.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "east_facade_n",
+      "name": "East Facade North",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          30.0,
+          2.5,
+          4.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          6.0,
+          5.0,
+          0.8
+        ]
+      },
+      "material_name": "textures/dust/wall_plaster_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.0,
+            14.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.0,
+            14.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.0,
+            14.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.0,
+            14.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.0,
+            14.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.0,
+            14.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "east_facade_s",
+      "name": "East Facade South",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          30.0,
+          2.5,
+          -28.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          6.0,
+          5.0,
+          0.8
+        ]
+      },
+      "material_name": "textures/dust/wall_plaster_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.0,
+            14.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.0,
+            14.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.0,
+            14.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.0,
+            14.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.0,
+            14.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wall_plaster_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            4.0,
+            14.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "east_facade_trim",
+      "name": "East Facade Trim",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          30.0,
+          4.75,
+          -12.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          6.0,
+          0.35,
+          32.0
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "west_market_trim",
+      "name": "West Market Trim",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -24.0,
+          4.75,
+          -21.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          12.0,
+          0.35,
+          20.0
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            16,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "mid_step_long",
+      "name": "Long Threshold Block",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          13.8,
+          0.45,
+          3.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          2.6,
+          0.9,
+          2.0
+        ]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "mid_step_b",
+      "name": "B Threshold Block",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -17.0,
+          0.45,
+          -10.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          3.0,
+          0.9,
+          2.0
+        ]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            8
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "awning_b1_post_l",
+      "name": "Awning B1 Post L",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -29.4,
+          1.45,
+          -14.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.22,
+          2.9,
+          0.22
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "awning_b1_post_r",
+      "name": "Awning B1 Post R",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -24.6,
+          1.45,
+          -14.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.22,
+          2.9,
+          0.22
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "awning_b1_backbeam",
+      "name": "Awning B1 Back Beam",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -27.0,
+          2.95,
+          -16.2
+        ],
+        "rotation": [
+          0,
+          0,
+          12
+        ],
+        "scale": [
+          5.6,
+          0.18,
+          0.28
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            10,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            10,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            10,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            10,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            10,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            10,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "awning_b2_post_l",
+      "name": "Awning B2 Post L",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -17.9,
+          1.35,
+          -18.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.22,
+          2.7,
+          0.22
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "awning_b2_post_r",
+      "name": "Awning B2 Post R",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -13.1,
+          1.35,
+          -18.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.22,
+          2.7,
+          0.22
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "awning_b2_backbeam",
+      "name": "Awning B2 Back Beam",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -15.5,
+          2.75,
+          -20.2
+        ],
+        "rotation": [
+          0,
+          0,
+          -10
+        ],
+        "scale": [
+          5.6,
+          0.18,
+          0.28
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            10,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            10,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            10,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            10,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            10,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            10,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "awning_a1_post_l",
+      "name": "Awning A1 Post L",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          22.3,
+          1.35,
+          -28.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.22,
+          2.7,
+          0.22
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "awning_a1_post_r",
+      "name": "Awning A1 Post R",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          27.7,
+          1.35,
+          -28.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.22,
+          2.7,
+          0.22
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "awning_a1_backbeam",
+      "name": "Awning A1 Back Beam",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          25.0,
+          2.85,
+          -30.2
+        ],
+        "rotation": [
+          0,
+          0,
+          -12
+        ],
+        "scale": [
+          6.4,
+          0.18,
+          0.28
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            10,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            10,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            10,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            10,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            10,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            10,
+            10
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "sign_long_post",
+      "name": "Long Sign Post",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          36.2,
+          1.1,
+          -14.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.18,
+          2.2,
+          0.18
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "sign_market_post",
+      "name": "Market Sign Post",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -11.6,
+          1.1,
+          -16.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.18,
+          2.2,
+          0.18
+        ]
+      },
+      "material_name": "textures/dust/wood_trim_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wood_trim_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            8,
+            16
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    }
+  ],
+  "spawn_points": [
+    {
+      "id": "spawn_t_1",
+      "name": "T Spawn 1",
+      "spawn_type": "player",
+      "transform": {
+        "position": [
+          -27,
+          1.0,
+          31
+        ],
+        "rotation": [
+          0,
+          180,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "spawn_t_2",
+      "name": "T Spawn 2",
+      "spawn_type": "player",
+      "transform": {
+        "position": [
+          -21,
+          1.0,
+          30
+        ],
+        "rotation": [
+          0,
+          180,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "spawn_t_3",
+      "name": "T Spawn 3",
+      "spawn_type": "player",
+      "transform": {
+        "position": [
+          -14,
+          1.0,
+          31
+        ],
+        "rotation": [
+          0,
+          180,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "spawn_ct_1",
+      "name": "CT Spawn 1",
+      "spawn_type": "player",
+      "transform": {
+        "position": [
+          24,
+          1.0,
+          -30
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "spawn_ct_2",
+      "name": "CT Spawn 2",
+      "spawn_type": "player",
+      "transform": {
+        "position": [
+          18,
+          1.0,
+          -29
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "spawn_ct_3",
+      "name": "CT Spawn 3",
+      "spawn_type": "player",
+      "transform": {
+        "position": [
+          -24,
+          1.0,
+          -29
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    }
+  ],
+  "pickups": [
+    {
+      "id": "pk_ak_t",
+      "name": "Ammo AK (T)",
+      "kind": "AmmoAk47",
+      "transform": {
+        "position": [
+          -24,
+          0.6,
+          28
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "amount": 60
+    },
+    {
+      "id": "pk_hp_t",
+      "name": "Health Small (T)",
+      "kind": "HealthSmall",
+      "transform": {
+        "position": [
+          -14,
+          0.6,
+          29
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "amount": 25
+    },
+    {
+      "id": "pk_shells_bentry",
+      "name": "Shells B Entry",
+      "kind": "AmmoShotgun",
+      "transform": {
+        "position": [
+          -22,
+          0.6,
+          12
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "amount": 16
+    },
+    {
+      "id": "pk_hp_tunnel",
+      "name": "Health Tunnel",
+      "kind": "HealthSmall",
+      "transform": {
+        "position": [
+          -24,
+          0.6,
+          -6
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "amount": 25
+    },
+    {
+      "id": "pk_shotty_mid",
+      "name": "Shotgun Mid",
+      "kind": "WeaponShotgun",
+      "transform": {
+        "position": [
+          0,
+          0.7,
+          4
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "pk_shells_mid",
+      "name": "Shotgun Shells Mid",
+      "kind": "AmmoShotgun",
+      "transform": {
+        "position": [
+          -4,
+          0.6,
+          8
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "amount": 16
+    },
+    {
+      "id": "pk_hp_mid",
+      "name": "Health Mid",
+      "kind": "HealthSmall",
+      "transform": {
+        "position": [
+          6,
+          0.6,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "amount": 25
+    },
+    {
+      "id": "pk_ak_long",
+      "name": "Ammo AK Long",
+      "kind": "AmmoAk47",
+      "transform": {
+        "position": [
+          24,
+          0.6,
+          9
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "amount": 60
+    },
+    {
+      "id": "pk_hp_long",
+      "name": "Health Long",
+      "kind": "HealthSmall",
+      "transform": {
+        "position": [
+          28,
+          0.6,
+          -18
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "amount": 25
+    },
+    {
+      "id": "pk_rl_b",
+      "name": "Rocket Launcher B",
+      "kind": "WeaponRocketLauncher",
+      "transform": {
+        "position": [
+          -19,
+          0.7,
+          -24
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "pk_rocket_b",
+      "name": "Rockets B",
+      "kind": "AmmoRocket",
+      "transform": {
+        "position": [
+          -14,
+          0.6,
+          -26
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "amount": 4
+    },
+    {
+      "id": "pk_hpbig_b",
+      "name": "Health Large B",
+      "kind": "HealthLarge",
+      "transform": {
+        "position": [
+          -28,
+          0.6,
+          -26
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "amount": 50
+    },
+    {
+      "id": "pk_ak_a",
+      "name": "Ammo AK A",
+      "kind": "AmmoAk47",
+      "transform": {
+        "position": [
+          20,
+          0.6,
+          -12
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "amount": 60
+    },
+    {
+      "id": "pk_hp_a",
+      "name": "Health Small A",
+      "kind": "HealthSmall",
+      "transform": {
+        "position": [
+          18,
+          0.6,
+          -28
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "amount": 25
+    }
+  ]
+}

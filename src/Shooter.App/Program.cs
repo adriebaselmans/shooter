@@ -35,6 +35,15 @@ internal static class Program
     private static RocketRenderer? _rocketRen;
     private static MuzzleFlashRenderer? _muzzleFlashRen;
     private static ScorchRenderer? _scorchRen;
+    private static HdrTarget? _hdr;
+    private static SkyRenderer? _skyRen;
+    private static IblProbe? _ibl;
+    private static ShadowMap? _shadow;
+    private static Bloom? _bloom;
+    private static SsaoPass? _ssao;
+    private static AutoExposure? _autoExp;
+    private static PostFx? _postFx;
+    private static LightingEnvironment _lighting = new();
     private static InputState _inputState = new();
     private static IMouse? _mouse;
     private static Vector2 _lastMouse;
@@ -61,7 +70,13 @@ internal static class Program
         _window.Load += OnLoad;
         _window.Update += OnUpdate;
         _window.Render += OnRender;
-        _window.FramebufferResize += sz => _gl?.Viewport(sz);
+        _window.FramebufferResize += sz =>
+        {
+            _gl?.Viewport(sz);
+            _hdr?.Resize(sz.X, sz.Y);
+            _bloom?.Resize(sz.X, sz.Y);
+            _ssao?.Resize(sz.X, sz.Y);
+        };
         _window.Closing += OnClosing;
         _window.Run();
         return 0;
@@ -129,6 +144,20 @@ internal static class Program
         _rocketRen = new RocketRenderer(_gl);
         _muzzleFlashRen = new MuzzleFlashRenderer(_gl);
         _scorchRen = new ScorchRenderer(_gl);
+
+        // Lighting pipeline: HDR target + sky + IBL probe + shadow + bloom + tonemap.
+        _hdr = new HdrTarget(_gl);
+        _hdr.Resize(_window!.FramebufferSize.X, _window.FramebufferSize.Y);
+        _skyRen = new SkyRenderer(_gl);
+        _ibl = new IblProbe(_gl);
+        _ibl.Build(_lighting);
+        _shadow = new ShadowMap(_gl);
+        _bloom = new Bloom(_gl);
+        _bloom.Resize(_window.FramebufferSize.X, _window.FramebufferSize.Y);
+        _ssao = new SsaoPass(_gl);
+        _ssao.Resize(_window.FramebufferSize.X, _window.FramebufferSize.Y);
+        _autoExp = new AutoExposure(_gl);
+        _postFx = new PostFx(_gl);
 
         var sky = _world.SkyColor;
         _gl.ClearColor(sky.X, sky.Y, sky.Z, 1f);
@@ -351,22 +380,55 @@ internal static class Program
     private static void OnRender(double dt)
     {
         if (_gl is null || _player is null || _world is null || _worldRen is null || _hudRen is null || _decalRen is null || _tracerRen is null || _holes is null || _tracers is null || _weapons is null || _pickups is null || _rockets is null || _scorches is null) return;
-
-        _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+        if (_hdr is null || _skyRen is null || _ibl is null || _shadow is null || _bloom is null || _ssao is null || _autoExp is null || _postFx is null) return;
 
         var fb = _window!.FramebufferSize;
+        // Make sure offscreen targets match the live window size (handles retina + first frame).
+        _hdr.Resize(fb.X, fb.Y);
+        _bloom.Resize(fb.X, fb.Y);
+        _ssao.Resize(fb.X, fb.Y);
+
         float aspect = fb.Y > 0 ? (float)fb.X / fb.Y : 16f / 9f;
         var view = Matrix4x4.CreateLookAt(_player.EyePosition, _player.EyePosition + _player.Forward(), Vector3.UnitY);
         var proj = Matrix4x4.CreatePerspectiveFieldOfView(WeaponViewmodelRenderer.FovYRadians, aspect, 0.05f, 1000f);
         var viewProj = view * proj;
 
-        _worldRen.Draw(viewProj, _world, _pickups);
+        // 1. Shadow pass: depth-only render of world brushes from the sun.
+        var lightSpace = _shadow.BuildLightSpace(_player.Position, _lighting);
+        _shadow.RenderPass(_world.Brushes, (Dictionary<Guid, GlMesh>)_worldRen.BrushMeshes, lightSpace);
+
+        // 2. Bind HDR target, clear color (to sky-ish) + depth, and render the scene.
+        _hdr.Bind();
+        _gl.ClearColor(0f, 0f, 0f, 1f); // sky covers the framebuffer; clear matters only for safety.
+        _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+        // Sky: view matrix without translation so the cube tracks the camera.
+        var viewNoTrans = view;
+        viewNoTrans.M41 = 0; viewNoTrans.M42 = 0; viewNoTrans.M43 = 0;
+        _skyRen.Draw(viewNoTrans, proj, _lighting);
+
+        _worldRen.Draw(view, viewProj, _world, _pickups, _lighting, _shadow, _ibl);
         _decalRen.Draw(viewProj, _holes);
         _scorchRen?.Draw(viewProj, _scorches);
         _tracerRen.Draw(viewProj, _tracers);
-        _rocketRen?.Draw(viewProj, _rockets);
-        _viewmodelRen?.Draw(fb.X, fb.Y, _weapons);
+        _rocketRen?.Draw(view, viewProj, _rockets, _lighting, _shadow, _ibl, _worldRen);
+        _viewmodelRen?.Draw(fb.X, fb.Y, _weapons, _lighting, _shadow, _ibl, _worldRen);
         if (_muzzleFlash is not null) _muzzleFlashRen?.Draw(fb.X, fb.Y, _muzzleFlash);
+
+        // 3. SSAO on depth + normal.
+        _ssao.Run(_hdr.DepthTex, _hdr.NormalTex, proj, _lighting.SsaoRadius, _lighting.SsaoBias);
+
+        // 4. Bloom on the HDR buffer.
+        _bloom.Run(_hdr.ColorTex);
+
+        // 5. Auto-exposure: log-luminance → mipmap → 1×1 readback → smoothed exposure.
+        _autoExp.Run(_hdr.ColorTex, _lighting, (float)dt);
+
+        // 6. Post: tone-map (HDR * AO + bloom) into the default framebuffer.
+        _postFx.Draw(_hdr.ColorTex, _bloom.OutputTex, _ssao.AoTex,
+            _lighting.SsaoStrength, _autoExp.CurrentExposure, fb.X, fb.Y);
+
+        // 7. HUD on top of the LDR default framebuffer.
         _hudRen.Draw(fb.X, fb.Y, _player, _weapons);
 
         if (_showDebug)
@@ -377,6 +439,14 @@ internal static class Program
 
     private static void OnClosing()
     {
+        _postFx?.Dispose();
+        _autoExp?.Dispose();
+        _ssao?.Dispose();
+        _bloom?.Dispose();
+        _shadow?.Dispose();
+        _ibl?.Dispose();
+        _skyRen?.Dispose();
+        _hdr?.Dispose();
         _scorchRen?.Dispose();
         _muzzleFlashRen?.Dispose();
         _rocketRen?.Dispose();

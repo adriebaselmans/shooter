@@ -1,0 +1,315 @@
+id: req-shooter-lighting-pass
+title: Shooter.App Lighting Pass — HDR pipeline, sky, shadows, IBL, bloom, ACES
+status: ready_for_architecture
+parent: req-shooter-v1
+summary: >
+  Replace the current ad-hoc Phong + flat ambient + clear-color sky in Shooter.App
+  with a coherent HDR-linear lighting system. One coordinated change delivers:
+  HDR offscreen target, procedural physical sky, image-based ambient lighting,
+  cascaded shadow mapping (single cascade), Lambert direct lighting on lit
+  shaders, bloom on the HDR buffer, and ACES filmic tone mapping. The goal is a
+  single perceptual jump from "test level" to "shipped game" without altering
+  gameplay, controls, file formats, or asset pipeline.
+
+motivation: >
+  The current renderer flattens the scene: every surface receives the same
+  ambient, the sun has no occlusion, the sky is a constant color, and bright
+  effects (muzzle flash, scorch core) clip to white at the source. Each of
+  tone-mapping, sky, shadows, IBL, and bloom is half-broken without the others,
+  so they must land together as one feature.
+
+scope:
+  in:
+    - Shooter.App rendering pipeline only (no editor changes).
+    - New offscreen HDR (RGBA16F) main color buffer; existing default framebuffer
+      receives only LDR tone-mapped output + HUD.
+    - Procedural sky shader (analytic, e.g. Hosek–Wilkie or Preetham) drawn as a
+      cube at far plane; HDR radiance output.
+    - Image-based ambient: small irradiance cubemap convolved from the procedural
+      sky; replaces the flat ambient term.
+    - Directional sun shadow map (single cascade, 2048², depth-only FBO, 3×3 PCF
+      sampling, slope-scaled bias).
+    - Replacement of Phong direct term with Lambert(N·L) * sunColor * shadow in
+      lit world and weapon shaders.
+    - HDR-buffer bloom (mip-chain Gaussian or dual-Kawase) thresholded on
+      values > 1.0.
+    - ACES filmic tone map + gamma in a final fullscreen post pass with an
+      `Exposure` uniform.
+    - A new `LightingEnvironment` runtime struct holding sun direction, sun
+      intensity, turbidity, ground albedo, exposure; centrally driven; default
+      values picked to look like late-afternoon outdoor light.
+    - Updated pass order in `Program.OnRender`:
+      shadow → main HDR (sky → world → entities → decals → muzzle flash) →
+      bloom → tonemap → HUD.
+  out:
+    - PBR materials / textured world brushes (separate next step).
+    - Multiple shadow cascades (CSM split). Single cascade only.
+    - SSAO.
+    - Particle systems / smoke trails.
+    - Auto-exposure / eye adaptation (manual exposure constant only).
+    - Screen-space reflections, refractions, volumetrics, god rays.
+    - Editor changes; .shmap format changes; gameplay tuning.
+    - Audio.
+
+functional_requirements:
+  # --- Pipeline plumbing ---
+  - id: L1
+    text: >
+      All world-space scene geometry (sky, world brushes, pickups, weapon
+      viewmodel, rocket, decals, scorches, muzzle flash) renders into a single
+      offscreen HDR color attachment of internal format RGBA16F at the
+      framebuffer (retina) resolution, with a matching depth-stencil
+      attachment.
+  - id: L2
+    text: >
+      The HDR target is recreated when the framebuffer size changes; old
+      attachments are released cleanly.
+  - id: L3
+    text: >
+      The default framebuffer is written exactly twice per frame: once by the
+      tone-map post pass, once by the HUD pass. No lit geometry writes the
+      default framebuffer directly.
+  - id: L4
+    text: >
+      All lighting math runs in linear space. Sampled textures continue to be
+      decoded via the existing GLB pipeline (already linear-internal); no
+      double-gamma.
+
+  # --- Sky ---
+  - id: L5
+    text: >
+      A procedural analytic sky shader produces HDR radiance per view direction
+      from sun direction, turbidity, and ground albedo, and is drawn as a unit
+      cube around the camera at the far plane (depth=1 trick) before any other
+      HDR-pass geometry.
+  - id: L6
+    text: >
+      The sky writes to depth in a way that allows opaque scene geometry drawn
+      after it to occlude the sky correctly, but the sky itself never causes
+      depth fighting with far-plane geometry.
+  - id: L7
+    text: >
+      The sky's sun direction is read from the active `LightingEnvironment`;
+      changing the sun direction produces a visible recolor of the sky with no
+      asset reload.
+
+  # --- Image-based ambient ---
+  - id: L8
+    text: >
+      A small (e.g. 32² or 64²) HDR cubemap is rendered from the procedural sky
+      and convolved into a tiny (e.g. 16² or 32²) diffuse irradiance cubemap.
+      The irradiance probe is rebuilt only when the sun direction or sky
+      parameters change (initially: built once at startup).
+  - id: L9
+    text: >
+      Lit shaders (world + textured model) take their ambient term as
+      `sample(irradianceCube, N) * albedo`, replacing any flat ambient
+      constant. Magnitude tuned so unshadowed lit surfaces clearly dominate
+      shadowed surfaces under default sun.
+
+  # --- Shadow map ---
+  - id: L10
+    text: >
+      A single 2048² depth-only framebuffer is produced each frame by
+      rendering the world brush list (and any other static shadow casters) from
+      the sun's perspective using a stripped vertex shader that writes only
+      depth.
+  - id: L11
+    text: >
+      The shadow camera is an orthographic frustum sized to cover at minimum a
+      40 m radius around the player position, with stable texel snapping to
+      avoid shimmer when the player moves.
+  - id: L12
+    text: >
+      Lit shaders sample the shadow map with 3×3 percentage-closer filtering
+      (or equivalent kernel of comparable softness) and use a slope-scaled
+      depth bias plus a small constant bias tuned to eliminate visible acne on
+      the supplied test arena under default sun direction.
+  - id: L13
+    text: >
+      Pickups and decals receive shadows from world brushes; the weapon
+      viewmodel does NOT receive shadows (view-space, can self-shadow
+      incorrectly).
+  - id: L14
+    text: >
+      Outside the shadow frustum, surfaces fall back to "fully lit by sun"
+      (no shadow); the transition is not visible during normal play within the
+      arena bounds.
+
+  # --- Direct lighting ---
+  - id: L15
+    text: >
+      The direct-light term in lit shaders becomes Lambert: `max(N·L, 0) *
+      sunColor * sunIntensity * shadowVisibility`. Existing Phong specular is
+      removed (re-added with PBR specular in a future step).
+  - id: L16
+    text: >
+      `sunIntensity` is HDR (>1.0). Default values produce a sky that looks
+      blue at zenith, warmer near horizon, with shadow side ~10–20% of lit
+      side under default exposure.
+
+  # --- Bloom ---
+  - id: L17
+    text: >
+      A bloom pass operates on the HDR color buffer, thresholded around 1.0,
+      and produces a soft glow added to the HDR image before tone mapping.
+  - id: L18
+    text: >
+      Muzzle flash, scorch core, and direct sun-on-light-color surfaces visibly
+      bloom; surfaces below threshold do not bleed.
+
+  # --- Tone mapping & post ---
+  - id: L19
+    text: >
+      The final post pass applies ACES filmic tone mapping followed by gamma
+      (sRGB encode) to convert HDR linear → LDR sRGB into the default
+      framebuffer.
+  - id: L20
+    text: >
+      Exposure is a uniform on the post pass driven by
+      `LightingEnvironment.Exposure`; default chosen so the test arena reads
+      neither blown-out nor murky; no auto-exposure.
+  - id: L21
+    text: >
+      The HUD (crosshair, ammo, health, FPS) renders to the default
+      framebuffer after the post pass and is unaffected by exposure / bloom /
+      tone mapping.
+
+  # --- Lighting environment ---
+  - id: L22
+    text: >
+      A `LightingEnvironment` struct (or class) holds `SunDirection: Vector3`,
+      `SunColor: Vector3` (linear HDR), `SunIntensity: float`, `Turbidity:
+      float`, `GroundAlbedo: Vector3`, `Exposure: float`. It is the single
+      source of truth consumed by the sky shader, the shadow camera, the lit
+      shaders, and the post pass.
+  - id: L23
+    text: >
+      Default `LightingEnvironment` values produce a late-afternoon outdoor
+      look (sun ~30° above horizon, slightly warm) without requiring user
+      tuning. Values are constants in code; no config file needed.
+
+non_functional_requirements:
+  - id: NL1
+    text: >
+      The full feature builds on net10.0 with the existing Silk.NET OpenGL
+      bindings and SharpGLTF dependency set; no new native dependencies and no
+      new asset files are required.
+  - id: NL2
+    text: >
+      `dotnet build shooter.slnx` succeeds with zero errors and zero new
+      warnings beyond the pre-feature baseline.
+  - id: NL3
+    text: >
+      `dotnet format shooter.slnx --verify-no-changes --severity warn` exits
+      cleanly.
+  - id: NL4
+    text: >
+      Frame time on the bundled fallback arena on the developer's macOS retina
+      target stays interactive (≥60 fps in normal play); first-frame asset
+      upload spike already mitigated by the existing dt clamp must continue to
+      work.
+  - id: NL5
+    text: >
+      All new GL resources (FBOs, textures, renderbuffers, shaders, VAOs/VBOs)
+      are owned by IDisposable renderer classes and released in
+      `Program.OnClosing`.
+  - id: NL6
+    text: >
+      Cross-platform GL feature use is limited to GL 3.3 core + widely
+      supported extensions; no compute shaders, no bindless, no NV/AMD-only
+      paths. (GL_ARB_texture_storage and seamless cubemaps are acceptable.)
+
+constraints:
+  - Single coordinated PR: all subsystems land together; no half-states merged.
+  - Existing shaders retain their public uniform names where reused; new
+    shaders live alongside in `Render/Shaders.cs`.
+  - Pass order in `Program.OnRender` is the canonical sequence; deviations
+    require explicit design rationale.
+  - No gameplay math changes (collision, weapons, projectile, pickup, HUD
+    logic untouched).
+  - No automated tests added; rely on `dotnet build` + `dotnet format` plus
+    manual visual verification per acceptance criteria.
+
+assumptions:
+  - The Hosek–Wilkie sky model (or equivalent analytic approximation) is
+    sufficient — no need for measured/HDRI captures.
+  - A single shadow cascade at 2048² is visually adequate for a 60×60 arena
+    with the sun at typical late-afternoon angles. CSM split is deferred.
+  - Bloom can be implemented with a five-mip Gaussian down/up chain; dual-Kawase
+    is allowed but not required.
+  - The view-space muzzle flash continues to render into the HDR buffer with
+    additive blending; no special path required.
+
+acceptance_criteria:
+  - id: AC1
+    text: >
+      Visible shadow cast by the central platform onto the floor of the
+      fallback arena, with soft (PCF) edges and no visible acne or
+      peter-panning at default sun direction.
+  - id: AC2
+    text: >
+      The sky changes color across the dome — brighter/warmer near the sun,
+      cooler at zenith — and recolors when `LightingEnvironment.SunDirection`
+      is changed in code.
+  - id: AC3
+    text: >
+      The shaded side of every lit surface reads as cool sky-colored ambient,
+      not as a flat gray. (Verified by pointing at a wall away from the sun
+      and confirming a blue tint distinct from in-shadow lit-side rendering.)
+  - id: AC4
+    text: >
+      Firing the AK-47 produces a visible bloom halo around the muzzle flash;
+      a rocket detonation produces a visible bloom halo around the scorch
+      bright core for the duration of the flash. Non-emissive surfaces do not
+      bloom.
+  - id: AC5
+    text: >
+      Bright pickups and the sun-lit side of the weapon viewmodel do not blow
+      out to flat white at default exposure; tone curve preserves color
+      separation at high luminance.
+  - id: AC6
+    text: >
+      HUD elements are crisp, unblurred, and unaffected by exposure changes.
+  - id: AC7
+    text: >
+      Frame rate is interactive on the dev machine in the fallback arena
+      (≥60 fps target).
+  - id: AC8
+    text: >
+      Build and format checks pass per NL2 and NL3.
+  - id: AC9
+    text: >
+      Closing the window cleanly disposes all new GL resources (no GL warnings
+      / leaks logged in debug output).
+
+open_questions:
+  - id: Q1
+    text: >
+      Sky model choice — Hosek–Wilkie (more accurate, more uniforms) vs
+      Preetham (simpler, slightly less accurate). Architect to choose.
+  - id: Q2
+    text: >
+      Bloom kernel — five-mip Gaussian vs dual-Kawase. Architect to choose
+      based on perf budget and code simplicity.
+  - id: Q3
+    text: >
+      Exact size of the HDR cubemap probe and irradiance convolution sample
+      count. Architect to fix.
+  - id: Q4
+    text: >
+      Whether the muzzle flash should bypass tone-mapping clamp by using a
+      higher HDR value at the source (likely yes, to preserve punch through
+      ACES). Architect to specify.
+
+deliverables:
+  - New renderer classes under `src/Shooter.App/Render/`:
+    `HdrTarget`, `SkyRenderer`, `IblProbe`, `ShadowMap`, `Bloom`, `PostFx`.
+  - New `Game/LightingEnvironment.cs` (data only; no behavior beyond defaults).
+  - New shaders appended to `Render/Shaders.cs`:
+    `SkyVert/Frag`, `ShadowDepthVert`, `BloomThreshold/Down/Up`,
+    `PostFxVert/Frag`, plus updates to `WorldFrag` and `TexturedModelFrag`.
+  - Updated `Program.cs` pass order and resource lifecycle.
+  - Updated wiki page `architecture/shooter-runtime` describing the new pass
+    pipeline; new decision page `decisions/lighting-pipeline` recording the
+    chosen sky model and bloom approach (filled by architect).

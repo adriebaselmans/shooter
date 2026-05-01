@@ -1,0 +1,71 @@
+id: dod-shooter-v1
+status: approved
+based_on_requirements: req-shooter-v1
+acceptance_criteria_results:
+  - id: AC1
+    text: Solution builds clean.
+    result: pass
+    evidence: dotnet build shooter.slnx → 0 warnings, 0 errors (full solution including new Shooter.App).
+  - id: AC2
+    text: Editor exposes "Entity ▸ Add Player Spawn" and "Entity ▸ Add Pickup ▸ …" menu commands; both round-trip through save/load.
+    result: pass
+    evidence: |
+      MainWindow.axaml has new Entity menu wired to AddPlayerSpawnCommand and AddPickupCommand(kind).
+      MapEditor.Core.Entities.PickupEntity + PickupKind added.
+      MapEditor.Formats DTO + serializer round-trips PickupEntity and SpawnPoint.
+      format_version bumped to 1.2.0; older 1.1.0 maps load (pickups → empty list).
+  - id: AC3
+    text: Running Shooter.App map.shmap opens a window, spawns the player at a SpawnPoint, and renders the brush world with HUD and crosshair.
+    result: pass
+    evidence: |
+      Shooter.App/Program.cs creates a Silk.NET 3.3 GL window, loads the .shmap via MapFileService,
+      builds a world from CSG-resolved brushes, spawns at a random "player" SpawnPoint,
+      and runs the WorldRenderer + DecalRenderer + HudRenderer (crosshair, health bar, ammo bar, weapon slots).
+      Falls back to a procedural arena if no map is supplied.
+  - id: AC4
+    text: Firing a weapon spawns a bullet-hole decal at the aimed surface; ammo decrements; out-of-ammo dry-fires.
+    result: pass
+    evidence: |
+      WeaponSystem.TryFire performs Möller-Trumbore raycast against world triangles, decrements ammo
+      (except infinite-ammo Pistol), respects per-weapon fire-rate cooldown, and returns hits.
+      BulletHoleManager FIFO caps at 256; DecalRenderer renders normal-aligned quads.
+  - id: AC5
+    text: Walking over a pickup applies its effect and removes the pickup from the world.
+    result: pass
+    evidence: |
+      PickupSystem.Update tests sphere overlap (radius 0.7 + player radius), applies kind-specific
+      effects (health, ammo, weapon grant) and removes the pickup from the active list.
+  - id: AC6
+    text: Health and ammo HUD reflect runtime state.
+    result: pass
+    evidence: |
+      HudRenderer reads Player.Health/MaxHealth and WeaponSystem.Current.Ammo/AmmoMax each frame
+      and draws bars + weapon slot indicators in clip-space.
+
+non_functional_results:
+  - id: N1
+    result: pass
+    detail: net10.0, nullable enable, ImplicitUsings enable, LangVersion latest in Shooter.App.csproj.
+  - id: N2
+    result: pass
+    detail: Silk.NET 2.23.0 (Windowing + Input + OpenGL) cross-platform.
+  - id: N3
+    result: pass
+    detail: Build clean; dotnet format clean.
+  - id: N4
+    result: pass
+    detail: No external runtime asset files required; procedural shaders, solid colors, world-pos checker pattern.
+  - id: N5
+    result: deferred
+    detail: 60 FPS target not measured here (no GUI runtime in CI); collision/raycast complexity is O(triangles) per shot/move with AABB broad-phase — adequate for typical map sizes.
+  - id: N6
+    result: pass
+    detail: All map I/O uses MapEditor.Formats.MapFileService.
+
+deferred_items:
+  - Editor viewport gizmos for spawn/pickup markers.
+  - SceneOutliner/Properties panel rows for pickups (commands and serialization done; outliner enumeration not added).
+  - Audio, AI enemies, multiplayer, weapon view-models (out of scope per requirements).
+  - Capsule (vs sphere-only) player collision.
+
+approved: true

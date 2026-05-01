@@ -1,11 +1,11 @@
 ---
 id: implementation-history
 cat: context
-rev: 3
+rev: 6
 created: 2026-04-26T12:00:00Z
-updated: 2026-04-29T16:00:00Z
+updated: 2026-04-29T20:45:00Z
 by: coordinator
-tags: [history, implemented, editor, viewports, brushes, gl, wpf, avalonia, shooter, weapons, glb]
+tags: [history, implemented, editor, viewports, brushes, gl, wpf, avalonia, shooter, weapons, glb, lighting, hdr, shadows, textures]
 summary: "Completed implementation milestones for the shooter map editor and game runtime."
 status: active
 ---
@@ -53,3 +53,32 @@ status: active
 - Procedural fallback arena: 60×60 floor, perimeter walls, central platform with two pitched ramps, two side platforms, columns, crates, alley, scattered pickups.
 - Spawn snap-to-floor via downward raycast; uses `Player.Radius` (sphere collider) not `HalfHeight`.
 - `OnUpdate` clamps `dt` to `1/30s`; `Player.Update` clamps fall to `-24 m/s` terminal velocity (anti-tunnel).
+
+## Shooter.App lighting pass (2026-04-29)
+- Coordinator-flow delivery: requirements / design / review / DoD YAMLs filled out.
+- HDR-linear forward pipeline: RGBA16F offscreen target replaces direct default-framebuffer rendering.
+- Procedural analytic sky (blue zenith + warm horizon + Mie sun glow + ground); drawn as unit cube with depth=1 trick.
+- Image-based ambient: 64² sky cubemap + 16² irradiance cubemap (one-shot, 64 hemisphere samples/texel).
+- 2048² single-cascade directional shadow map with hardware PCF (`sampler2DShadow`), 3×3 kernel, slope-scaled bias, front-face cull during shadow pass.
+- Lambert direct lighting in `WorldFrag` and `TexturedModelFrag` via shared `LightingHeader` snippet; Phong removed.
+- Muzzle flash multiplied by HDR_BOOST=6.0 to survive ACES tone curve.
+- Bloom: threshold @ 0.9 with knee → 5-mip Karis-13 downsample → 9-tap tent-filter additive upsample.
+- Final post pass: ACES filmic (Narkowicz) + gamma 1/2.2, Exposure uniform.
+- HUD draws after PostFx into default framebuffer; unaffected by exposure/bloom.
+- New: `Game/LightingEnvironment.cs`, `Render/{HdrTarget,SkyRenderer,IblProbe,ShadowMap,Bloom,PostFx}.cs`. Modified: `Shaders.cs`, `WorldRenderer`, `TexturedModelRenderer`, `WeaponViewmodelRenderer`, `RocketRenderer`, `Program.cs`.
+- Single `LightingEnvironment` instance threaded through every renderer as the source of truth (sun direction, sun color/intensity, turbidity, ground albedo, exposure, irradiance intensity).
+
+## Shooter.App dust texture pass (2026-04-29)
+- Dust-style playable map authored as `dust.shmap`: open courtyard, covered tunnel, enclosed interior room, crates, platform, pickups, and multiple spawns.
+- Imported five Poly Haven CC0 1k diffuse maps into `assets/textures/dust/` and documented source/license in `assets/textures/dust/LICENSES.md`.
+- Shooter.App world-brush path upgraded from tint-only to optional diffuse texture sampling using the existing UVs authored by `MeshGenerator`.
+- New `Render/TextureCache.cs` caches GL uploads by file path and owns white-fallback texture disposal.
+- `GameWorld.FromScene` now resolves image-backed `material_name` values into absolute `TexturePath` values; missing files remain non-fatal and fall back to hashed tint.
+- `dust.shmap` now applies distinct sand / plaster / stone / concrete / wood materials by brush category.
+- Follow-up Dust polish pass: map rebuilt to 59 brushes / 708 tris with explicit A-long, mid, and B-tunnel/B-market route identities.
+- Added surface-mapping UV tuning directly in `dust.shmap` for large floors, walls, ceilings, cover, crates, trims, and awnings.
+- Replaced the too-subtle outer-wall plaster with a stronger brick texture and sank tall walls slightly into the ground to eliminate the visible floating-gap impression.
+- Imported extra Poly Haven CC0 textures for outer walls, awnings, and trim (`brick_wall_001`, `blue_painted_planks`, `brown_planks_05`).
+- Grounding hotfix after visual feedback first tried map-side overlap/plinth adjustments, but those were ultimately superseded by the real engine fix below.
+- Real root cause fixed in engine: `MeshGenerator.GenerateBox` top and bottom face winding corrected, which resolved the persistent floor/wall seam artifact across box-based geometry.
+- Final cleanup pass removed the temporary seam-debug runtime toggles, normalized floor-contact map authoring, kept the genuine structural support additions (awning posts / lintel connections), and rebalanced Dust map pickups/facade accents.

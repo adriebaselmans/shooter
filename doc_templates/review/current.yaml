@@ -1,29 +1,56 @@
-id: review-shooter-v1
-status: approved
-based_on_design: design-shooter-v1
-summary: |
-  Implementation reviewed against the design for Shooter.App and editor extensions.
-checks:
-  - id: build
-    result: pass
-    detail: dotnet build shooter.slnx → 0 warnings, 0 errors.
-  - id: lint
-    result: pass
-    detail: dotnet format --verify-no-changes (severity warn) → clean after auto-format.
-  - id: scope_match
-    result: pass
-    detail: All work items W1–W8 implemented; PickupEntity round-trip; commands; ViewModel + Avalonia menu; new Shooter.App with weapons, pickups, decals, HUD, FPS controls.
-  - id: format_compat
-    result: pass
-    detail: format_version bumped to 1.2.0; ValidateVersion accepts any 1.x; older 1.1.0 maps load with empty pickups list.
-  - id: separation_of_concerns
-    result: pass
-    detail: Game logic, physics, rendering, and input split into namespaces; no GL leaks into Game/* layer.
-findings:
-  blocking: []
-  non_blocking:
-    - SceneOutliner / Properties panel does not yet enumerate Pickup entities; menu adds work and serialization round-trip works, but in-editor reposition currently must go via JSON or manual property editing. Acceptable for v1; queued for follow-up.
-    - In-viewport gizmo rendering for spawns/pickups deferred — markers not visible in the editor 2D/3D viewports (also a follow-up).
-    - Sphere-only collision for the player (no capsule), so very tall thin geometry could clip near top/bottom; sufficient for typical Quake-scale rooms.
+id: review-shooter-dust-final-polish
+title: Review — Shooter.App Dust Final Cleanup, Balance, and Visual Polish
+status: passed
+parent: design-shooter-dust-final-polish
+reviewer_role: reviewer
+reviewed_at: 2026-04-29T22:35:00Z
+
+scope_reviewed:
+  - src/MapEditor.Core/Geometry/MeshGenerator.cs
+  - src/Shooter.App/Game/LightingEnvironment.cs
+  - src/Shooter.App/Input/InputState.cs
+  - src/Shooter.App/Render/WorldRenderer.cs
+  - src/Shooter.App/Program.cs
+  - dust.shmap
+
+requirements_traceability:
+  - id: L46
+    status: met
+    note: "Temporary F2/F3 seam-debug toggles and related runtime fields were removed."
+  - id: L47
+    status: met
+    note: "Map floor-contact workaround sink was normalized back toward clean authored contact after the true MeshGenerator fix."
+  - id: L48
+    status: met
+    note: "Final beauty pass adds cleaner facade variation and calmer material choices without another disruptive geometry rewrite."
+  - id: L49
+    status: met
+    note: "Pickups redistributed slightly across long/B approach while preserving mid shotgun and B rocket identity."
+  - id: L50
+    status: met
+    note: "Three-route identity remains: long/open, mid, and tunnel/interior."
+
+approved:
+  - "Correct cleanup order: preserve the real engine fix (box winding) while removing temporary debugging and workaround clutter."
+  - "Map polish stays restrained and readable instead of ballooning again."
+  - "Support posts/lintels remain because they fixed real disconnected geometry, not just perceived issues."
+
+feedback:
+  - "If the user wants a richer Dust look later, the next increment should be landmark props/material accents, not more structural debugging."
+
+blocking_findings: []
 rework_target: none
-approved: true
+
+evidence:
+  build:
+    command: "dotnet build src/Shooter.App/Shooter.App.csproj"
+    result: "passed"
+  format:
+    command: "dotnet format shooter.slnx --verify-no-changes --severity warn -v minimal"
+    result: "passed"
+  smoke_run:
+    command: "dotnet run --project src/Shooter.App -- dust.shmap (5 s)"
+    result: "passed; world = 70 brushes, 840 tris, 6 spawns, 14 pickups"
+
+decision: approved
+gate_to_testing: true
