@@ -1,46 +1,41 @@
-id: req-shooter-dust-final-polish
-title: Shooter.App Dust Map — Final Cleanup, Balance, and Visual Polish
+id: req-shooter-authored-material-properties
+title: Authored Material Properties via Map Editor and Shooter Runtime
 status: approved
-parent: req-shooter-dust-polish
-created_at: 2026-04-29T22:10:00Z
+parent: req-shooter-visual-big-pass-no-editor
+created_at: 2026-05-01T23:20:00Z
 
 context: >
-  The core floor/wall disconnection issue is now fixed at the engine level: box top/bottom face
-  winding in MeshGenerator was wrong. With the root cause removed, the user wants a proper final
-  polish pass: simplify temporary debugging or workaround changes that are no longer needed,
-  rebalance route pickups a bit, and make the Dust-inspired map cleaner and more attractive.
+  The user wants material behavior authored directly in the map editor rather than relying on
+  runtime-only filename conventions. The system must persist those properties in .shmap, expose
+  them in the editor, and use them in Shooter.App. It must support at least standard, water, and
+  lava material behaviors, and the Dust demo map should include a water example to verify the flow.
 
 functional:
-  - id: L46
-    text: "Remove temporary debugging/runtime instrumentation added only for seam diagnosis when it is no longer needed for the shipped map experience."
-  - id: L47
-    text: "Simplify map hacks that were introduced while chasing the old seam bug if they are no longer necessary after the MeshGenerator fix."
-  - id: L48
-    text: "dust.shmap receives a final visual polish pass that improves route landmarking, facade variety, and overall Dust-like readability without regressing the fixed geometry connections."
-  - id: L49
-    text: "Pickups are rebalanced so each major route offers a meaningful incentive while the strongest rewards remain contestable rather than stacked in one area."
-  - id: L50
-    text: "The final polished map still preserves the three-route identity: long/open lane, mid route, tunnel/interior route."
+  - id: L98
+    text: "The map editor exposes authored brush material properties rather than requiring runtime-only texture filename conventions."
+  - id: L99
+    text: "Brush material properties persist in .shmap and load/save without breaking older maps."
+  - id: L100
+    text: "Shooter.App consumes authored material properties as the source of truth for runtime shading behavior."
+  - id: L101
+    text: "The material system supports at least Standard, Water, and Lava behavior families."
+  - id: L102
+    text: "The Dust demo map includes a water-authored example so the new material workflow can be checked visually."
 
 non_functional:
-  - id: NL17
-    text: "No new package references. Prefer content cleanup and small code cleanup only."
-  - id: NL18
-    text: "Any code cleanup must preserve the now-correct box mesh winding behavior and must not reintroduce floor/wall seam artifacts."
-  - id: NL19
-    text: "Build + format clean and smoke-run clean on dust.shmap."
+  - id: NL48
+    text: "Remain backward-compatible with older maps that do not yet contain authored material_properties."
+  - id: NL49
+    text: "Keep the initial authored material model practical: brush-level properties first rather than a full per-surface authored material graph."
+  - id: NL50
+    text: "Build + format clean across the solution."
 
 acceptance_criteria:
-  - id: AC26
-    text: "`dotnet run --project src/Shooter.App -- dust.shmap` loads the final polished map successfully with the floor/wall connection issue still fixed."
-  - id: AC27
-    text: "Temporary seam-debug controls or toggles are removed unless they remain intentionally supported as a permanent debug feature with clear justification."
-  - id: AC28
-    text: "The map looks cleaner and more deliberate than the bug-hunt version: no obvious patch geometry, clearer landmarks, and improved pickup distribution."
-  - id: AC29
+  - id: AC60
+    text: "MapEditor.App.Avalonia builds with editable brush material properties in the properties panel."
+  - id: AC61
+    text: "Shooter.App builds and loads a .shmap using authored material properties for standard/water/lava behavior."
+  - id: AC62
+    text: "Dust demo map includes at least one water-authored brush and still loads cleanly."
+  - id: AC63
     text: "Build + format clean."
-
-out_of_scope:
-  - "A completely new map layout from scratch."
-  - "Advanced scripted objectives, bots, or game-mode-specific logic."
-  - "PBR/normal-map work for brush geometry."

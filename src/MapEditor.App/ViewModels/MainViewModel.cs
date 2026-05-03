@@ -171,6 +171,7 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         ApplySelectedTextureToBrushCommand.NotifyCanExecuteChanged();
         ApplySelectedTextureToSelectedSurfacesCommand.NotifyCanExecuteChanged();
         CommitSurfaceMappingEditsCommand.NotifyCanExecuteChanged();
+        CommitMaterialPropertiesEditsCommand.NotifyCanExecuteChanged();
         FitSelectedSurfaceMappingsCommand.NotifyCanExecuteChanged();
         ResetSelectedSurfaceMappingsCommand.NotifyCanExecuteChanged();
         SetSelectedBrushOperationCommand.NotifyCanExecuteChanged();
@@ -186,6 +187,7 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         RefreshSelectionDetails();
         ApplySelectedTextureToSelectedSurfacesCommand.NotifyCanExecuteChanged();
         CommitSurfaceMappingEditsCommand.NotifyCanExecuteChanged();
+        CommitMaterialPropertiesEditsCommand.NotifyCanExecuteChanged();
         FitSelectedSurfaceMappingsCommand.NotifyCanExecuteChanged();
         ResetSelectedSurfaceMappingsCommand.NotifyCanExecuteChanged();
     }
@@ -536,6 +538,18 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         }
 
         _sceneService.Execute(new ApplyBrushTextureCommand(_sceneService.Scene, brush, SelectedTextureKey));
+        if (SelectedTextureEntry is { } entry)
+        {
+            var preset = entry.Kind switch
+            {
+                MapEditor.Rendering.Infrastructure.TextureMaterialKind.Water => BrushMaterialProperties.Preset(BrushMaterialKind.Water),
+                MapEditor.Rendering.Infrastructure.TextureMaterialKind.Lava => BrushMaterialProperties.Preset(BrushMaterialKind.Lava),
+                _ => brush.MaterialProperties.Kind is BrushMaterialKind.Water or BrushMaterialKind.Lava
+                    ? BrushMaterialProperties.Preset(BrushMaterialKind.Standard)
+                    : brush.MaterialProperties
+            };
+            _sceneService.Execute(new UpdateBrushMaterialPropertiesCommand(_sceneService.Scene, brush, preset));
+        }
         RefreshSelectionDetails();
         _statusBarVm.Message = $"Applied texture '{SelectedTextureKey}' to brush.";
     }
@@ -570,6 +584,54 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         GetSelectedBrush() is not null &&
         !string.IsNullOrWhiteSpace(SelectedTextureKey) &&
         _surfaceSelectionService.HasSelection;
+
+    [RelayCommand(CanExecute = nameof(CanEditSelectedBrushMaterialProperties))]
+    private void CommitMaterialPropertiesEdits()
+    {
+        var brush = GetSelectedBrush();
+        if (brush is null)
+        {
+            return;
+        }
+
+        if (!Enum.TryParse<BrushMaterialKind>(_propertiesVm.MaterialKind, ignoreCase: true, out var kind) ||
+            !PropertiesViewModel.TryParseFloat(_propertiesVm.MaterialRoughnessText, out var roughness) ||
+            !PropertiesViewModel.TryParseFloat(_propertiesVm.MaterialSpecularText, out var specular) ||
+            !PropertiesViewModel.TryParseFloat(_propertiesVm.MaterialNormalStrengthText, out var normalStrength) ||
+            !PropertiesViewModel.TryParseFloat(_propertiesVm.MaterialEmissiveText, out var emissive) ||
+            !PropertiesViewModel.TryParseFloat(_propertiesVm.MaterialOpacityText, out var opacity) ||
+            !PropertiesViewModel.TryParseFloat(_propertiesVm.MaterialFlowSpeedUText, out var flowU) ||
+            !PropertiesViewModel.TryParseFloat(_propertiesVm.MaterialFlowSpeedVText, out var flowV) ||
+            !PropertiesViewModel.TryParseFloat(_propertiesVm.MaterialDistortionText, out var distortion) ||
+            !PropertiesViewModel.TryParseFloat(_propertiesVm.MaterialFresnelText, out var fresnel) ||
+            !PropertiesViewModel.TryParseFloat(_propertiesVm.MaterialPulseText, out var pulse))
+        {
+            _statusBarVm.Message = "Invalid material property format.";
+            RefreshSelectionDetails();
+            return;
+        }
+
+        var props = new BrushMaterialProperties(
+            kind,
+            roughness,
+            specular,
+            normalStrength,
+            emissive,
+            opacity,
+            new Vector2(flowU, flowV),
+            distortion,
+            fresnel,
+            pulse);
+
+        if (props == brush.MaterialProperties)
+            return;
+
+        _sceneService.Execute(new UpdateBrushMaterialPropertiesCommand(_sceneService.Scene, brush, props));
+        RefreshSelectionDetails();
+        _statusBarVm.Message = "Material properties updated.";
+    }
+
+    private bool CanEditSelectedBrushMaterialProperties() => GetSelectedBrush() is not null;
 
     [RelayCommand(CanExecute = nameof(CanEditSelectedSurfaceMappings))]
     private void CommitSurfaceMappingEdits()

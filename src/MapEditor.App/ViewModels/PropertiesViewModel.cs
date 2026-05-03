@@ -31,7 +31,20 @@ public sealed partial class PropertiesViewModel : ObservableObject
     [ObservableProperty] private string _surfaceScaleVText = string.Empty;
     [ObservableProperty] private string _surfaceRotationText = string.Empty;
     [ObservableProperty] private bool _textureLockEnabled = true;
+    [ObservableProperty] private string _materialKind = "Standard";
+    [ObservableProperty] private string _materialRoughnessText = string.Empty;
+    [ObservableProperty] private string _materialSpecularText = string.Empty;
+    [ObservableProperty] private string _materialNormalStrengthText = string.Empty;
+    [ObservableProperty] private string _materialEmissiveText = string.Empty;
+    [ObservableProperty] private string _materialOpacityText = string.Empty;
+    [ObservableProperty] private string _materialFlowSpeedUText = string.Empty;
+    [ObservableProperty] private string _materialFlowSpeedVText = string.Empty;
+    [ObservableProperty] private string _materialDistortionText = string.Empty;
+    [ObservableProperty] private string _materialFresnelText = string.Empty;
+    [ObservableProperty] private string _materialPulseText = string.Empty;
     [ObservableProperty] private IReadOnlyList<SurfaceSelectionChip> _surfaceChips = Array.Empty<SurfaceSelectionChip>();
+
+    public IReadOnlyList<string> MaterialKinds { get; } = ["Standard", "Water", "Lava"];
 
     public void PopulateFromBrush(Brush brush)
     {
@@ -47,8 +60,8 @@ public sealed partial class PropertiesViewModel : ObservableObject
         GeometryState = brush.HasExplicitGeometry ? "Explicit geometry" : "Primitive-generated geometry";
         FaceCountText = BrushGeometryFactory.GetGeometry(brush).FaceCount.ToString(CultureInfo.InvariantCulture);
         MaterialSummary = brush.SurfaceMappings.Count == 0
-            ? brush.MaterialName
-            : $"{brush.MaterialName} + {brush.SurfaceMappings.Count} face override(s)";
+            ? $"{brush.MaterialName} ({brush.MaterialProperties.Kind})"
+            : $"{brush.MaterialName} ({brush.MaterialProperties.Kind}) + {brush.SurfaceMappings.Count} face override(s)";
         SurfaceChips = BuildSurfaceChips(brush, []);
         SelectedSurfaceSummary = "No surfaces selected";
         SurfaceOffsetUText = string.Empty;
@@ -57,6 +70,17 @@ public sealed partial class PropertiesViewModel : ObservableObject
         SurfaceScaleVText = string.Empty;
         SurfaceRotationText = string.Empty;
         TextureLockEnabled = true;
+        MaterialKind = brush.MaterialProperties.Kind.ToString();
+        MaterialRoughnessText = FormatFloat(brush.MaterialProperties.Roughness);
+        MaterialSpecularText = FormatFloat(brush.MaterialProperties.SpecularStrength);
+        MaterialNormalStrengthText = FormatFloat(brush.MaterialProperties.NormalStrength);
+        MaterialEmissiveText = FormatFloat(brush.MaterialProperties.EmissiveStrength);
+        MaterialOpacityText = FormatFloat(brush.MaterialProperties.Opacity);
+        MaterialFlowSpeedUText = FormatFloat(brush.MaterialProperties.FlowSpeed.X);
+        MaterialFlowSpeedVText = FormatFloat(brush.MaterialProperties.FlowSpeed.Y);
+        MaterialDistortionText = FormatFloat(brush.MaterialProperties.DistortionStrength);
+        MaterialFresnelText = FormatFloat(brush.MaterialProperties.FresnelStrength);
+        MaterialPulseText = FormatFloat(brush.MaterialProperties.PulseStrength);
         CanEditSurfaceMapping = false;
     }
 
@@ -118,6 +142,17 @@ public sealed partial class PropertiesViewModel : ObservableObject
         SurfaceScaleVText = string.Empty;
         SurfaceRotationText = string.Empty;
         TextureLockEnabled = true;
+        MaterialKind = "Standard";
+        MaterialRoughnessText = string.Empty;
+        MaterialSpecularText = string.Empty;
+        MaterialNormalStrengthText = string.Empty;
+        MaterialEmissiveText = string.Empty;
+        MaterialOpacityText = string.Empty;
+        MaterialFlowSpeedUText = string.Empty;
+        MaterialFlowSpeedVText = string.Empty;
+        MaterialDistortionText = string.Empty;
+        MaterialFresnelText = string.Empty;
+        MaterialPulseText = string.Empty;
         SurfaceChips = Array.Empty<SurfaceSelectionChip>();
     }
 

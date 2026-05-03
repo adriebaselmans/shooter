@@ -187,6 +187,27 @@ public partial class MainWindow : Window
         CommitSurfaceMappingEdits();
     }
 
+    private void OnMaterialEditorKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter)
+        {
+            return;
+        }
+
+        CommitMaterialEdits();
+        e.Handled = true;
+    }
+
+    private void OnMaterialEditorLostFocus(object? sender, RoutedEventArgs e)
+    {
+        CommitMaterialEdits();
+    }
+
+    private void OnMaterialKindChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        CommitMaterialEdits();
+    }
+
     private void OnTextureLockChanged(object? sender, RoutedEventArgs e)
     {
         CommitSurfaceMappingEdits();
@@ -220,6 +241,14 @@ public partial class MainWindow : Window
         if (_viewModel.CommitSurfaceMappingEditsCommand.CanExecute(null))
         {
             _viewModel.CommitSurfaceMappingEditsCommand.Execute(null);
+        }
+    }
+
+    private void CommitMaterialEdits()
+    {
+        if (_viewModel.CommitMaterialPropertiesEditsCommand.CanExecute(null))
+        {
+            _viewModel.CommitMaterialPropertiesEditsCommand.Execute(null);
         }
     }
 

@@ -1,11 +1,11 @@
 ---
 id: current-behavior
 cat: context
-rev: 4
+rev: 9
 created: 2026-04-26T12:00:00Z
-updated: 2026-04-29T19:55:00Z
+updated: 2026-05-01T23:50:00Z
 by: coordinator
-tags: [behavior, ux, editor, viewports, shortcuts, primitives, shooter, gameplay, lighting, textures]
+tags: [behavior, ux, editor, viewports, shortcuts, primitives, shooter, gameplay, lighting, textures, metal]
 summary: "Stable user-facing behaviors that must not regress."
 status: active
 ---
@@ -42,6 +42,20 @@ status: active
 - Final image is ACES tone-mapped and gamma-encoded; exposure is a single uniform on the post pass unless auto-exposure is enabled.
 - Static world brushes may sample diffuse/albedo textures through their authored UVs; pickups remain untextured self-illuminated cubes.
 - HUD remains crisp, LDR, unaffected by exposure / bloom / tone map.
+- The visual baseline is intentionally less over-bright than before: exposure, ambient, sun, and bloom are tuned to preserve stronger contrast and more readable highlights.
+- Textured world surfaces now receive heuristic roughness/specular/detail-normal response even when dedicated normal maps are not yet authored.
+- Brush material behavior can now be authored directly in the editor and persisted into `.shmap` through a brush-level `material_properties` block.
+- Shooter.App still supports runtime companion maps by filename convention, but authored material properties now define intended behavior directly for Standard/Water/Lava brushes.
+- Distant outdoor geometry picks up subtle dust-style haze/fog, and the final frame receives mild color grading plus vignette.
+- Rocket smoke, explosion dust/debris, and muzzle smoke particles now add lightweight motion polish.
+- `dust.shmap` now includes a water-authored demo brush to verify the workflow visually.
+
+## Must stay true (Shooter.App Metal backend)
+- `Shooter.App --backend=metal` initializes a concrete Metal backend on macOS instead of routing through OpenGL.
+- The Metal backend renders world/models into HDR scene textures, runs directional shadowing, SSAO, bloom, and tone mapping, then draws HUD last.
+- Metal decals, scorch marks, and muzzle flash render in the HDR scene path rather than being omitted.
+- Metal also includes a hybrid path-traced indirect-lighting layer that accumulates while the camera is stable and resets on movement/resize.
+- Metal remains compatible with the backend abstraction and does not change the default OpenGL startup path.
 
 ## open
 - None.

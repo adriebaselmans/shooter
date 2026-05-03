@@ -23,6 +23,7 @@ This repository uses project-local skills as the operational layer beneath the t
 - `unit-testing`
 - `acceptance-testing`
 - `memory-update`
+- `online-material-sourcing`
 
 ## Reusable OpenAI Skills
 These are useful when installed and available in Codex:

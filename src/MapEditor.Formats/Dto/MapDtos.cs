@@ -6,7 +6,7 @@ namespace MapEditor.Formats.Dto;
 public sealed class MapDto
 {
     [JsonPropertyName("format_version")]
-    public string FormatVersion { get; set; } = "1.3.0";
+    public string FormatVersion { get; set; } = "1.4.0";
 
     [JsonPropertyName("editor_version")]
     public string EditorVersion { get; set; } = "0.1.0";
@@ -81,6 +81,9 @@ public sealed class BrushDto
     [JsonPropertyName("surface_mappings")]
     public Dictionary<string, SurfaceMappingDto>? SurfaceMappings { get; set; }
 
+    [JsonPropertyName("material_properties")]
+    public MaterialPropertiesDto? MaterialProperties { get; set; }
+
     [JsonPropertyName("geometry")]
     public BrushGeometryDto? Geometry { get; set; }
 
@@ -125,6 +128,42 @@ public sealed class SurfaceMappingDto
 
     [JsonPropertyName("texture_locked")]
     public bool TextureLocked { get; set; } = true;
+
+    [JsonExtensionData]
+    public Dictionary<string, System.Text.Json.JsonElement>? AdditionalData { get; set; }
+}
+
+public sealed class MaterialPropertiesDto
+{
+    [JsonPropertyName("kind")]
+    public string Kind { get; set; } = "standard";
+
+    [JsonPropertyName("roughness")]
+    public float Roughness { get; set; } = 0.86f;
+
+    [JsonPropertyName("specular_strength")]
+    public float SpecularStrength { get; set; } = 0.04f;
+
+    [JsonPropertyName("normal_strength")]
+    public float NormalStrength { get; set; } = 0.18f;
+
+    [JsonPropertyName("emissive_strength")]
+    public float EmissiveStrength { get; set; }
+
+    [JsonPropertyName("opacity")]
+    public float Opacity { get; set; } = 1.0f;
+
+    [JsonPropertyName("flow_speed")]
+    public float[] FlowSpeed { get; set; } = [0f, 0f];
+
+    [JsonPropertyName("distortion_strength")]
+    public float DistortionStrength { get; set; }
+
+    [JsonPropertyName("fresnel_strength")]
+    public float FresnelStrength { get; set; }
+
+    [JsonPropertyName("pulse_strength")]
+    public float PulseStrength { get; set; }
 
     [JsonExtensionData]
     public Dictionary<string, System.Text.Json.JsonElement>? AdditionalData { get; set; }

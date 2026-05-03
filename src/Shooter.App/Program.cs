@@ -4,9 +4,9 @@ using Shooter.Game;
 using Shooter.Input;
 using Shooter.Physics;
 using Shooter.Render;
+using Shooter.RenderSystem;
 using Silk.NET.Input;
 using Silk.NET.Maths;
-using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 
 namespace Shooter;
@@ -14,8 +14,9 @@ namespace Shooter;
 internal static class Program
 {
     private static IWindow? _window;
-    private static GL? _gl;
     private static IInputContext? _input;
+    private static IRenderBackend? _renderBackend;
+    private static BackendKind _backendKind = BackendKind.OpenGL;
 
     private static GameWorld? _world;
     private static CollisionWorld? _col;
@@ -27,28 +28,14 @@ internal static class Program
     private static RocketSystem? _rockets;
     private static MuzzleFlash? _muzzleFlash;
     private static ScorchManager? _scorches;
-    private static WorldRenderer? _worldRen;
-    private static DecalRenderer? _decalRen;
-    private static TracerRenderer? _tracerRen;
-    private static HudRenderer? _hudRen;
-    private static WeaponViewmodelRenderer? _viewmodelRen;
-    private static RocketRenderer? _rocketRen;
-    private static MuzzleFlashRenderer? _muzzleFlashRen;
-    private static ScorchRenderer? _scorchRen;
-    private static HdrTarget? _hdr;
-    private static SkyRenderer? _skyRen;
-    private static IblProbe? _ibl;
-    private static ShadowMap? _shadow;
-    private static Bloom? _bloom;
-    private static SsaoPass? _ssao;
-    private static AutoExposure? _autoExp;
-    private static PostFx? _postFx;
+    private static ParticleSystem? _particles;
     private static LightingEnvironment _lighting = new();
     private static InputState _inputState = new();
     private static IMouse? _mouse;
     private static Vector2 _lastMouse;
     private static bool _firstMouse = true;
     private static bool _showDebug;
+    private static bool _backendInitFailed;
     private static float _fpsAccum;
     private static int _fpsFrames;
     private static float _fpsValue;
@@ -57,26 +44,31 @@ internal static class Program
 
     private static int Main(string[] args)
     {
-        _mapPath = args.Length > 0 ? args[0] : ResolveDefaultMap();
+        foreach (var arg in args)
+        {
+            if (arg.StartsWith("--backend=", StringComparison.OrdinalIgnoreCase))
+                _backendKind = RenderBackendFactory.Parse(arg[10..]);
+            else if (!arg.StartsWith("--", StringComparison.Ordinal))
+                _mapPath = arg;
+        }
+        if (string.IsNullOrEmpty(_mapPath)) _mapPath = ResolveDefaultMap();
+
+        var api = _backendKind == BackendKind.Metal
+            ? new GraphicsAPI(ContextAPI.None, ContextProfile.Core, ContextFlags.Default, new APIVersion(0, 0))
+            : new GraphicsAPI(ContextAPI.OpenGL, ContextProfile.Core, ContextFlags.ForwardCompatible, new APIVersion(3, 3));
 
         var opts = WindowOptions.Default with
         {
             Size = new Vector2D<int>(1280, 720),
-            Title = "Shooter",
+            Title = $"Shooter ({_backendKind})",
             VSync = true,
-            API = new GraphicsAPI(ContextAPI.OpenGL, ContextProfile.Core, ContextFlags.ForwardCompatible, new APIVersion(3, 3)),
+            API = api,
         };
         _window = Window.Create(opts);
         _window.Load += OnLoad;
         _window.Update += OnUpdate;
         _window.Render += OnRender;
-        _window.FramebufferResize += sz =>
-        {
-            _gl?.Viewport(sz);
-            _hdr?.Resize(sz.X, sz.Y);
-            _bloom?.Resize(sz.X, sz.Y);
-            _ssao?.Resize(sz.X, sz.Y);
-        };
+        _window.FramebufferResize += sz => _renderBackend?.Resize(sz.X, sz.Y);
         _window.Closing += OnClosing;
         _window.Run();
         return 0;
@@ -92,7 +84,6 @@ internal static class Program
 
     private static void OnLoad()
     {
-        _gl = GL.GetApi(_window!);
         _input = _window!.CreateInput();
 
         // Capture mouse for FPS look.
@@ -124,6 +115,7 @@ internal static class Program
         _rockets = new RocketSystem();
         _muzzleFlash = new MuzzleFlash();
         _scorches = new ScorchManager();
+        _particles = new ParticleSystem();
         _weapons = new WeaponSystem();
         _pickups = new PickupSystem(_world);
         _player = new Player();
@@ -135,34 +127,20 @@ internal static class Program
             : Vector3.Zero;
         _player.Position = SnapSpawnToFloor(spawnPoint, _col);
 
-        // Renderers
-        _worldRen = new WorldRenderer(_gl, _world);
-        _decalRen = new DecalRenderer(_gl);
-        _tracerRen = new TracerRenderer(_gl);
-        _hudRen = new HudRenderer(_gl);
-        _viewmodelRen = new WeaponViewmodelRenderer(_gl);
-        _rocketRen = new RocketRenderer(_gl);
-        _muzzleFlashRen = new MuzzleFlashRenderer(_gl);
-        _scorchRen = new ScorchRenderer(_gl);
+        _renderBackend = RenderBackendFactory.Create(_backendKind);
+        try
+        {
+            _renderBackend.Initialize(_window!, _world, _lighting);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Renderer] {_backendKind} initialization failed: {ex.Message}");
+            _backendInitFailed = true;
+            _window!.Title = $"Shooter ({_backendKind}) - backend init failed";
+            _window.Close();
+            return;
+        }
 
-        // Lighting pipeline: HDR target + sky + IBL probe + shadow + bloom + tonemap.
-        _hdr = new HdrTarget(_gl);
-        _hdr.Resize(_window!.FramebufferSize.X, _window.FramebufferSize.Y);
-        _skyRen = new SkyRenderer(_gl);
-        _ibl = new IblProbe(_gl);
-        _ibl.Build(_lighting);
-        _shadow = new ShadowMap(_gl);
-        _bloom = new Bloom(_gl);
-        _bloom.Resize(_window.FramebufferSize.X, _window.FramebufferSize.Y);
-        _ssao = new SsaoPass(_gl);
-        _ssao.Resize(_window.FramebufferSize.X, _window.FramebufferSize.Y);
-        _autoExp = new AutoExposure(_gl);
-        _postFx = new PostFx(_gl);
-
-        var sky = _world.SkyColor;
-        _gl.ClearColor(sky.X, sky.Y, sky.Z, 1f);
-        _gl.Enable(EnableCap.DepthTest);
-        _gl.Viewport(_window!.FramebufferSize);
         Console.WriteLine($"[Shooter] World: {_world.Brushes.Count} brushes, {_world.AllTriangles.Count} tris, {_world.PlayerSpawns.Count} spawns, {_world.Pickups.Count} pickups.");
     }
 
@@ -302,7 +280,8 @@ internal static class Program
 
     private static void OnUpdate(double dt)
     {
-        if (_player is null || _col is null || _weapons is null || _pickups is null || _holes is null || _tracers is null || _rockets is null || _muzzleFlash is null || _scorches is null) return;
+        if (_backendInitFailed) return;
+        if (_player is null || _col is null || _weapons is null || _pickups is null || _holes is null || _tracers is null || _rockets is null || _muzzleFlash is null || _scorches is null || _particles is null) return;
         // Clamp frame dt: the first frame after asset upload (textures, shaders) can be hundreds
         // of ms, which would otherwise let gravity tunnel the player through the floor.
         float fdt = MathF.Min((float)dt, 1f / 30f);
@@ -317,6 +296,9 @@ internal static class Program
         _tracers.Update(fdt);
         _rockets.Update(fdt, _col);
         _muzzleFlash.Update(fdt);
+        _particles.Update(fdt);
+        foreach (var rocket in _rockets.Active)
+            _particles.EmitRocketTrail(rocket, fdt);
 
         // On rocket detonation: leave one big scorch decal centred on the impact point.
         foreach (var det in _rockets.Detonations)
@@ -325,6 +307,7 @@ internal static class Program
             {
                 _scorches.Add(pt, n,
                 det.SplashRadius);
+                _particles.EmitExplosion(pt, n, det.SplashRadius);
             }
         }
 
@@ -355,6 +338,7 @@ internal static class Program
                     _ => (new Vector3(0.20f, -0.16f, -0.61f), 1.0f),
                 };
                 _muzzleFlash.Trigger(flashOffset, flashScale);
+                _particles.EmitMuzzleSmoke(muzzle, fwd);
 
                 if (result.Projectile is { } proj)
                 {
@@ -379,82 +363,27 @@ internal static class Program
 
     private static void OnRender(double dt)
     {
-        if (_gl is null || _player is null || _world is null || _worldRen is null || _hudRen is null || _decalRen is null || _tracerRen is null || _holes is null || _tracers is null || _weapons is null || _pickups is null || _rockets is null || _scorches is null) return;
-        if (_hdr is null || _skyRen is null || _ibl is null || _shadow is null || _bloom is null || _ssao is null || _autoExp is null || _postFx is null) return;
-
-        var fb = _window!.FramebufferSize;
-        // Make sure offscreen targets match the live window size (handles retina + first frame).
-        _hdr.Resize(fb.X, fb.Y);
-        _bloom.Resize(fb.X, fb.Y);
-        _ssao.Resize(fb.X, fb.Y);
-
-        float aspect = fb.Y > 0 ? (float)fb.X / fb.Y : 16f / 9f;
-        var view = Matrix4x4.CreateLookAt(_player.EyePosition, _player.EyePosition + _player.Forward(), Vector3.UnitY);
-        var proj = Matrix4x4.CreatePerspectiveFieldOfView(WeaponViewmodelRenderer.FovYRadians, aspect, 0.05f, 1000f);
-        var viewProj = view * proj;
-
-        // 1. Shadow pass: depth-only render of world brushes from the sun.
-        var lightSpace = _shadow.BuildLightSpace(_player.Position, _lighting);
-        _shadow.RenderPass(_world.Brushes, (Dictionary<Guid, GlMesh>)_worldRen.BrushMeshes, lightSpace);
-
-        // 2. Bind HDR target, clear color (to sky-ish) + depth, and render the scene.
-        _hdr.Bind();
-        _gl.ClearColor(0f, 0f, 0f, 1f); // sky covers the framebuffer; clear matters only for safety.
-        _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-        // Sky: view matrix without translation so the cube tracks the camera.
-        var viewNoTrans = view;
-        viewNoTrans.M41 = 0; viewNoTrans.M42 = 0; viewNoTrans.M43 = 0;
-        _skyRen.Draw(viewNoTrans, proj, _lighting);
-
-        _worldRen.Draw(view, viewProj, _world, _pickups, _lighting, _shadow, _ibl);
-        _decalRen.Draw(viewProj, _holes);
-        _scorchRen?.Draw(viewProj, _scorches);
-        _tracerRen.Draw(viewProj, _tracers);
-        _rocketRen?.Draw(view, viewProj, _rockets, _lighting, _shadow, _ibl, _worldRen);
-        _viewmodelRen?.Draw(fb.X, fb.Y, _weapons, _lighting, _shadow, _ibl, _worldRen);
-        if (_muzzleFlash is not null) _muzzleFlashRen?.Draw(fb.X, fb.Y, _muzzleFlash);
-
-        // 3. SSAO on depth + normal.
-        _ssao.Run(_hdr.DepthTex, _hdr.NormalTex, proj, _lighting.SsaoRadius, _lighting.SsaoBias);
-
-        // 4. Bloom on the HDR buffer.
-        _bloom.Run(_hdr.ColorTex);
-
-        // 5. Auto-exposure: log-luminance → mipmap → 1×1 readback → smoothed exposure.
-        _autoExp.Run(_hdr.ColorTex, _lighting, (float)dt);
-
-        // 6. Post: tone-map (HDR * AO + bloom) into the default framebuffer.
-        _postFx.Draw(_hdr.ColorTex, _bloom.OutputTex, _ssao.AoTex,
-            _lighting.SsaoStrength, _autoExp.CurrentExposure, fb.X, fb.Y);
-
-        // 7. HUD on top of the LDR default framebuffer.
-        _hudRen.Draw(fb.X, fb.Y, _player, _weapons);
-
-        if (_showDebug)
-        {
-            Console.Title = $"Shooter | pos={_player.Position:F1} fps={_fpsValue:F0} tris={_world.AllTriangles.Count} holes={_holes.Count} tracers={_tracers.Active.Count}";
-        }
+        if (_backendInitFailed) return;
+        if (_renderBackend is null || _player is null || _world is null || _holes is null || _tracers is null || _weapons is null || _pickups is null || _rockets is null || _scorches is null || _particles is null) return;
+        _renderBackend.Render(dt, new RenderFrameData(
+            _player,
+            _world,
+            _weapons,
+            _pickups,
+            _holes,
+            _tracers,
+            _rockets,
+            _muzzleFlash,
+            _scorches,
+            _particles,
+            _lighting,
+            _showDebug,
+            _fpsValue));
     }
 
     private static void OnClosing()
     {
-        _postFx?.Dispose();
-        _autoExp?.Dispose();
-        _ssao?.Dispose();
-        _bloom?.Dispose();
-        _shadow?.Dispose();
-        _ibl?.Dispose();
-        _skyRen?.Dispose();
-        _hdr?.Dispose();
-        _scorchRen?.Dispose();
-        _muzzleFlashRen?.Dispose();
-        _rocketRen?.Dispose();
-        _viewmodelRen?.Dispose();
-        _hudRen?.Dispose();
-        _tracerRen?.Dispose();
-        _decalRen?.Dispose();
-        _worldRen?.Dispose();
+        _renderBackend?.Dispose();
         _input?.Dispose();
     }
 }

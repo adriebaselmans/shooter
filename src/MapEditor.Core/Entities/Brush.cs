@@ -20,6 +20,7 @@ public sealed class Brush : IEntity
     public BrushPrimitive Primitive { get; set; } = BrushPrimitive.Box;
     public Transform Transform { get; set; } = Transform.Identity;
     public string MaterialName { get; set; } = "default";
+    public BrushMaterialProperties MaterialProperties { get; set; } = BrushMaterialProperties.Default;
     public IReadOnlyDictionary<string, SurfaceMapping> SurfaceMappings => _surfaceMappings;
     public int AppearanceVersion { get; private set; }
     public int GeometryVersion { get; private set; }
@@ -43,6 +44,7 @@ public sealed class Brush : IEntity
             Primitive = Primitive,
             Transform = Transform,
             MaterialName = MaterialName,
+            MaterialProperties = MaterialProperties,
             AppearanceVersion = AppearanceVersion,
             GeometryVersion = GeometryVersion
         };

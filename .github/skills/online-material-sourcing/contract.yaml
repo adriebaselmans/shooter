@@ -1,0 +1,20 @@
+name: online-material-sourcing
+description: Source textures/materials from reliable online providers, record licensing, and integrate them into this repository in a repeatable way.
+response_mode: one-shot
+required_inputs:
+  - bounded material/texture need
+  - target map/theme or destination folder
+  - quality/licensing constraints when known
+expected_outputs:
+  - imported asset file paths
+  - source/provider summary
+  - license/provenance note update
+  - integration notes for map/runtime/editor usage
+owned_artifacts:
+  - assets/textures/
+  - local LICENSES.md files beneath assets/
+completion_criteria:
+  - The chosen source is identified and documented.
+  - Imported files are placed under a repository-local texture folder.
+  - License/provenance notes are updated.
+  - The integration target is clear enough for the next role to use immediately.

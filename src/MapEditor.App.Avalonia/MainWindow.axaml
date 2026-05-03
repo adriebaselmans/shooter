@@ -260,6 +260,36 @@
                 </WrapPanel>
               </StackPanel>
             </Expander>
+
+            <Expander Header="Material Properties" IsExpanded="True" IsVisible="{Binding Properties.CanEditTexturing}">
+              <StackPanel Spacing="6" Margin="0,8,0,0">
+                <TextBlock Text="Kind" />
+                <ComboBox ItemsSource="{Binding Properties.MaterialKinds}"
+                          SelectedItem="{Binding Properties.MaterialKind, Mode=TwoWay}"
+                          SelectionChanged="OnMaterialKindChanged" />
+                <TextBlock Text="Roughness" />
+                <TextBox Text="{Binding Properties.MaterialRoughnessText, UpdateSourceTrigger=PropertyChanged}" KeyDown="OnMaterialEditorKeyDown" LostFocus="OnMaterialEditorLostFocus" />
+                <TextBlock Text="Specular" />
+                <TextBox Text="{Binding Properties.MaterialSpecularText, UpdateSourceTrigger=PropertyChanged}" KeyDown="OnMaterialEditorKeyDown" LostFocus="OnMaterialEditorLostFocus" />
+                <TextBlock Text="Normal Strength" />
+                <TextBox Text="{Binding Properties.MaterialNormalStrengthText, UpdateSourceTrigger=PropertyChanged}" KeyDown="OnMaterialEditorKeyDown" LostFocus="OnMaterialEditorLostFocus" />
+                <TextBlock Text="Emissive" />
+                <TextBox Text="{Binding Properties.MaterialEmissiveText, UpdateSourceTrigger=PropertyChanged}" KeyDown="OnMaterialEditorKeyDown" LostFocus="OnMaterialEditorLostFocus" />
+                <TextBlock Text="Opacity" />
+                <TextBox Text="{Binding Properties.MaterialOpacityText, UpdateSourceTrigger=PropertyChanged}" KeyDown="OnMaterialEditorKeyDown" LostFocus="OnMaterialEditorLostFocus" />
+                <TextBlock Text="Flow Speed" />
+                <Grid ColumnDefinitions="*,8,*">
+                  <TextBox Grid.Column="0" Text="{Binding Properties.MaterialFlowSpeedUText, UpdateSourceTrigger=PropertyChanged}" KeyDown="OnMaterialEditorKeyDown" LostFocus="OnMaterialEditorLostFocus" />
+                  <TextBox Grid.Column="2" Text="{Binding Properties.MaterialFlowSpeedVText, UpdateSourceTrigger=PropertyChanged}" KeyDown="OnMaterialEditorKeyDown" LostFocus="OnMaterialEditorLostFocus" />
+                </Grid>
+                <TextBlock Text="Distortion" />
+                <TextBox Text="{Binding Properties.MaterialDistortionText, UpdateSourceTrigger=PropertyChanged}" KeyDown="OnMaterialEditorKeyDown" LostFocus="OnMaterialEditorLostFocus" />
+                <TextBlock Text="Fresnel" />
+                <TextBox Text="{Binding Properties.MaterialFresnelText, UpdateSourceTrigger=PropertyChanged}" KeyDown="OnMaterialEditorKeyDown" LostFocus="OnMaterialEditorLostFocus" />
+                <TextBlock Text="Pulse" />
+                <TextBox Text="{Binding Properties.MaterialPulseText, UpdateSourceTrigger=PropertyChanged}" KeyDown="OnMaterialEditorKeyDown" LostFocus="OnMaterialEditorLostFocus" />
+              </StackPanel>
+            </Expander>
           </StackPanel>
         </StackPanel>
       </ScrollViewer>

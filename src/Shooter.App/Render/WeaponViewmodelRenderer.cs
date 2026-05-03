@@ -74,7 +74,8 @@ public sealed class WeaponViewmodelRenderer : IDisposable
         // projection), so writeNormal=false makes the shader emit 0 to leave the normal buffer
         // intact.
         _modelRen.BeginPass(Matrix4x4.Identity, proj, clearDepthFirst: true, env, shadow, ibl, worldRen,
-            receiveShadows: false, writeNormal: false);
+            receiveShadows: false, writeNormal: false, viewSpaceLighting: true, applyFog: false,
+            roughness: 0.28f, specularStrength: 0.24f);
         _modelRen.DrawModel(model, modelMat);
     }
 

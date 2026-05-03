@@ -191,6 +191,37 @@ public sealed class UpdateSurfaceMappingCommand : ISceneCommand
 }
 
 /// <summary>Changes a brush operation between additive and subtractive.</summary>
+public sealed class UpdateBrushMaterialPropertiesCommand : ISceneCommand
+{
+    private readonly Scene _scene;
+    private readonly Brush _brush;
+    private readonly BrushMaterialProperties _oldProperties;
+    private readonly BrushMaterialProperties _newProperties;
+
+    public UpdateBrushMaterialPropertiesCommand(Scene scene, Brush brush, BrushMaterialProperties newProperties)
+    {
+        _scene = scene;
+        _brush = brush;
+        _oldProperties = brush.MaterialProperties;
+        _newProperties = newProperties;
+    }
+
+    public void Execute()
+    {
+        _brush.MaterialProperties = _newProperties;
+        _brush.TouchAppearance();
+        _scene.RaiseChanged();
+    }
+
+    public void Undo()
+    {
+        _brush.MaterialProperties = _oldProperties;
+        _brush.TouchAppearance();
+        _scene.RaiseChanged();
+    }
+}
+
+/// <summary>Changes a brush operation between additive and subtractive.</summary>
 public sealed class SetBrushOperationCommand : ISceneCommand
 {
     private readonly Scene _scene;
@@ -372,6 +403,7 @@ internal static class BooleanResultBrushFactory
             Primitive = source.Primitive,
             Operation = source.Operation,
             MaterialName = source.MaterialName,
+            MaterialProperties = source.MaterialProperties,
             Transform = result.Transform
         };
 

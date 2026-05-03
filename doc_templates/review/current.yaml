@@ -1,56 +1,69 @@
-id: review-shooter-dust-final-polish
-title: Review — Shooter.App Dust Final Cleanup, Balance, and Visual Polish
+id: review-shooter-authored-material-properties
+title: Review — Authored Material Properties Through Editor and Runtime
 status: passed
-parent: design-shooter-dust-final-polish
+parent: design-shooter-authored-material-properties
 reviewer_role: reviewer
-reviewed_at: 2026-04-29T22:35:00Z
+reviewed_at: 2026-05-01T23:45:00Z
 
 scope_reviewed:
-  - src/MapEditor.Core/Geometry/MeshGenerator.cs
-  - src/Shooter.App/Game/LightingEnvironment.cs
-  - src/Shooter.App/Input/InputState.cs
+  - src/MapEditor.Core/Entities/BrushTexturing.cs
+  - src/MapEditor.Core/Entities/Brush.cs
+  - src/MapEditor.Core/Commands/SceneCommands.cs
+  - src/MapEditor.Formats/Dto/MapDtos.cs
+  - src/MapEditor.Formats/MapSerializer.cs
+  - src/MapEditor.App/ViewModels/PropertiesViewModel.cs
+  - src/MapEditor.App/ViewModels/MainViewModel.cs
+  - src/MapEditor.App.Avalonia/MainWindow.axaml
+  - src/MapEditor.App.Avalonia/MainWindow.axaml.cs
+  - src/Shooter.App/Game/World.cs
   - src/Shooter.App/Render/WorldRenderer.cs
-  - src/Shooter.App/Program.cs
+  - src/Shooter.App/Render/TexturedModelRenderer.cs
+  - src/Shooter.App/Render/Shaders.cs
+  - src/Shooter.App/RenderSystem/MetalBootstrapBackend.cs
   - dust.shmap
 
 requirements_traceability:
-  - id: L46
+  - id: L98
     status: met
-    note: "Temporary F2/F3 seam-debug toggles and related runtime fields were removed."
-  - id: L47
+    note: "Editor properties panel now exposes authored brush material properties."
+  - id: L99
     status: met
-    note: "Map floor-contact workaround sink was normalized back toward clean authored contact after the true MeshGenerator fix."
-  - id: L48
+    note: "Brush material_properties now serialize to .shmap and remain optional for older maps."
+  - id: L100
     status: met
-    note: "Final beauty pass adds cleaner facade variation and calmer material choices without another disruptive geometry rewrite."
-  - id: L49
+    note: "Shooter world extraction and renderers now consume authored material properties."
+  - id: L101
     status: met
-    note: "Pickups redistributed slightly across long/B approach while preserving mid shotgun and B rocket identity."
-  - id: L50
+    note: "Standard, Water, and Lava behavior families are represented in the authored material model and runtime shading."
+  - id: L102
     status: met
-    note: "Three-route identity remains: long/open, mid, and tunnel/interior."
+    note: "dust.shmap now contains a water-authored demo brush."
 
 approved:
-  - "Correct cleanup order: preserve the real engine fix (box winding) while removing temporary debugging and workaround clutter."
-  - "Map polish stays restrained and readable instead of ballooning again."
-  - "Support posts/lintels remain because they fixed real disconnected geometry, not just perceived issues."
+  - "Good tradeoff: brush-level authored properties deliver real editor control without a full material graph."
+  - "Backward-compatibility is preserved by optional serialization and runtime fallback behavior."
+  - "Water authoring is immediately testable in the demo map."
 
 feedback:
-  - "If the user wants a richer Dust look later, the next increment should be landmark props/material accents, not more structural debugging."
+  - "A future phase could extend authored properties to per-surface overrides if needed."
+  - "Lava support exists in the authored/runtime model but is not showcased in Dust, which is a reasonable art-direction choice."
 
 blocking_findings: []
 rework_target: none
 
 evidence:
-  build:
+  build_shooter:
     command: "dotnet build src/Shooter.App/Shooter.App.csproj"
     result: "passed"
-  format:
-    command: "dotnet format shooter.slnx --verify-no-changes --severity warn -v minimal"
+  build_solution:
+    command: "dotnet build shooter.slnx"
     result: "passed"
-  smoke_run:
-    command: "dotnet run --project src/Shooter.App -- dust.shmap (5 s)"
-    result: "passed; world = 70 brushes, 840 tris, 6 spawns, 14 pickups"
+  smoke_gl:
+    command: "dotnet run --project src/Shooter.App -- dust.shmap (10 s)"
+    result: "passed"
+  smoke_metal:
+    command: "dotnet run --project src/Shooter.App -- --backend=metal dust.shmap (10 s)"
+    result: "passed"
 
 decision: approved
 gate_to_testing: true

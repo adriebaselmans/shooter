@@ -1,0 +1,155 @@
+- ts: 2026-05-01T13:05:00Z
+  role: architect
+  action: created
+  target: wiki/decisions/renderer-abstraction-and-metal-bootstrap
+  summary: "Recorded backend abstraction and Metal bootstrap decision for Shooter.App"
+
+- ts: 2026-05-01T13:05:00Z
+  role: coordinator
+  action: updated
+  target: wiki/architecture/shooter-runtime
+  summary: "Added RenderSystem backend abstraction and macOS Metal bootstrap backend to runtime architecture"
+
+- ts: 2026-05-01T13:05:00Z
+  role: coordinator
+  action: updated
+  target: wiki/context/implementation-history
+  summary: "Added renderer abstraction + Metal bootstrap milestone"
+
+- ts: 2026-05-01T14:00:00Z
+  role: coordinator
+  action: updated
+  target: wiki/architecture/shooter-runtime
+  summary: "Advanced Metal backend status from clear/present bootstrap to static world rendering with depth + flat lighting"
+
+- ts: 2026-05-01T14:00:00Z
+  role: coordinator
+  action: updated
+  target: wiki/context/implementation-history
+  summary: "Recorded Metal phase-2 world pass milestone"
+
+- ts: 2026-05-01T14:55:00Z
+  role: coordinator
+  action: updated
+  target: wiki/architecture/shooter-runtime
+  summary: "Advanced Metal backend status to textured world rendering with per-brush batches and texture fallback"
+
+- ts: 2026-05-01T14:55:00Z
+  role: coordinator
+  action: updated
+  target: wiki/context/implementation-history
+  summary: "Recorded Metal phase-3 textured world milestone"
+
+- ts: 2026-05-01T15:40:00Z
+  role: coordinator
+  action: updated
+  target: wiki/architecture/shooter-runtime
+  summary: "Advanced Metal backend status to textured world + viewmodel + rockets + HUD"
+
+- ts: 2026-05-01T15:40:00Z
+  role: coordinator
+  action: updated
+  target: wiki/context/implementation-history
+  summary: "Recorded Metal phase-4 models and HUD milestone"
+
+- ts: 2026-05-01T16:40:00Z
+  role: coordinator
+  action: updated
+  target: wiki/architecture/shooter-runtime
+  summary: "Advanced Metal backend status to HDR offscreen + tone-map presentation"
+
+- ts: 2026-05-01T16:40:00Z
+  role: coordinator
+  action: updated
+  target: wiki/context/implementation-history
+  summary: "Recorded Metal phase-5 HDR and tone-map milestone"
+
+- ts: 2026-05-01T19:10:00Z
+  role: coordinator
+  action: updated
+  target: wiki/architecture/shooter-runtime
+  summary: "Advanced Metal backend status to include shadows, SSAO, bloom, overlays, and GPU-side scene lighting"
+
+- ts: 2026-05-01T19:10:00Z
+  role: coordinator
+  action: updated
+  target: wiki/context/implementation-history
+  summary: "Recorded Metal phase-6 full effects parity milestone"
+
+- ts: 2026-05-01T19:10:00Z
+  role: coordinator
+  action: updated
+  target: wiki/context/current-behavior
+  summary: "Updated runtime behavior summary for Metal full-effects path"
+
+- ts: 2026-05-01T20:45:00Z
+  role: coordinator
+  action: updated
+  target: wiki/architecture/shooter-runtime
+  summary: "Recorded cross-backend visual quality pass and more explicit GPU-side material/light/post direction"
+
+- ts: 2026-05-01T20:45:00Z
+  role: coordinator
+  action: updated
+  target: wiki/context/implementation-history
+  summary: "Recorded visual quality pass with lighting/material/fog/grading improvements"
+
+- ts: 2026-05-01T20:45:00Z
+  role: coordinator
+  action: updated
+  target: wiki/context/current-behavior
+  summary: "Updated current behavior to reflect the darker/tighter visual baseline and new fog/material response"
+
+- ts: 2026-05-01T21:50:00Z
+  role: coordinator
+  action: updated
+  target: wiki/architecture/shooter-runtime
+  summary: "Recorded first hybrid path-tracing coexistence point in the Metal backend"
+
+- ts: 2026-05-01T21:50:00Z
+  role: coordinator
+  action: updated
+  target: wiki/context/implementation-history
+  summary: "Recorded Metal hybrid path-tracing phase-1 milestone"
+
+- ts: 2026-05-01T21:50:00Z
+  role: coordinator
+  action: updated
+  target: wiki/context/current-behavior
+  summary: "Updated current behavior to include Metal hybrid path-traced GI accumulation"
+
+- ts: 2026-05-01T23:00:00Z
+  role: coordinator
+  action: updated
+  target: wiki/architecture/shooter-runtime
+  summary: "Recorded runtime-only companion material maps and the latest big visual pass"
+
+- ts: 2026-05-01T23:00:00Z
+  role: coordinator
+  action: updated
+  target: wiki/context/implementation-history
+  summary: "Recorded companion-map, shadow, GI, and particle visual-runtime milestone"
+
+- ts: 2026-05-01T23:00:00Z
+  role: coordinator
+  action: updated
+  target: wiki/context/current-behavior
+  summary: "Updated current behavior for runtime companion maps and particle polish"
+
+- ts: 2026-05-01T23:50:00Z
+  role: coordinator
+  action: updated
+  target: wiki/architecture/shooter-runtime
+  summary: "Recorded authored material-properties model and runtime support for Standard/Water/Lava"
+
+- ts: 2026-05-01T23:50:00Z
+  role: coordinator
+  action: updated
+  target: wiki/context/implementation-history
+  summary: "Recorded editor-to-runtime authored material-properties milestone"
+
+- ts: 2026-05-01T23:50:00Z
+  role: coordinator
+  action: updated
+  target: wiki/context/current-behavior
+  summary: "Updated current behavior for authored material properties and Dust water demo"

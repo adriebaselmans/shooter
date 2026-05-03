@@ -1,11 +1,11 @@
 ---
 id: implementation-history
 cat: context
-rev: 6
+rev: 7
 created: 2026-04-26T12:00:00Z
-updated: 2026-04-29T20:45:00Z
+updated: 2026-05-01T13:05:00Z
 by: coordinator
-tags: [history, implemented, editor, viewports, brushes, gl, wpf, avalonia, shooter, weapons, glb, lighting, hdr, shadows, textures]
+tags: [history, implemented, editor, viewports, brushes, gl, metal, wpf, avalonia, shooter, weapons, glb, lighting, hdr, shadows, textures, backends]
 summary: "Completed implementation milestones for the shooter map editor and game runtime."
 status: active
 ---
@@ -82,3 +82,20 @@ status: active
 - Grounding hotfix after visual feedback first tried map-side overlap/plinth adjustments, but those were ultimately superseded by the real engine fix below.
 - Real root cause fixed in engine: `MeshGenerator.GenerateBox` top and bottom face winding corrected, which resolved the persistent floor/wall seam artifact across box-based geometry.
 - Final cleanup pass removed the temporary seam-debug runtime toggles, normalized floor-contact map authoring, kept the genuine structural support additions (awning posts / lintel connections), and rebalanced Dust map pickups/facade accents.
+
+## Shooter.App renderer abstraction + Metal bootstrap (2026-05-01)
+- Program-level rendering ownership moved behind `RenderSystem/IRenderBackend`.
+- Existing feature-complete OpenGL path wrapped as `OpenGLRenderBackend` and remains the default backend.
+- Backend selection added via CLI (`--backend=gl|metal`).
+- Concrete macOS `MetalBootstrapBackend` implemented using Silk's Cocoa window handle plus Objective-C / QuartzCore / Metal interop.
+- Metal bootstrap backend attaches a `CAMetalLayer`, creates `MTLDevice` + command queue, acquires a drawable, encodes a render-pass clear, and presents.
+- Scope deliberately stops at clear/present bootstrap; feature parity with the OpenGL gameplay renderer remains future work.
+- Metal phase 2: static brush world now renders on Metal using uploaded triangle soup, a real depth attachment, and CPU-side ambient + Lambert flat lighting from the live player camera.
+- Metal phase 3: textured world rendering added on Metal via per-brush batches, preserved MeshGenerator UVs, per-brush Metal textures loaded from TexturePath, and white-texture fallback for missing assets.
+- Metal phase 4: held-weapon viewmodel, active rocket models, and primitive HUD rendering added on top of the textured Metal world path.
+- Metal phase 5: HDR offscreen target + ACES-style tone-mapping post pass added; HUD remains a final pass over the drawable.
+- Metal phase 6: directional shadow map, HDR scene MRT normal output, SSAO, bloom, decals/scorches/muzzle flash overlays, and richer GPU-side scene lighting added to the Metal backend.
+- Visual quality pass: tuned exposure/bloom/light defaults, added heuristic roughness/specular/detail-normal material response, softened shadow filtering, introduced fog/haze and post color grading, and mirrored the direction across OpenGL and Metal.
+- Hybrid path tracing phase 1: Metal gained a low-resolution progressive indirect-GI pass that traces against static world triangles and blends into raster post output.
+- Visual runtime big pass (no editor/schema changes): companion normal/roughness/AO maps by filename convention, higher-quality shadows, denoised hybrid GI, and lightweight smoke/dust/debris particle polish added.
+- Authored material-properties phase: map/editor/runtime now share a brush-level material model supporting Standard/Water/Lava with persisted .shmap data and Dust includes a water demo brush.

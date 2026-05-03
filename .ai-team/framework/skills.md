@@ -22,12 +22,14 @@ This file maps team roles to project-local skills and reusable external skills.
   Optional external: `playwright`, `webapp-testing`, `web-design-guidelines`, `composition-patterns`
 - Scout
   Primary: `.github/skills/external-research`
+  Supporting: `.github/skills/online-material-sourcing`
 - Architect
   Primary: `.github/skills/architecture-design`
+  Supporting: `.github/skills/online-material-sourcing`
   Optional external: `openai-docs`, `security-threat-model`, `security-best-practices`, `azure-well-architected`
 - Developer
   Primary: `.github/skills/implementation-clean-code`
-  Supporting: `.github/skills/unit-testing`
+  Supporting: `.github/skills/unit-testing`, `.github/skills/online-material-sourcing`
   Optional external: `openai-docs`, `gh-fix-ci`, `security-best-practices`, `playwright`, `react-best-practices`, `composition-patterns`
 - Reviewer
   Primary: `.github/skills/code-review`
@@ -66,6 +68,7 @@ Tier 2:
 - Use `openai-docs` when architecture or implementation work depends on current OpenAI platform guidance.
 - Use `scout` when architecture or implementation depends on current external information that is temporally unstable, version-sensitive, freshness-sensitive, or meaningfully uncertain.
 - Use `playwright` or `webapp-testing` when tester or developer work requires real browser automation.
+- Use `.github/skills/online-material-sourcing` when a task depends on importing textures/materials from online providers, recording licensing, or turning one-off sourcing knowledge into repeatable repository practice.
 - Use `security-best-practices` for explicit security review or secure-by-default implementation choices.
 - Use `security-threat-model` for explicit security architecture and abuse-path analysis.
 - Use `gh-fix-ci` when developer or reviewer work is blocked by failing GitHub Actions checks.

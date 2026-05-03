@@ -19,10 +19,56 @@ uniform vec3  uSunDir;          // direction light travels (normalized)
 uniform vec3  uSunColor;        // linear HDR
 uniform float uSunIntensity;    // HDR multiplier
 uniform float uIrradianceIntensity;
+uniform float uShadowSoftness;
+uniform vec3  uCameraPos;
+uniform vec3  uToSunView;
+uniform vec3  uFogColor;
+uniform float uFogDensity;
+uniform float uFogStart;
+uniform float uFogHeightFalloff;
+uniform float uFogBaseHeight;
+uniform float uTime;
 uniform int   uReceiveShadows;  // 0 = always lit, 1 = sample shadow map
 
 vec3 iblAmbient(vec3 n){
     return texture(uIrradiance, n).rgb * uIrradianceIntensity;
+}
+
+vec3 tangentFromNormal(vec3 n){
+    vec3 up = abs(n.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+    return normalize(cross(up, n));
+}
+
+mat3 cotangentFrame(vec3 n, vec3 p, vec2 uv){
+    vec3 dp1 = dFdx(p);
+    vec3 dp2 = dFdy(p);
+    vec2 duv1 = dFdx(uv);
+    vec2 duv2 = dFdy(uv);
+    vec3 dp2perp = cross(dp2, n);
+    vec3 dp1perp = cross(n, dp1);
+    vec3 t = dp2perp * duv1.x + dp1perp * duv2.x;
+    vec3 b = dp2perp * duv1.y + dp1perp * duv2.y;
+    float invmax = inversesqrt(max(dot(t, t), dot(b, b)));
+    return mat3(t * invmax, b * invmax, n);
+}
+
+vec3 normalFromMap(sampler2D normalMap, vec3 p, vec2 uv, vec3 n){
+    vec3 tnorm = texture(normalMap, uv).xyz * 2.0 - 1.0;
+    return normalize(cotangentFrame(n, p, uv) * tnorm);
+}
+
+vec3 detailNormalFromAlbedo(sampler2D tex, vec2 uv, vec2 texel, vec3 n, float strength, int hasTexture){
+    if (hasTexture == 0 || strength <= 0.0001 || texel.x <= 0.0 || texel.y <= 0.0)
+        return normalize(n);
+    vec3 luma = vec3(0.2126, 0.7152, 0.0722);
+    float left  = dot(texture(tex, uv - vec2(texel.x, 0.0)).rgb, luma);
+    float right = dot(texture(tex, uv + vec2(texel.x, 0.0)).rgb, luma);
+    float down  = dot(texture(tex, uv - vec2(0.0, texel.y)).rgb, luma);
+    float up    = dot(texture(tex, uv + vec2(0.0, texel.y)).rgb, luma);
+    vec3 t = tangentFromNormal(n);
+    vec3 b = normalize(cross(n, t));
+    vec3 mapN = normalize(vec3((left - right) * strength * 6.0, (down - up) * strength * 6.0, 1.0));
+    return normalize(mat3(t, b, n) * mapN);
 }
 
 float pcfShadow(vec3 worldPos, vec3 n){
@@ -32,25 +78,47 @@ float pcfShadow(vec3 worldPos, vec3 n){
     proj = proj * 0.5 + 0.5;
     if (proj.z > 1.0 || proj.x < 0.0 || proj.x > 1.0 || proj.y < 0.0 || proj.y > 1.0)
         return 1.0; // outside frustum: fully lit
-    // Slope-scaled bias to combat acne on grazing surfaces.
-    // Keep this deliberately small: too much bias makes all contact shadows detach and the
-    // whole map reads like it is floating above the floor (peter-panning).
-    float bias = max(0.00025 * (1.0 - max(dot(n, -uSunDir), 0.0)), 0.00006);
+    float bias = max(0.00022 * (1.0 - max(dot(n, -uSunDir), 0.0)), 0.00005);
     float depth = proj.z - bias;
-    float sum = 0.0;
     vec2 texel = 1.0 / vec2(textureSize(uShadowMap, 0));
-    for (int y = -1; y <= 1; ++y){
-        for (int x = -1; x <= 1; ++x){
-            vec2 o = vec2(x, y) * texel;
-            sum += texture(uShadowMap, vec3(proj.xy + o, depth));
-        }
-    }
-    return sum / 9.0;
+    float distToCamera = length(uCameraPos - worldPos);
+    float adaptiveSoftness = mix(0.75, 1.65, clamp((distToCamera - 6.0) / 28.0, 0.0, 1.0)) * uShadowSoftness;
+    vec2 taps[16] = vec2[](
+        vec2(-0.326, -0.406), vec2(-0.840, -0.074), vec2(-0.696,  0.457), vec2(-0.203,  0.621),
+        vec2( 0.962, -0.195), vec2( 0.473, -0.480), vec2( 0.519,  0.767), vec2( 0.185, -0.893),
+        vec2( 0.507,  0.064), vec2( 0.896,  0.412), vec2(-0.322, -0.933), vec2(-0.792, -0.598),
+        vec2(-0.118,  0.122), vec2( 0.142, -0.132), vec2(-0.452,  0.212), vec2( 0.328,  0.286)
+    );
+    float sum = 0.0;
+    for (int i = 0; i < 16; ++i)
+        sum += texture(uShadowMap, vec3(proj.xy + taps[i] * texel * adaptiveSoftness, depth));
+    return sum / 16.0;
 }
 
 vec3 directSun(vec3 n, vec3 albedo, float visibility){
     float ndl = max(dot(n, -uSunDir), 0.0);
     return albedo * uSunColor * uSunIntensity * ndl * visibility;
+}
+
+vec3 sunSpecular(vec3 n, vec3 viewDir, vec3 lightDir, float roughness, float specularStrength, float visibility){
+    float ndl = max(dot(n, lightDir), 0.0);
+    float ndv = max(dot(n, viewDir), 0.0);
+    if (ndl <= 0.0 || ndv <= 0.0 || specularStrength <= 0.0001) return vec3(0.0);
+    vec3 h = normalize(viewDir + lightDir);
+    float ndh = max(dot(n, h), 0.0);
+    float shininess = mix(96.0, 12.0, clamp(roughness, 0.0, 1.0));
+    float spec = pow(ndh, shininess) * ndl * visibility;
+    float fres = mix(0.04, 1.0, pow(1.0 - ndv, 5.0));
+    return uSunColor * uSunIntensity * spec * fres * specularStrength;
+}
+
+vec3 applyFog(vec3 color, vec3 worldPos, float applyAmount){
+    if (applyAmount <= 0.0) return color;
+    float dist = max(length(uCameraPos - worldPos) - uFogStart, 0.0);
+    float fog = 1.0 - exp(-dist * uFogDensity);
+    float height = clamp(exp(-(worldPos.y - uFogBaseHeight) * uFogHeightFalloff), 0.0, 1.0);
+    fog = clamp(fog * height, 0.0, 1.0);
+    return mix(color, uFogColor, fog);
 }
 """;
 
@@ -90,17 +158,53 @@ in vec2 vUv;
 layout(location=0) out vec4 oColor;
 layout(location=1) out vec4 oViewNormal;
 uniform sampler2D uBaseColor;
+uniform sampler2D uNormalMap;
+uniform sampler2D uRoughnessMap;
+uniform sampler2D uAoMap;
 uniform int uHasTexture;
+uniform int uHasNormalMap;
+uniform int uHasRoughnessMap;
+uniform int uHasAoMap;
 uniform vec3 uTint;
 uniform float uSelfIllum;
+uniform vec2 uTexelSize;
+uniform vec4 uMaterialParams; // x roughness, y specular, z detail-normal strength, w apply fog
+uniform vec4 uMaterialFx0;    // x kind(0 std,1 water,2 lava), y emissive, z opacity, w fresnel
+uniform vec4 uMaterialFx1;    // x flowU, y flowV, z distortion, w pulse
 """ + "\n" + LightingHeader + "\n" + """
 void main(){
-    vec3 n = normalize(vNormal);
-    vec3 tex = (uHasTexture == 1) ? texture(uBaseColor, vUv).rgb : vec3(1.0);
-    // Preserve the old tint path for fallback-only materials.
+    vec2 flowUv = vUv + uMaterialFx1.xy * uTime;
+    vec2 distort = vec2(
+        sin((vWorldPos.x + uTime * 0.9) * 1.7),
+        cos((vWorldPos.z - uTime * 0.7) * 1.4)) * (uMaterialFx1.z * 0.06);
+    vec2 sampleUv = flowUv + distort;
+    vec3 baseN = normalize(vNormal);
+    vec3 tex = (uHasTexture == 1) ? texture(uBaseColor, sampleUv).rgb : vec3(1.0);
     vec3 albedo = tex * uTint;
+    vec3 n = (uHasNormalMap == 1)
+        ? normalFromMap(uNormalMap, vWorldPos, sampleUv, baseN)
+        : detailNormalFromAlbedo(uBaseColor, sampleUv, uTexelSize, baseN, uMaterialParams.z, uHasTexture);
+    float roughness = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, sampleUv).r : uMaterialParams.x;
+    float ao = (uHasAoMap == 1) ? texture(uAoMap, sampleUv).r : 1.0;
     float vis = pcfShadow(vWorldPos, n);
-    vec3 lit = albedo * iblAmbient(n) + directSun(n, albedo, vis) + albedo * uSelfIllum;
+    vec3 viewDir = normalize(uCameraPos - vWorldPos);
+    vec3 lit = albedo * iblAmbient(n) * ao
+             + directSun(n, albedo, vis)
+             + sunSpecular(n, viewDir, -uSunDir, roughness, uMaterialParams.y, vis)
+             + albedo * uSelfIllum;
+    int kind = int(uMaterialFx0.x + 0.5);
+    if (kind == 1) {
+        float fres = pow(1.0 - max(dot(n, viewDir), 0.0), 5.0) * uMaterialFx0.w;
+        vec3 waterTint = mix(vec3(0.08, 0.34, 0.54), vec3(0.14, 0.52, 0.72), clamp(tex.b * 1.4, 0.0, 1.0));
+        vec3 refl = mix(uFogColor * 0.45 + waterTint * 0.35, uSunColor * 1.15 + waterTint * 0.25, clamp(fres, 0.0, 1.0));
+        vec3 body = waterTint * 0.72 + albedo * 0.18 + iblAmbient(n) * 0.18;
+        lit = mix(body, refl + sunSpecular(n, viewDir, -uSunDir, 0.04, max(uMaterialParams.y, 0.35), 1.0), clamp(uMaterialFx0.z, 0.0, 1.0));
+    } else if (kind == 2) {
+        float pulse = 1.0 + sin(uTime * 4.0 + vWorldPos.x * 0.35 + vWorldPos.z * 0.28) * uMaterialFx1.w;
+        vec3 emissive = albedo * uMaterialFx0.y * pulse;
+        lit = albedo * 0.20 + directSun(n, albedo, vis) * 0.15 + emissive;
+    }
+    lit = applyFog(lit, vWorldPos, uMaterialParams.w);
     oColor = vec4(lit, 1.0);
     oViewNormal = vec4(normalize(vViewNormal), 1.0);
 }
@@ -122,19 +226,41 @@ in vec2 vUv;
 layout(location=0) out vec4 oColor;
 layout(location=1) out vec4 oViewNormal;
 uniform sampler2D uBaseColor;
+uniform sampler2D uNormalMap;
+uniform sampler2D uRoughnessMap;
+uniform sampler2D uAoMap;
 uniform vec4 uBaseColorFactor;
 uniform int  uHasTexture;
+uniform int  uHasNormalMap;
+uniform int  uHasRoughnessMap;
+uniform int  uHasAoMap;
 uniform int  uWriteNormal;     /* 0 = view-space objects (skip normal write) */
+uniform int  uViewSpaceLighting;
+uniform int  uApplyFog;
+uniform vec2 uTexelSize;
+uniform vec4 uMaterialParams;  /* x roughness, y specular, z detail, w applyFog */
+uniform vec4 uMaterialFx0;
+uniform vec4 uMaterialFx1;
 """ + "\n" + LightingHeader + "\n" + """
 void main(){
     vec4 base = (uHasTexture == 1) ? texture(uBaseColor, vUv) * uBaseColorFactor : uBaseColorFactor;
     if (base.a < 0.05) discard;
-    vec3 n = normalize(vNormal);
-    float vis = pcfShadow(vWorldPos, n);
-    vec3 lit = base.rgb * iblAmbient(n) + directSun(n, base.rgb, vis);
+    vec3 pos = vWorldPos;
+    vec3 geomN = normalize(uViewSpaceLighting == 1 ? vViewNormal : vNormal);
+    vec3 n = (uHasNormalMap == 1)
+        ? normalFromMap(uNormalMap, pos, vUv, geomN)
+        : detailNormalFromAlbedo(uBaseColor, vUv, uTexelSize, geomN, uMaterialParams.z, uHasTexture);
+    float roughness = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, vUv).r : uMaterialParams.x;
+    float ao = (uHasAoMap == 1) ? texture(uAoMap, vUv).r : 1.0;
+    vec3 lightDir = normalize(uViewSpaceLighting == 1 ? uToSunView : -uSunDir);
+    vec3 viewDir = normalize(uViewSpaceLighting == 1 ? -vWorldPos : (uCameraPos - vWorldPos));
+    float vis = (uViewSpaceLighting == 1) ? 1.0 : pcfShadow(vWorldPos, normalize(vNormal));
+    vec3 lit = base.rgb * iblAmbient(n) * ao
+             + base.rgb * uSunColor * uSunIntensity * max(dot(n, lightDir), 0.0) * vis
+             + sunSpecular(n, viewDir, lightDir, roughness, uMaterialParams.y, vis);
+    if (uApplyFog == 1)
+        lit = applyFog(lit, vWorldPos, uMaterialParams.w);
     oColor = vec4(lit, base.a);
-    // Viewmodel renders in view-space relative to the camera; its world normal is meaningless
-    // for SSAO, so we output 0 to avoid corrupting the normal buffer.
     oViewNormal = (uWriteNormal == 1) ? vec4(normalize(vViewNormal), 1.0) : vec4(0.0);
 }
 """;
@@ -345,6 +471,36 @@ void main(){
 }
 """;
 
+    public const string ParticleVert = """
+#version 330 core
+layout(location=0) in vec3 aPos;
+layout(location=1) in vec2 aUv;
+layout(location=2) in vec4 aColor;
+uniform mat4 uViewProj;
+out vec2 vUv;
+out vec4 vColor;
+void main(){
+    vUv = aUv;
+    vColor = aColor;
+    gl_Position = uViewProj * vec4(aPos, 1.0);
+}
+""";
+
+    public const string ParticleFrag = """
+#version 330 core
+in vec2 vUv;
+in vec4 vColor;
+layout(location=0) out vec4 oColor;
+layout(location=1) out vec4 oViewNormal;
+void main(){
+    float r = length(vUv);
+    if (r > 1.0) discard;
+    float alpha = smoothstep(1.0, 0.15, r) * vColor.a;
+    oColor = vec4(vColor.rgb, alpha);
+    oViewNormal = vec4(0.0);
+}
+""";
+
     // ---------------------------------------------------------------------
     // Muzzle flash (HDR-boosted so it punches through ACES)
     // ---------------------------------------------------------------------
@@ -543,8 +699,12 @@ uniform sampler2D uAo;
 uniform float uExposure;
 uniform float uBloomStrength;
 uniform float uAoStrength;
+uniform float uContrast;
+uniform float uSaturation;
+uniform float uShadowCool;
+uniform float uHighlightWarm;
+uniform float uVignetteStrength;
 
-// Narkowicz ACES-fitted approximation.
 vec3 aces(vec3 x){
     const float a = 2.51;
     const float b = 0.03;
@@ -560,7 +720,17 @@ void main(){
     float aoMul = mix(1.0, ao, clamp(uAoStrength, 0.0, 1.0));
     vec3 c = (hdr * aoMul + bloom * uBloomStrength) * uExposure;
     c = aces(c);
+    float lum = dot(c, vec3(0.2126, 0.7152, 0.0722));
+    vec3 cool = vec3(1.0 - uShadowCool * 0.35, 1.0, 1.0 + uShadowCool);
+    vec3 warm = vec3(1.0 + uHighlightWarm, 1.0 + uHighlightWarm * 0.35, 1.0 - uHighlightWarm * 0.55);
+    c *= mix(cool, warm, smoothstep(0.18, 0.90, lum));
+    c = mix(vec3(lum), c, uSaturation);
+    c = (c - 0.5) * uContrast + 0.5;
+    c = clamp(c, 0.0, 1.0);
     c = pow(c, vec3(1.0 / 2.2));
+    vec2 q = vUv * 2.0 - 1.0;
+    float vignette = 1.0 - dot(q, q) * 0.22 * uVignetteStrength;
+    c *= clamp(vignette, 0.0, 1.0);
     FragColor = vec4(c, 1.0);
 }
 """;

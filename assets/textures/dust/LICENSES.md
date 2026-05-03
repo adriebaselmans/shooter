@@ -1,9 +1,10 @@
 # Dust texture set licenses
 
-All textures in this folder were downloaded from **Poly Haven** and are provided by Poly Haven under the **CC0 1.0 Universal** license.
+Textures in this folder come from **Poly Haven** and **ambientCG**. Both providers publish these assets under **CC0 1.0 Universal**.
 
 - License summary: free for commercial and non-commercial use, no attribution required.
 - Poly Haven license page: https://polyhaven.com/license
+- ambientCG license page: https://ambientcg.com/index.php
 
 ## Imported assets
 
@@ -54,3 +55,9 @@ All textures in this folder were downloaded from **Poly Haven** and are provided
    - Source: https://polyhaven.com/a/brown_planks_05
    - Download family: Diffuse / 1k JPG
    - Intended use: Trim bands, lintels, counters, and sign boards
+
+9. `water_river_1k.jpg`
+   - Asset: `Ground083`
+   - Source: https://ambientcg.com/a/Ground083
+   - Download family: Preview / 1024 JPG
+   - Intended use: Demo fountain water surface tint/variation for authored water material behavior

@@ -39,17 +39,22 @@ public sealed class WorldRenderer : IDisposable
     public unsafe void Draw(Matrix4x4 view, Matrix4x4 viewProj, GameWorld world, PickupSystem pickups,
         LightingEnvironment env, ShadowMap shadow, IblProbe ibl)
     {
+        Matrix4x4.Invert(view, out var invView);
+        var cameraPos = new Vector3(invView.M41, invView.M42, invView.M43);
         _gl.Enable(EnableCap.DepthTest);
         _gl.Enable(EnableCap.CullFace);
         _gl.CullFace(TriangleFace.Back);
         _gl.FrontFace(FrontFaceDirection.Ccw);
 
         _shader.Use();
-        BindLighting(_shader, env, shadow, ibl);
+        BindLighting(_shader, env, shadow, ibl, cameraPos, view);
         UploadMatrix(_shader.U("uViewProj"), viewProj);
         UploadMatrix(_shader.U("uView"), view);
         _gl.Uniform1(_shader.U("uReceiveShadows"), 1);
         _gl.Uniform1(_shader.U("uBaseColor"), 0);
+        _gl.Uniform1(_shader.U("uNormalMap"), 1);
+        _gl.Uniform1(_shader.U("uRoughnessMap"), 2);
+        _gl.Uniform1(_shader.U("uAoMap"), 3);
         _gl.Uniform1(_shader.U("uSelfIllum"), 0f);
 
         foreach (var wb in world.Brushes)
@@ -58,9 +63,24 @@ public sealed class WorldRenderer : IDisposable
             UploadMatrix(_shader.U("uModel"), wb.Model);
             UploadMatrix(_shader.U("uNormalMat"), wb.NormalMatrix);
             _gl.Uniform3(_shader.U("uTint"), wb.TintColor.X, wb.TintColor.Y, wb.TintColor.Z);
+            var material = _textures.GetMaterialSet(wb.TexturePath);
             _gl.ActiveTexture(TextureUnit.Texture0);
-            _gl.BindTexture(TextureTarget.Texture2D, _textures.GetOrWhite(wb.TexturePath));
+            _gl.BindTexture(TextureTarget.Texture2D, material.BaseColorHandle);
+            _gl.ActiveTexture(TextureUnit.Texture1);
+            _gl.BindTexture(TextureTarget.Texture2D, material.NormalHandle);
+            _gl.ActiveTexture(TextureUnit.Texture2);
+            _gl.BindTexture(TextureTarget.Texture2D, material.RoughnessHandle);
+            _gl.ActiveTexture(TextureUnit.Texture3);
+            _gl.BindTexture(TextureTarget.Texture2D, material.AoHandle);
             _gl.Uniform1(_shader.U("uHasTexture"), _textures.HasTexture(wb.TexturePath) ? 1 : 0);
+            _gl.Uniform1(_shader.U("uHasNormalMap"), material.HasNormalMap ? 1 : 0);
+            _gl.Uniform1(_shader.U("uHasRoughnessMap"), material.HasRoughnessMap ? 1 : 0);
+            _gl.Uniform1(_shader.U("uHasAoMap"), material.HasAoMap ? 1 : 0);
+            _gl.Uniform2(_shader.U("uTexelSize"), material.TexelSizeX, material.TexelSizeY);
+            _gl.Uniform4(_shader.U("uMaterialParams"), wb.Roughness, wb.SpecularStrength, wb.DetailNormalStrength, 1f);
+            _gl.Uniform4(_shader.U("uMaterialFx0"), (float)wb.MaterialKind, wb.EmissiveStrength, wb.Opacity, wb.FresnelStrength);
+            _gl.Uniform4(_shader.U("uMaterialFx1"), wb.FlowSpeed.X, wb.FlowSpeed.Y, wb.DistortionStrength, wb.PulseStrength);
+            _gl.ActiveTexture(TextureUnit.Texture0);
             glMesh.Bind();
             _gl.DrawElements(PrimitiveType.Triangles, (uint)glMesh.IndexCount, DrawElementsType.UnsignedInt, (void*)0);
         }
@@ -68,6 +88,13 @@ public sealed class WorldRenderer : IDisposable
         // Pickups: same shader, bumped self-illum so they read as "objects of interest".
         _gl.Uniform1(_shader.U("uSelfIllum"), 0.45f);
         _gl.Uniform1(_shader.U("uHasTexture"), 0);
+        _gl.Uniform1(_shader.U("uHasNormalMap"), 0);
+        _gl.Uniform1(_shader.U("uHasRoughnessMap"), 0);
+        _gl.Uniform1(_shader.U("uHasAoMap"), 0);
+        _gl.Uniform2(_shader.U("uTexelSize"), 0f, 0f);
+        _gl.Uniform4(_shader.U("uMaterialParams"), 0.68f, 0.18f, 0.0f, 1f);
+        _gl.Uniform4(_shader.U("uMaterialFx0"), 0f, 0f, 1f, 0f);
+        _gl.Uniform4(_shader.U("uMaterialFx1"), 0f, 0f, 0f, 0f);
         _gl.ActiveTexture(TextureUnit.Texture0);
         _gl.BindTexture(TextureTarget.Texture2D, _textures.GetOrWhite(null));
         _pickupCube.Bind();
@@ -91,7 +118,7 @@ public sealed class WorldRenderer : IDisposable
     /// <summary>Binds shadow map and irradiance cube + uploads lighting uniforms onto the
     /// supplied shader. Reused by other lit renderers (textured model) so the call site stays
     /// in one place.</summary>
-    public void BindLighting(ShaderProgram s, LightingEnvironment env, ShadowMap shadow, IblProbe ibl)
+    public void BindLighting(ShaderProgram s, LightingEnvironment env, ShadowMap shadow, IblProbe ibl, Vector3 cameraPos, Matrix4x4 view)
     {
         // Texture unit 4 = shadow map, unit 5 = irradiance cube.
         _gl.ActiveTexture(TextureUnit.Texture4);
@@ -108,6 +135,16 @@ public sealed class WorldRenderer : IDisposable
         _gl.Uniform3(s.U("uSunColor"), env.SunColor.X, env.SunColor.Y, env.SunColor.Z);
         _gl.Uniform1(s.U("uSunIntensity"), env.SunIntensity);
         _gl.Uniform1(s.U("uIrradianceIntensity"), env.IrradianceIntensity);
+        _gl.Uniform1(s.U("uShadowSoftness"), env.ShadowSoftness);
+        _gl.Uniform3(s.U("uCameraPos"), cameraPos.X, cameraPos.Y, cameraPos.Z);
+        var toSunView = Vector3.Normalize(Vector3.TransformNormal(env.ToSun, view));
+        _gl.Uniform3(s.U("uToSunView"), toSunView.X, toSunView.Y, toSunView.Z);
+        _gl.Uniform3(s.U("uFogColor"), env.FogColor.X, env.FogColor.Y, env.FogColor.Z);
+        _gl.Uniform1(s.U("uFogDensity"), env.FogDensity);
+        _gl.Uniform1(s.U("uFogStart"), env.FogStart);
+        _gl.Uniform1(s.U("uFogHeightFalloff"), env.FogHeightFalloff);
+        _gl.Uniform1(s.U("uFogBaseHeight"), env.FogBaseHeight);
+        _gl.Uniform1(s.U("uTime"), Environment.TickCount / 1000f);
 
         _gl.ActiveTexture(TextureUnit.Texture0); // leave unit 0 active for downstream textures
     }

@@ -9,7 +9,7 @@ namespace Shooter.Render;
 /// position with texel snapping to eliminate shimmer.</summary>
 public sealed class ShadowMap : IDisposable
 {
-    public const int Size = 2048;
+    public const int Size = 3072;
     public const float HalfExtent = 30f;   // metres covered around the player on each axis
     public const float Near = -40f;
     public const float Far = 40f;

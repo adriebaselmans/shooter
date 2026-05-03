@@ -31,7 +31,10 @@ public static class MapSerializer
                 Operation = ParseOperation(b.Operation),
                 Primitive = ParsePrimitive(b.PrimitiveType),
                 Transform = ToTransform(b.Transform),
-                MaterialName = b.MaterialName
+                MaterialName = b.MaterialName,
+                MaterialProperties = b.MaterialProperties is not null
+                    ? ToMaterialProperties(b.MaterialProperties)
+                    : BrushMaterialProperties.Default
             };
 
             if (b.Geometry is not null)
@@ -110,6 +113,7 @@ public static class MapSerializer
                 PrimitiveType = b.Primitive.ToString().ToLowerInvariant(),
                 Transform = FromTransform(b.Transform),
                 MaterialName = b.MaterialName,
+                MaterialProperties = FromMaterialProperties(b.MaterialProperties),
                 Geometry = b.HasExplicitGeometry ? FromGeometry(b.Geometry!) : null,
                 SurfaceMappings = b.SurfaceMappings.Count == 0
                     ? null
@@ -200,6 +204,43 @@ public static class MapSerializer
         Scale = FromVec2(mapping.Scale),
         RotationDegrees = mapping.RotationDegrees,
         TextureLocked = mapping.TextureLocked
+    };
+
+    private static BrushMaterialProperties ToMaterialProperties(MaterialPropertiesDto dto)
+    {
+        var preset = dto.Kind.ToLowerInvariant() switch
+        {
+            "water" => BrushMaterialProperties.Preset(BrushMaterialKind.Water),
+            "lava" => BrushMaterialProperties.Preset(BrushMaterialKind.Lava),
+            _ => BrushMaterialProperties.Preset(BrushMaterialKind.Standard)
+        };
+
+        return preset with
+        {
+            Roughness = dto.Roughness,
+            SpecularStrength = dto.SpecularStrength,
+            NormalStrength = dto.NormalStrength,
+            EmissiveStrength = dto.EmissiveStrength,
+            Opacity = dto.Opacity,
+            FlowSpeed = ToVec2(dto.FlowSpeed, Vector2.Zero),
+            DistortionStrength = dto.DistortionStrength,
+            FresnelStrength = dto.FresnelStrength,
+            PulseStrength = dto.PulseStrength,
+        };
+    }
+
+    private static MaterialPropertiesDto FromMaterialProperties(BrushMaterialProperties props) => new()
+    {
+        Kind = props.Kind.ToString().ToLowerInvariant(),
+        Roughness = props.Roughness,
+        SpecularStrength = props.SpecularStrength,
+        NormalStrength = props.NormalStrength,
+        EmissiveStrength = props.EmissiveStrength,
+        Opacity = props.Opacity,
+        FlowSpeed = FromVec2(props.FlowSpeed),
+        DistortionStrength = props.DistortionStrength,
+        FresnelStrength = props.FresnelStrength,
+        PulseStrength = props.PulseStrength,
     };
 
     private static BrushGeometry ToGeometry(BrushGeometryDto dto) =>

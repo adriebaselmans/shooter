@@ -1,6 +1,11 @@
 category: decisions
-updated: 2026-04-29T19:55:00Z
+updated: 2026-05-01T13:05:00Z
 pages:
+  - id: renderer-abstraction-and-metal-bootstrap
+    summary: "Shooter.App adopts a backend abstraction with OpenGL as the stable implementation and a first concrete Metal bootstrap backend on macOS."
+    tags: [renderer, abstraction, metal, opengl, macos, backend, shooter, decisions]
+    rev: 1
+    updated: 2026-05-01T13:05:00Z
   - id: lighting-pipeline
     summary: "Resolutions of Q1..Q4 from req-shooter-lighting-pass: sky model, bloom kernel, IBL sizes, muzzle-flash HDR boost."
     tags: [lighting, hdr, sky, bloom, ibl, aces, decisions]

@@ -1,6 +1,6 @@
 version: 1
-updated: 2026-04-29T20:45:00Z
-total_pages: 16
+updated: 2026-05-01T13:05:00Z
+total_pages: 17
 categories:
   project:
     count: 1
@@ -20,8 +20,8 @@ categories:
         rev: 1
       - id: shooter-runtime
         summary: "Shooter.App game runtime: physics, weapons, rendering, asset pipeline."
-        tags: [shooter, runtime, opengl, silk-net, gameplay, weapons, rendering, textures]
-        rev: 2
+        tags: [shooter, runtime, opengl, metal, silk-net, gameplay, weapons, rendering, textures, backends]
+        rev: 3
       - id: material-browser-and-animation
         summary: "Avalonia material browser and shader-driven animated texture metadata."
         tags: [avalonia, materials, textures, animation, water, lava]
@@ -31,9 +31,13 @@ categories:
         tags: [opengl, avalonia, silk-net, viewports, input, overlay]
         rev: 2
   decisions:
-    count: 4
+    count: 5
     summary: "ADR-style decision records with rationale"
     hot:
+      - id: renderer-abstraction-and-metal-bootstrap
+        summary: "Shooter.App adopts a backend abstraction with OpenGL as the stable implementation and a first concrete Metal bootstrap backend on macOS."
+        tags: [renderer, abstraction, metal, opengl, macos, backend, shooter, decisions]
+        rev: 1
       - id: lighting-pipeline
         summary: "Resolutions of Q1..Q4 from req-shooter-lighting-pass: sky model, bloom kernel, IBL sizes, muzzle-flash HDR boost."
         tags: [lighting, hdr, sky, bloom, ibl, aces, decisions]
@@ -84,8 +88,8 @@ categories:
         rev: 1
       - id: implementation-history
         summary: "Completed implementation milestones for the shooter map editor and game runtime."
-        tags: [history, implemented, editor, viewports, brushes, gl, wpf, avalonia, shooter, weapons, glb, lighting, hdr, shadows, textures]
-        rev: 6
+        tags: [history, implemented, editor, viewports, brushes, gl, metal, wpf, avalonia, shooter, weapons, glb, lighting, hdr, shadows, textures, backends]
+        rev: 7
       - id: current-behavior
         summary: "Stable user-facing behaviors that must not regress."
         tags: [behavior, ux, editor, viewports, shortcuts, primitives, shooter, gameplay, lighting, textures]

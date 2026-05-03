@@ -21,6 +21,16 @@ public sealed class WorldBrush
     public string MaterialName { get; init; } = "default";
     public string? TexturePath { get; init; }
     public Vector3 TintColor { get; init; } = new(0.75f, 0.75f, 0.78f);
+    public BrushMaterialKind MaterialKind { get; init; } = BrushMaterialKind.Standard;
+    public float Roughness { get; init; } = 0.85f;
+    public float SpecularStrength { get; init; } = 0.04f;
+    public float DetailNormalStrength { get; init; } = 0.0f;
+    public float EmissiveStrength { get; init; } = 0.0f;
+    public float Opacity { get; init; } = 1.0f;
+    public Vector2 FlowSpeed { get; init; } = Vector2.Zero;
+    public float DistortionStrength { get; init; } = 0.0f;
+    public float FresnelStrength { get; init; } = 0.0f;
+    public float PulseStrength { get; init; } = 0.0f;
 }
 
 /// <summary>Loaded game world: geometry, spawns, pickups, ambient/light info.</summary>
@@ -71,6 +81,9 @@ public sealed class GameWorld
             var (bmin, bmax) = ComputeBounds(tris);
 
             var texturePath = ResolveMaterialTexturePath(brush.MaterialName);
+            var visuals = InferSurfaceVisuals(brush.MaterialName, texturePath);
+            var authored = brush.MaterialProperties;
+            bool useAuthored = authored.Kind != BrushMaterialKind.Standard || authored != BrushMaterialProperties.Default;
             var wb = new WorldBrush
             {
                 BrushId = brush.Id,
@@ -83,6 +96,16 @@ public sealed class GameWorld
                 MaterialName = brush.MaterialName,
                 TexturePath = texturePath,
                 TintColor = ColorFromMaterial(brush.MaterialName, texturePath),
+                MaterialKind = useAuthored ? authored.Kind : BrushMaterialKind.Standard,
+                Roughness = useAuthored ? authored.Roughness : visuals.Roughness,
+                SpecularStrength = useAuthored ? authored.SpecularStrength : visuals.SpecularStrength,
+                DetailNormalStrength = useAuthored ? authored.NormalStrength : visuals.DetailNormalStrength,
+                EmissiveStrength = useAuthored ? authored.EmissiveStrength : 0.0f,
+                Opacity = useAuthored ? authored.Opacity : 1.0f,
+                FlowSpeed = useAuthored ? authored.FlowSpeed : Vector2.Zero,
+                DistortionStrength = useAuthored ? authored.DistortionStrength : 0.0f,
+                FresnelStrength = useAuthored ? authored.FresnelStrength : 0.0f,
+                PulseStrength = useAuthored ? authored.PulseStrength : 0.0f,
             };
             brushes.Add(wb);
             allTris.AddRange(tris);
@@ -194,6 +217,30 @@ public sealed class GameWorld
             return new Vector3(r, g, b);
         }
     }
+
+    private static SurfaceVisuals InferSurfaceVisuals(string materialName, string? texturePath)
+    {
+        string key = $"{materialName} {texturePath}".ToLowerInvariant();
+        var result = new SurfaceVisuals(0.86f, 0.04f, 0.0f);
+
+        if (!string.IsNullOrWhiteSpace(texturePath))
+            result = result with { DetailNormalStrength = 0.18f };
+
+        if (key.Contains("sand"))
+            return new SurfaceVisuals(0.97f, 0.02f, 0.16f);
+        if (key.Contains("plaster"))
+            return new SurfaceVisuals(0.90f, 0.04f, 0.22f);
+        if (key.Contains("stone") || key.Contains("brick"))
+            return new SurfaceVisuals(0.84f, 0.05f, 0.20f);
+        if (key.Contains("concrete"))
+            return new SurfaceVisuals(0.84f, 0.07f, 0.30f);
+        if (key.Contains("wood") || key.Contains("plank") || key.Contains("trim"))
+            return new SurfaceVisuals(0.72f, 0.10f, 0.26f);
+        if (key.Contains("awning"))
+            return new SurfaceVisuals(0.68f, 0.08f, 0.12f);
+        return result;
+    }
 }
 
+public readonly record struct SurfaceVisuals(float Roughness, float SpecularStrength, float DetailNormalStrength);
 public readonly record struct PickupSpec(Guid Id, PickupKind Kind, Vector3 Position);

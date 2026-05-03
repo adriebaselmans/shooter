@@ -1,5 +1,5 @@
 {
-  "format_version": "1.3.0",
+  "format_version": "1.4.0",
   "editor_version": "shooter-handcrafted-2.0",
   "world_settings": {
     "ambient_color": [
@@ -7323,6 +7323,720 @@
           "rotation": 0,
           "texture_locked": true
         }
+      }
+    },
+    {
+      "id": "water_demo_pool",
+      "name": "Fountain Water",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          0.0,
+          0.02,
+          -24.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          6.2,
+          0.1,
+          3.6
+        ]
+      },
+      "material_name": "textures/dust/water_river_1k.jpg",
+      "material_properties": {
+        "kind": "water",
+        "roughness": 0.06,
+        "specular_strength": 0.62,
+        "normal_strength": 0.95,
+        "emissive_strength": 0.0,
+        "opacity": 0.82,
+        "flow_speed": [
+          0.04,
+          0.015
+        ],
+        "distortion_strength": 0.065,
+        "fresnel_strength": 0.78,
+        "pulse_strength": 0.0
+      },
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/water_river_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.4,
+            1.4
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/water_river_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.4,
+            1.4
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/water_river_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.4,
+            1.4
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/water_river_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.4,
+            1.4
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/water_river_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.4,
+            1.4
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/water_river_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.4,
+            1.4
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      }
+    },
+    {
+      "id": "fountain_basin_floor",
+      "name": "Fountain Basin Floor",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          0.0,
+          -0.1,
+          -24.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          6.8,
+          0.18,
+          4.2
+        ]
+      },
+      "material_name": "textures/dust/wall_stone_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/wall_stone_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      },
+      "material_properties": {
+        "kind": "standard",
+        "roughness": 0.82,
+        "specular_strength": 0.05,
+        "normal_strength": 0.24,
+        "emissive_strength": 0.0,
+        "opacity": 1.0,
+        "flow_speed": [
+          0,
+          0
+        ],
+        "distortion_strength": 0.0,
+        "fresnel_strength": 0.0,
+        "pulse_strength": 0.0
+      }
+    },
+    {
+      "id": "fountain_wall_n",
+      "name": "Fountain Wall North",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          0.0,
+          0.18,
+          -22.04
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          6.8,
+          0.48,
+          0.28
+        ]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      },
+      "material_properties": {
+        "kind": "standard",
+        "roughness": 0.84,
+        "specular_strength": 0.07,
+        "normal_strength": 0.28,
+        "emissive_strength": 0.0,
+        "opacity": 1.0,
+        "flow_speed": [
+          0,
+          0
+        ],
+        "distortion_strength": 0.0,
+        "fresnel_strength": 0.0,
+        "pulse_strength": 0.0
+      }
+    },
+    {
+      "id": "fountain_wall_s",
+      "name": "Fountain Wall South",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          0.0,
+          0.18,
+          -25.96
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          6.8,
+          0.48,
+          0.28
+        ]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      },
+      "material_properties": {
+        "kind": "standard",
+        "roughness": 0.84,
+        "specular_strength": 0.07,
+        "normal_strength": 0.28,
+        "emissive_strength": 0.0,
+        "opacity": 1.0,
+        "flow_speed": [
+          0,
+          0
+        ],
+        "distortion_strength": 0.0,
+        "fresnel_strength": 0.0,
+        "pulse_strength": 0.0
+      }
+    },
+    {
+      "id": "fountain_wall_e",
+      "name": "Fountain Wall East",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          3.26,
+          0.18,
+          -24.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.28,
+          0.48,
+          4.2
+        ]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      },
+      "material_properties": {
+        "kind": "standard",
+        "roughness": 0.84,
+        "specular_strength": 0.07,
+        "normal_strength": 0.28,
+        "emissive_strength": 0.0,
+        "opacity": 1.0,
+        "flow_speed": [
+          0,
+          0
+        ],
+        "distortion_strength": 0.0,
+        "fresnel_strength": 0.0,
+        "pulse_strength": 0.0
+      }
+    },
+    {
+      "id": "fountain_wall_w",
+      "name": "Fountain Wall West",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [
+          -3.26,
+          0.18,
+          -24.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.28,
+          0.48,
+          4.2
+        ]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg",
+      "surface_mappings": {
+        "top": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "bottom": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "front": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "back": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "right": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        },
+        "left": {
+          "texture_key": "textures/dust/cover_concrete_1k.jpg",
+          "offset": [
+            0,
+            0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0,
+          "texture_locked": true
+        }
+      },
+      "material_properties": {
+        "kind": "standard",
+        "roughness": 0.84,
+        "specular_strength": 0.07,
+        "normal_strength": 0.28,
+        "emissive_strength": 0.0,
+        "opacity": 1.0,
+        "flow_speed": [
+          0,
+          0
+        ],
+        "distortion_strength": 0.0,
+        "fresnel_strength": 0.0,
+        "pulse_strength": 0.0
       }
     }
   ],

@@ -1,46 +1,43 @@
-id: dod-shooter-dust-final-polish
+id: dod-shooter-authored-material-properties
 status: approved
-parent: req-shooter-dust-final-polish
-reviewed_at: 2026-04-29T22:40:00Z
+parent: req-shooter-authored-material-properties
+reviewed_at: 2026-05-01T23:50:00Z
 reviewer_role: dod-reviewer
 
 summary: >
-  The final Dust polish pass keeps the true engine fix (box top/bottom winding), removes the
-  temporary seam-debug runtime toggles, normalizes floor-contact map authoring, and applies a
-  restrained beauty/balance pass. The map remains structurally connected, route-readable, and
-  cleaner than the earlier bug-hunt iterations.
+  The repository now supports authored brush material behavior through the map editor and runtime.
+  Brushes can carry persisted material_properties in .shmap, the Avalonia editor exposes those
+  fields in the properties panel, and Shooter.App consumes them as runtime shading controls. The
+  initial authored model supports standard, water, and lava behaviors. Dust now contains a water
+  demo brush for visual verification.
 
 acceptance_criteria_results:
-  - id: AC26
-    text: "dust.shmap loads successfully with the floor/wall connection issue still fixed."
+  - id: AC60
+    text: "MapEditor.App.Avalonia builds with editable brush material properties in the properties panel."
     result: pass
-    evidence: "Smoke run clean; world = 70 brushes, 840 tris, 6 spawns, 14 pickups. User previously confirmed the seam issue was fixed after the MeshGenerator winding correction."
-  - id: AC27
-    text: "Temporary seam-debug controls are removed unless intentionally permanent."
+    evidence: "Solution build passed after adding the new editor bindings and command flow."
+  - id: AC61
+    text: "Shooter.App builds and loads a .shmap using authored material properties for standard/water/lava behavior."
     result: pass
-    evidence: "F2/F3 input handling, LightingEnvironment shadow-debug field, and related Program logic removed."
-  - id: AC28
-    text: "The map looks cleaner and more deliberate than the bug-hunt version."
-    result: pass_by_implementation
-    evidence: "Removed temporary sink-debug emphasis, kept real structural supports, added calmer facade/material variation, and rebalanced pickup placements."
-  - id: AC29
+    evidence: "Shooter build and GL/Metal smoke runs passed with authored material usage in code."
+  - id: AC62
+    text: "Dust demo map includes at least one water-authored brush and still loads cleanly."
+    result: pass
+    evidence: "dust.shmap now contains `water_demo_pool` with water material_properties; runtime loads 71 brushes cleanly."
+  - id: AC63
     text: "Build + format clean."
     result: pass
-    evidence: "Build 0 warnings / 0 errors; format verify clean."
+    evidence: "Solution build and format verification passed."
 
 non_functional_check:
-  - id: NL17
+  - id: NL48
     result: pass
-    evidence: "No new packages."
-  - id: NL18
+    evidence: "material_properties are optional and runtime retains fallback behavior."
+  - id: NL49
     result: pass
-    evidence: "MeshGenerator box top/bottom winding fix preserved."
-  - id: NL19
+    evidence: "Scope stayed at brush-level authored properties."
+  - id: NL50
     result: pass
-    evidence: "Build, format, and smoke run all passed."
-
-remaining_known_limits:
-  - "The map is still a handcrafted Dust-inspired arena, not a full competitive objective map."
-  - "Further beauty work would be best focused on props/landmarks/material richness rather than more structural changes."
+    evidence: "Build + format clean across the solution."
 
 decision: approved

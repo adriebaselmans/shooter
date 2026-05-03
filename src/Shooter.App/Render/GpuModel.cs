@@ -10,8 +10,10 @@ public sealed class GlTexture : IDisposable
 {
     private readonly GL _gl;
     public uint Handle { get; }
+    public int Width { get; }
+    public int Height { get; }
 
-    public GlTexture(GL gl, uint handle) { _gl = gl; Handle = handle; }
+    public GlTexture(GL gl, uint handle, int width, int height) { _gl = gl; Handle = handle; Width = width; Height = height; }
 
     public static unsafe GlTexture? FromImageBytes(GL gl, byte[] imageBytes)
     {
@@ -34,7 +36,7 @@ public sealed class GlTexture : IDisposable
         gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)GLEnum.Repeat);
         gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)GLEnum.Repeat);
         gl.BindTexture(TextureTarget.Texture2D, 0);
-        return new GlTexture(gl, handle);
+        return new GlTexture(gl, handle, img.Width, img.Height);
     }
 
     public void Bind(int unit = 0)
