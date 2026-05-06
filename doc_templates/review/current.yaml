@@ -1,29 +1,29 @@
-id: review-shooter-remove-metal-backend
-title: Review — Remove Metal Backend from Shooter.App
+id: review-shooter-opengl-polish-three-pass
+title: Review — OpenGL Runtime Polish in Three Unattended Passes
 status: approved
-parent: design-shooter-remove-metal-backend
-created_at: 2026-05-06T13:08:00Z
+parent: design-shooter-opengl-polish-three-pass
+created_at: 2026-05-06T13:55:00Z
 
 summary:
   outcome: approved
   scope_reviewed:
+    - dust.shmap
+    - src/MapEditor.Core/Entities/BrushTexturing.cs
+    - src/Shooter.App/Game/Weapons.cs
+    - src/Shooter.App/Game/Particles.cs
+    - src/Shooter.App/Game/World.cs
     - src/Shooter.App/Program.cs
-    - src/Shooter.App/RenderSystem/IRenderBackend.cs
-    - src/Shooter.App/RenderSystem/OpenGLRenderBackend.cs
-    - src/Shooter.App/RenderSystem/MetalBootstrapBackend.cs
-    - src/Shooter.App/Platform/Metal/ObjCRuntime.cs
-    - src/Shooter.App/RenderSystem/BackendKind.cs
-    - src/Shooter.App/RenderSystem/RenderBackendFactory.cs
-    - src/Shooter.App/Render/RenderConstants.cs
+    - src/Shooter.App/Render/HudRenderer.cs
+    - src/Shooter.App/Render/Shaders.cs
 
 findings:
   - severity: info
-    note: "Metal runtime code was fully removed from Shooter.App rather than left as an unsupported option or stub."
+    note: "Pass 1 added a focused Dust readability/reward pass: new route props/cover and four additional pickups."
   - severity: info
-    note: "Program startup now always creates the OpenGL 3.3 context and instantiates `OpenGLRenderBackend` directly."
+    note: "Pass 2 kept the authored material pipeline intact while improving preset values, fallback surface heuristics, and the OpenGL world shader's water/lava response."
   - severity: info
-    note: "The remaining render-backend interface is still valid for the surviving OpenGL path after removing the unused `Kind` property."
+    note: "Pass 3 improved combat feel through hitscan tracer support, impact dust, weapon-sensitive muzzle smoke, and a more reactive HUD/crosshair."
 
 risks:
   - severity: low
-    note: "This pass intentionally did not rewrite the OpenGL renderer architecture; it only removed Metal-related code and selection logic."
+    note: "These are polish-layer changes; future iteration may still be needed after user visual/play feel feedback, but no structural runtime risk was introduced."

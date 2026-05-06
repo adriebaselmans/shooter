@@ -157,7 +157,12 @@ public sealed class WeaponSystem
     public readonly record struct FireResult(
         bool Fired,
         IReadOnlyList<RayHit> Hits,
+        IReadOnlyList<ShotRay> Rays,
         ProjectileSpawn? Projectile);
+
+    /// <summary>Resolved visual ray for a hitscan shot. Used by the caller for tracers and
+    /// impact feedback even when the pellet did not hit geometry.</summary>
+    public readonly record struct ShotRay(Vector3 End, bool Hit);
 
     /// <summary>Description of a projectile to be spawned by the caller.</summary>
     public readonly record struct ProjectileSpawn(WeaponKind Owner, Vector3 Direction, float Speed, int Damage, float SplashRadius);
@@ -166,9 +171,9 @@ public sealed class WeaponSystem
     public FireResult TryFire(Vector3 origin, Vector3 forward, CollisionWorld col, bool triggerHeld)
     {
         var w = Current;
-        if (w.Cooldown > 0) return new FireResult(false, Array.Empty<RayHit>(), null);
-        if (!w.Def.Automatic && !triggerHeld) return new FireResult(false, Array.Empty<RayHit>(), null);
-        if (!w.Def.InfiniteAmmo && w.Ammo <= 0) return new FireResult(false, Array.Empty<RayHit>(), null);
+        if (w.Cooldown > 0) return new FireResult(false, Array.Empty<RayHit>(), Array.Empty<ShotRay>(), null);
+        if (!w.Def.Automatic && !triggerHeld) return new FireResult(false, Array.Empty<RayHit>(), Array.Empty<ShotRay>(), null);
+        if (!w.Def.InfiniteAmmo && w.Ammo <= 0) return new FireResult(false, Array.Empty<RayHit>(), Array.Empty<ShotRay>(), null);
 
         if (!w.Def.InfiniteAmmo) w.Ammo--;
         w.Cooldown = 1f / w.Def.FireRateHz;
@@ -179,17 +184,27 @@ public sealed class WeaponSystem
             return new FireResult(
                 true,
                 Array.Empty<RayHit>(),
+                Array.Empty<ShotRay>(),
                 new ProjectileSpawn(w.Def.Kind, dir, w.Def.ProjectileSpeed, w.Def.Damage, w.Def.SplashRadius));
         }
 
         var hits = new List<RayHit>(w.Def.Pellets);
+        var rays = new List<ShotRay>(w.Def.Pellets);
         for (int i = 0; i < w.Def.Pellets; i++)
         {
             var dir = ApplySpread(forward, w.Def.SpreadDegrees);
-            var hit = col.RayCast(origin, dir);
-            if (hit.Hit) hits.Add(hit);
+            var hit = col.RayCast(origin, dir, TracerSystem.MaxRange);
+            if (hit.Hit)
+            {
+                hits.Add(hit);
+                rays.Add(new ShotRay(hit.Point, true));
+            }
+            else
+            {
+                rays.Add(new ShotRay(origin + dir * TracerSystem.MaxRange, false));
+            }
         }
-        return new FireResult(true, hits, null);
+        return new FireResult(true, hits, rays, null);
     }
 
     private Vector3 ApplySpread(Vector3 forward, float degrees)

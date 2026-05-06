@@ -173,36 +173,51 @@ uniform vec4 uMaterialFx0;    // x kind(0 std,1 water,2 lava), y emissive, z opa
 uniform vec4 uMaterialFx1;    // x flowU, y flowV, z distortion, w pulse
 """ + "\n" + LightingHeader + "\n" + """
 void main(){
-    vec2 flowUv = vUv + uMaterialFx1.xy * uTime;
-    vec2 distort = vec2(
+    vec2 flowUvA = vUv + uMaterialFx1.xy * uTime;
+    vec2 flowUvB = vUv - uMaterialFx1.xy * (uTime * 0.73 + 0.17);
+    vec2 rippleA = vec2(
         sin((vWorldPos.x + uTime * 0.9) * 1.7),
         cos((vWorldPos.z - uTime * 0.7) * 1.4)) * (uMaterialFx1.z * 0.06);
-    vec2 sampleUv = flowUv + distort;
+    vec2 rippleB = vec2(
+        cos((vWorldPos.z + uTime * 0.6) * 1.2),
+        sin((vWorldPos.x - uTime * 0.5) * 1.5)) * (uMaterialFx1.z * 0.04);
+    vec2 sampleUv = flowUvA + rippleA;
+    vec2 sampleUv2 = flowUvB - rippleB;
     vec3 baseN = normalize(vNormal);
-    vec3 tex = (uHasTexture == 1) ? texture(uBaseColor, sampleUv).rgb : vec3(1.0);
+    vec3 texA = (uHasTexture == 1) ? texture(uBaseColor, sampleUv).rgb : vec3(1.0);
+    vec3 texB = (uHasTexture == 1) ? texture(uBaseColor, sampleUv2).rgb : vec3(1.0);
+    vec3 tex = mix(texA, texB, 0.35);
     vec3 albedo = tex * uTint;
     vec3 n = (uHasNormalMap == 1)
         ? normalFromMap(uNormalMap, vWorldPos, sampleUv, baseN)
         : detailNormalFromAlbedo(uBaseColor, sampleUv, uTexelSize, baseN, uMaterialParams.z, uHasTexture);
     float roughness = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, sampleUv).r : uMaterialParams.x;
+    roughness = clamp(max(roughness, uMaterialParams.x * 0.45), 0.02, 1.0);
     float ao = (uHasAoMap == 1) ? texture(uAoMap, sampleUv).r : 1.0;
     float vis = pcfShadow(vWorldPos, n);
     vec3 viewDir = normalize(uCameraPos - vWorldPos);
-    vec3 lit = albedo * iblAmbient(n) * ao
+    vec3 ambient = albedo * iblAmbient(n) * ao;
+    vec3 lit = ambient
              + directSun(n, albedo, vis)
              + sunSpecular(n, viewDir, -uSunDir, roughness, uMaterialParams.y, vis)
              + albedo * uSelfIllum;
     int kind = int(uMaterialFx0.x + 0.5);
     if (kind == 1) {
-        float fres = pow(1.0 - max(dot(n, viewDir), 0.0), 5.0) * uMaterialFx0.w;
-        vec3 waterTint = mix(vec3(0.08, 0.34, 0.54), vec3(0.14, 0.52, 0.72), clamp(tex.b * 1.4, 0.0, 1.0));
-        vec3 refl = mix(uFogColor * 0.45 + waterTint * 0.35, uSunColor * 1.15 + waterTint * 0.25, clamp(fres, 0.0, 1.0));
-        vec3 body = waterTint * 0.72 + albedo * 0.18 + iblAmbient(n) * 0.18;
-        lit = mix(body, refl + sunSpecular(n, viewDir, -uSunDir, 0.04, max(uMaterialParams.y, 0.35), 1.0), clamp(uMaterialFx0.z, 0.0, 1.0));
+        float fres = pow(1.0 - max(dot(n, viewDir), 0.0), 5.0) * max(0.25, uMaterialFx0.w);
+        float sparkle = pow(max(dot(reflect(-viewDir, n), -uSunDir), 0.0), 24.0);
+        vec3 waterDeep = vec3(0.05, 0.22, 0.34);
+        vec3 waterShallow = vec3(0.10, 0.44, 0.60);
+        vec3 waterTint = mix(waterDeep, waterShallow, clamp(tex.g * 0.9 + tex.b * 1.1 + 0.10, 0.0, 1.0));
+        vec3 reflection = mix(uFogColor * 0.32 + iblAmbient(n) * 0.78, uSunColor * (1.05 + sparkle * 1.8) + iblAmbient(n), clamp(fres + sparkle * 0.35, 0.0, 1.0));
+        vec3 body = waterTint * 0.84 + tex * 0.10 + iblAmbient(n) * 0.16;
+        lit = mix(body, reflection + sunSpecular(n, viewDir, -uSunDir, 0.035, max(uMaterialParams.y, 0.42), 1.0), clamp(0.28 + fres * 0.78, 0.0, 1.0));
+        lit += waterTint * sparkle * 0.28;
     } else if (kind == 2) {
         float pulse = 1.0 + sin(uTime * 4.0 + vWorldPos.x * 0.35 + vWorldPos.z * 0.28) * uMaterialFx1.w;
-        vec3 emissive = albedo * uMaterialFx0.y * pulse;
-        lit = albedo * 0.20 + directSun(n, albedo, vis) * 0.15 + emissive;
+        float heat = 0.65 + 0.35 * sin(uTime * 2.5 + vWorldPos.x * 0.42 - vWorldPos.z * 0.33);
+        vec3 hot = mix(vec3(0.32, 0.08, 0.02), vec3(1.00, 0.46, 0.08), clamp(tex.r * 1.4 + tex.g * 0.8, 0.0, 1.0));
+        vec3 emissive = hot * uMaterialFx0.y * pulse * (0.85 + heat * 0.45);
+        lit = hot * 0.24 + directSun(n, hot, vis) * 0.10 + emissive;
     }
     lit = applyFog(lit, vWorldPos, uMaterialParams.w);
     oColor = vec4(lit, 1.0);

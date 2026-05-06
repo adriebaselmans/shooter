@@ -221,23 +221,25 @@ public sealed class GameWorld
     private static SurfaceVisuals InferSurfaceVisuals(string materialName, string? texturePath)
     {
         string key = $"{materialName} {texturePath}".ToLowerInvariant();
-        var result = new SurfaceVisuals(0.86f, 0.04f, 0.0f);
+        var result = new SurfaceVisuals(0.82f, 0.05f, 0.0f);
 
         if (!string.IsNullOrWhiteSpace(texturePath))
-            result = result with { DetailNormalStrength = 0.18f };
+            result = result with { DetailNormalStrength = 0.20f };
 
+        if (key.Contains("water"))
+            return new SurfaceVisuals(0.05f, 0.66f, 0.90f);
         if (key.Contains("sand"))
-            return new SurfaceVisuals(0.97f, 0.02f, 0.16f);
+            return new SurfaceVisuals(0.98f, 0.02f, 0.10f);
         if (key.Contains("plaster"))
-            return new SurfaceVisuals(0.90f, 0.04f, 0.22f);
+            return new SurfaceVisuals(0.88f, 0.05f, 0.18f);
         if (key.Contains("stone") || key.Contains("brick"))
-            return new SurfaceVisuals(0.84f, 0.05f, 0.20f);
+            return new SurfaceVisuals(0.82f, 0.06f, 0.26f);
         if (key.Contains("concrete"))
-            return new SurfaceVisuals(0.84f, 0.07f, 0.30f);
+            return new SurfaceVisuals(0.80f, 0.08f, 0.34f);
         if (key.Contains("wood") || key.Contains("plank") || key.Contains("trim"))
-            return new SurfaceVisuals(0.72f, 0.10f, 0.26f);
+            return new SurfaceVisuals(0.68f, 0.12f, 0.20f);
         if (key.Contains("awning"))
-            return new SurfaceVisuals(0.68f, 0.08f, 0.12f);
+            return new SurfaceVisuals(0.62f, 0.10f, 0.08f);
         return result;
     }
 }

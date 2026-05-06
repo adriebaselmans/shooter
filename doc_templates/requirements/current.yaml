@@ -1,36 +1,38 @@
-id: req-shooter-remove-metal-backend
-title: Remove Metal Backend from Shooter.App
+id: req-shooter-opengl-polish-three-pass
+title: OpenGL Runtime Polish in Three Unattended Passes
 status: approved
-created_at: 2026-05-06T12:55:00Z
+created_at: 2026-05-06T13:30:00Z
 
 context: >
-  The user explicitly wants the Metal renderer removed and is done with maintaining or evaluating
-  the Metal path. Shooter.App should return to a clean OpenGL-only runtime state.
+  Metal has been removed. The user wants the stable OpenGL path polished further, unattended,
+  in three passes: Dust/map polish, material+water polish, and combat-feel polish.
 
 functional:
-  - id: L301
-    text: "Remove the Metal backend implementation and Metal platform interop code from Shooter.App."
-  - id: L302
-    text: "Remove Metal runtime selection/startup logic so Shooter.App runs through the OpenGL path only."
-  - id: L303
-    text: "Keep the working OpenGL renderer behavior intact."
+  - id: L401
+    text: "Pass 1 improves Dust route readability and reward distribution without destabilizing the current map/runtime."
+  - id: L402
+    text: "Pass 2 improves authored material response, especially water, on the OpenGL path."
+  - id: L403
+    text: "Pass 3 improves combat feel through gameplay/HUD/render feedback on the OpenGL path."
 
 non_functional:
-  - id: NL151
-    text: "Prefer a straightforward deletion/simplification pass over partial Metal deprecation."
-  - id: NL152
-    text: "Do not regress the current OpenGL gameplay/rendering path."
-  - id: NL153
-    text: "Build and format verification must pass after removal."
+  - id: NL201
+    text: "Prefer incremental, low-risk polish over renderer rewrites."
+  - id: NL202
+    text: "Do not reintroduce Metal or backend-selection complexity."
+  - id: NL203
+    text: "Build, format verification, and OpenGL smoke startup must pass after the three passes."
 
 acceptance_criteria:
-  - id: AC301
-    text: "`MetalBootstrapBackend.cs` and Metal Objective-C interop support are removed from the Shooter.App runtime codebase."
-  - id: AC302
-    text: "Program startup no longer selects or initializes a Metal backend."
-  - id: AC303
-    text: "Shooter.App still builds and starts successfully on `dust.shmap` using OpenGL."
-  - id: AC304
+  - id: AC401
+    text: "Dust contains a tangible readability/reward polish pass (e.g. route landmarks, cover, or pickup rebalancing)."
+  - id: AC402
+    text: "Water/material behavior is visibly richer in the OpenGL world shading path while staying authored-property driven."
+  - id: AC403
+    text: "Combat feedback is tangibly improved through gameplay, HUD, particle, tracer, or weapon-feel changes."
+  - id: AC404
     text: "`dotnet build shooter.slnx -nologo` passes."
-  - id: AC305
+  - id: AC405
     text: "`dotnet format shooter.slnx --verify-no-changes --severity warn -v minimal` passes."
+  - id: AC406
+    text: "`dotnet run --project src/Shooter.App -- dust.shmap` still starts successfully."

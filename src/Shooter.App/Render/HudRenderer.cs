@@ -30,15 +30,39 @@ public sealed class HudRenderer : IDisposable
         float pxX = 2f / viewportWidth;
         float pxY = 2f / viewportHeight;
 
-        // Crosshair (4 small rectangles around screen center, fixed pixel size)
-        const int armLen = 8, armThick = 2, gap = 4;
+        var w = weapons.Current;
+        float time = Environment.TickCount / 1000f;
+        float cooldownFrac = w.Def.FireRateHz > 0f ? Math.Clamp(w.Cooldown * w.Def.FireRateHz, 0f, 1f) : 0f;
+        float ammoFrac = w.Def.InfiniteAmmo ? 1f : (w.Def.AmmoMax > 0 ? (float)w.Ammo / w.Def.AmmoMax : 0f);
 
-        // Crosshair white
-        SetColor(1f, 1f, 1f, 0.9f);
-        DrawRect(-armLen * pxX, armThick * pxY * 0.5f, -gap * pxX, -armThick * pxY * 0.5f); // left
-        DrawRect(gap * pxX, armThick * pxY * 0.5f, armLen * pxX, -armThick * pxY * 0.5f); // right
-        DrawRect(-armThick * pxX * 0.5f, -gap * pxY, armThick * pxX * 0.5f, -armLen * pxY); // bottom
-        DrawRect(-armThick * pxX * 0.5f, armLen * pxY, armThick * pxX * 0.5f, gap * pxY);  // top
+        // Crosshair: reacts to current weapon and active recoil/cooldown.
+        float armLenPx = w.Def.Kind switch
+        {
+            WeaponKind.Ak47 => 8f,
+            WeaponKind.Shotgun => 10f,
+            WeaponKind.RocketLauncher => 12f,
+            _ => 8f,
+        };
+        float armThickPx = w.Def.Kind == WeaponKind.RocketLauncher ? 3f : 2f;
+        float gapPx = 4f + w.Def.SpreadDegrees * 1.1f + cooldownFrac * (w.Def.Kind == WeaponKind.Ak47 ? 8f : 12f);
+        Vector3 crossColor = w.Def.Kind switch
+        {
+            WeaponKind.Ak47 => new Vector3(0.95f, 0.94f, 0.88f),
+            WeaponKind.Shotgun => new Vector3(1.00f, 0.86f, 0.52f),
+            WeaponKind.RocketLauncher => new Vector3(1.00f, 0.70f, 0.36f),
+            _ => Vector3.One,
+        };
+        if (!w.Def.InfiniteAmmo && ammoFrac < 0.20f)
+        {
+            float pulse = 0.55f + 0.45f * (0.5f + 0.5f * MathF.Sin(time * 10f));
+            crossColor = Vector3.Lerp(crossColor, new Vector3(1.0f, 0.25f, 0.18f), pulse);
+        }
+        SetColor(crossColor.X, crossColor.Y, crossColor.Z, 0.92f);
+        DrawRect(-armLenPx * pxX, armThickPx * pxY * 0.5f, -gapPx * pxX, -armThickPx * pxY * 0.5f);
+        DrawRect(gapPx * pxX, armThickPx * pxY * 0.5f, armLenPx * pxX, -armThickPx * pxY * 0.5f);
+        DrawRect(-armThickPx * pxX * 0.5f, -gapPx * pxY, armThickPx * pxX * 0.5f, -armLenPx * pxY);
+        DrawRect(-armThickPx * pxX * 0.5f, armLenPx * pxY, armThickPx * pxX * 0.5f, gapPx * pxY);
+        DrawRect(-1.2f * pxX, 1.2f * pxY, 1.2f * pxX, -1.2f * pxY);
 
         // Bottom-left health bar
         float barW = 280 * pxX, barH = 22 * pxY;
@@ -46,22 +70,40 @@ public sealed class HudRenderer : IDisposable
         float barY = -1f + 16 * pxY;
         SetColor(0.05f, 0.05f, 0.05f, 0.7f);
         DrawRect(barX - 2 * pxX, barY + barH + 2 * pxY, barX + barW + 2 * pxX, barY - 2 * pxY);
-        float frac = player.MaxHealth > 0 ? (float)player.Health / player.MaxHealth : 0f;
-        SetColor(0.85f, 0.15f, 0.15f, 0.95f);
-        DrawRect(barX, barY + barH, barX + barW * Math.Clamp(frac, 0, 1), barY);
+        float healthFrac = player.MaxHealth > 0 ? Math.Clamp((float)player.Health / player.MaxHealth, 0f, 1f) : 0f;
+        Vector3 hpLow = new(0.88f, 0.18f, 0.16f);
+        Vector3 hpHigh = new(0.22f, 0.84f, 0.28f);
+        Vector3 healthColor = Vector3.Lerp(hpLow, hpHigh, MathF.Sqrt(healthFrac));
+        if (healthFrac < 0.35f)
+        {
+            float pulse = 0.55f + 0.45f * (0.5f + 0.5f * MathF.Sin(time * 8f));
+            healthColor = Vector3.Lerp(healthColor, new Vector3(1.0f, 0.28f, 0.16f), pulse);
+        }
+        SetColor(healthColor.X, healthColor.Y, healthColor.Z, 0.96f);
+        DrawRect(barX, barY + barH, barX + barW * healthFrac, barY);
 
         // Bottom-right ammo bar
-        var w = weapons.Current;
         float aBarW = 220 * pxX, aBarH = 18 * pxY;
         float aX = 1f - 16 * pxX - aBarW;
         float aY = -1f + 16 * pxY;
         SetColor(0.05f, 0.05f, 0.05f, 0.7f);
         DrawRect(aX - 2 * pxX, aY + aBarH + 2 * pxY, aX + aBarW + 2 * pxX, aY - 2 * pxY);
-        float aFrac = w.Def.InfiniteAmmo ? 1f : (w.Def.AmmoMax > 0 ? (float)w.Ammo / w.Def.AmmoMax : 0f);
-        SetColor(0.95f, 0.85f, 0.20f, 0.95f);
-        DrawRect(aX, aY + aBarH, aX + aBarW * Math.Clamp(aFrac, 0, 1), aY);
+        Vector3 ammoColor = w.Def.Kind switch
+        {
+            WeaponKind.Ak47 => new Vector3(0.95f, 0.85f, 0.20f),
+            WeaponKind.Shotgun => new Vector3(0.95f, 0.55f, 0.15f),
+            WeaponKind.RocketLauncher => new Vector3(1.00f, 0.38f, 0.18f),
+            _ => new Vector3(0.95f, 0.85f, 0.20f),
+        };
+        if (!w.Def.InfiniteAmmo && ammoFrac < 0.25f)
+        {
+            float pulse = 0.55f + 0.45f * (0.5f + 0.5f * MathF.Sin(time * 9f));
+            ammoColor = Vector3.Lerp(ammoColor, new Vector3(1.0f, 0.22f, 0.16f), pulse);
+        }
+        SetColor(ammoColor.X, ammoColor.Y, ammoColor.Z, 0.96f);
+        DrawRect(aX, aY + aBarH, aX + aBarW * Math.Clamp(ammoFrac, 0f, 1f), aY);
 
-        // Weapon slots top-left (3 squares; current one bright)
+        // Weapon slots top-left with small ammo/owned state strips.
         float slot = 28 * pxX, slotY = 28 * pxY;
         float sX = -1f + 16 * pxX;
         float sY = 1f - 16 * pxY - slotY;
@@ -73,6 +115,15 @@ public sealed class HudRenderer : IDisposable
             else if (ws.Owned) SetColor(0.7f, 0.7f, 0.7f, 0.85f);
             else SetColor(0.25f, 0.25f, 0.25f, 0.6f);
             DrawRect(x, sY + slotY, x + slot, sY);
+
+            float fillFrac = ws.Def.InfiniteAmmo ? 1f : (ws.Def.AmmoMax > 0 ? Math.Clamp((float)ws.Ammo / ws.Def.AmmoMax, 0f, 1f) : 0f);
+            SetColor(ws.Owned ? 0.15f : 0.10f, ws.Owned ? 0.15f : 0.10f, ws.Owned ? 0.15f : 0.10f, 0.85f);
+            DrawRect(x + 2 * pxX, sY + 6 * pxY, x + slot - 2 * pxX, sY + 2 * pxY);
+            if (ws.Owned)
+            {
+                SetColor(i == weapons.CurrentIndex ? 0.95f : 0.75f, i == weapons.CurrentIndex ? 0.85f : 0.75f, 0.25f, 0.95f);
+                DrawRect(x + 2 * pxX, sY + 6 * pxY, x + 2 * pxX + (slot - 4 * pxX) * fillFrac, sY + 2 * pxY);
+            }
         }
 
         _gl.Disable(EnableCap.Blend);

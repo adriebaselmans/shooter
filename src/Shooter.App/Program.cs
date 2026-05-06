@@ -346,7 +346,7 @@ internal static class Program
                     _ => (new Vector3(0.20f, -0.16f, -0.61f), 1.0f),
                 };
                 _muzzleFlash.Trigger(flashOffset, flashScale);
-                _particles.EmitMuzzleSmoke(muzzle, fwd);
+                _particles.EmitMuzzleSmoke(muzzle, fwd, _weapons.Current.Def.Kind);
 
                 if (result.Projectile is { } proj)
                 {
@@ -356,8 +356,28 @@ internal static class Program
                 }
                 else
                 {
-                    // Hitscan: register decals at every hit point.
-                    foreach (var h in result.Hits) _holes.Add(h.Point, h.Normal);
+                    // Hitscan: register decals, dust puffs, and a small number of representative
+                    // tracers so weapon fire reads clearly without turning the screen into soup.
+                    foreach (var h in result.Hits)
+                    {
+                        _holes.Add(h.Point, h.Normal);
+                        _particles.EmitImpactDust(h.Point, h.Normal, _weapons.Current.Def.Kind);
+                    }
+
+                    int tracerBudget = _weapons.Current.Def.Kind switch
+                    {
+                        WeaponKind.Ak47 => 1,
+                        WeaponKind.Shotgun => Math.Min(3, result.Rays.Count),
+                        _ => Math.Min(1, result.Rays.Count),
+                    };
+                    float tracerLifetime = _weapons.Current.Def.Kind == WeaponKind.Shotgun ? 0.075f : 0.05f;
+                    for (int i = 0; i < tracerBudget; i++)
+                    {
+                        int rayIndex = tracerBudget == 1
+                            ? 0
+                            : (int)MathF.Round(i * (result.Rays.Count - 1) / (float)(tracerBudget - 1));
+                        _tracers.Add(muzzle, result.Rays[rayIndex].End, tracerLifetime);
+                    }
                 }
             }
         }

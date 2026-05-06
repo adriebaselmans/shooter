@@ -1,17 +1,15 @@
-id: dod-shooter-remove-metal-backend
-title: DoD — Remove Metal Backend from Shooter.App
+id: dod-shooter-opengl-polish-three-pass
+title: DoD — OpenGL Runtime Polish in Three Unattended Passes
 status: approved
-parent: req-shooter-remove-metal-backend
-created_at: 2026-05-06T13:10:00Z
+parent: req-shooter-opengl-polish-three-pass
+created_at: 2026-05-06T13:57:00Z
 
 checklist:
-  - item: "Metal backend implementation removed"
+  - item: "Dust content pass completed"
     status: done
-  - item: "Metal Objective-C interop removed"
+  - item: "Material and water polish completed"
     status: done
-  - item: "Metal backend selection/startup logic removed"
-    status: done
-  - item: "OpenGL-only startup preserved and working"
+  - item: "Combat feel polish completed"
     status: done
   - item: "Build validation passed"
     status: done
@@ -26,4 +24,5 @@ evidence:
   smoke: "dotnet run --project src/Shooter.App -- dust.shmap"
 
 notes:
-  - "Metal-specific support files and factory/enum plumbing were deleted as dead code after simplifying Shooter.App to a single OpenGL runtime path."
+  - "Validated Dust now loads as 82 brushes, 984 tris, 6 spawns, 18 pickups after the map/readability pass."
+  - "All changes stayed on the OpenGL-only path; no backend-selection complexity was reintroduced."

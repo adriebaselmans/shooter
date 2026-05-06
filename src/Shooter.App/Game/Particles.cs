@@ -108,22 +108,51 @@ public sealed class ParticleSystem
         }
     }
 
-    public void EmitMuzzleSmoke(Vector3 origin, Vector3 forward)
+    public void EmitMuzzleSmoke(Vector3 origin, Vector3 forward, WeaponKind weapon)
     {
-        int count = 4;
+        int count = weapon switch
+        {
+            WeaponKind.Ak47 => 3,
+            WeaponKind.Shotgun => 6,
+            WeaponKind.RocketLauncher => 8,
+            _ => 4,
+        };
+        float speedMin = weapon == WeaponKind.RocketLauncher ? 0.45f : 0.25f;
+        float speedMax = weapon == WeaponKind.RocketLauncher ? 1.10f : weapon == WeaponKind.Shotgun ? 0.90f : 0.75f;
+        float baseSize = weapon == WeaponKind.RocketLauncher ? 0.14f : weapon == WeaponKind.Shotgun ? 0.11f : 0.09f;
         for (int i = 0; i < count; i++)
         {
             Vector3 jitter = new(Range(-0.02f, 0.02f), Range(-0.02f, 0.02f), Range(-0.02f, 0.02f));
             Spawn(new Particle
             {
                 Position = origin + forward * 0.08f + jitter,
-                Velocity = forward * Range(0.25f, 0.75f) + new Vector3(Range(-0.12f, 0.12f), Range(0.04f, 0.16f), Range(-0.12f, 0.12f)),
-                Color = new Vector4(0.48f, 0.48f, 0.50f, 0.26f),
-                Size = Range(0.09f, 0.16f),
-                Lifetime = Range(0.18f, 0.36f),
+                Velocity = forward * Range(speedMin, speedMax) + new Vector3(Range(-0.12f, 0.12f), Range(0.04f, 0.18f), Range(-0.12f, 0.12f)),
+                Color = new Vector4(0.48f, 0.48f, 0.50f, weapon == WeaponKind.RocketLauncher ? 0.32f : 0.26f),
+                Size = Range(baseSize, baseSize + 0.08f),
+                Lifetime = Range(0.18f, weapon == WeaponKind.RocketLauncher ? 0.55f : 0.36f),
                 Kind = ParticleKind.Smoke,
-                Drag = 3.6f,
+                Drag = weapon == WeaponKind.RocketLauncher ? 2.8f : 3.6f,
                 UpwardAccel = 0.14f,
+            });
+        }
+    }
+
+    public void EmitImpactDust(Vector3 point, Vector3 normal, WeaponKind weapon)
+    {
+        int count = weapon == WeaponKind.Shotgun ? 6 : 3;
+        for (int i = 0; i < count; i++)
+        {
+            Vector3 dir = RandomDirHemisphere(normal);
+            Spawn(new Particle
+            {
+                Position = point + normal * 0.03f + dir * Range(0.01f, 0.05f),
+                Velocity = normal * Range(0.12f, 0.45f) + dir * Range(0.10f, weapon == WeaponKind.Shotgun ? 0.85f : 0.45f),
+                Color = new Vector4(0.58f, 0.52f, 0.44f, weapon == WeaponKind.Shotgun ? 0.34f : 0.24f),
+                Size = Range(0.04f, weapon == WeaponKind.Shotgun ? 0.11f : 0.08f),
+                Lifetime = Range(0.14f, weapon == WeaponKind.Shotgun ? 0.34f : 0.24f),
+                Kind = ParticleKind.Dust,
+                Drag = 4.5f,
+                UpwardAccel = 0.08f,
             });
         }
     }
