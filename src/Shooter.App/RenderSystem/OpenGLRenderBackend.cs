@@ -30,7 +30,6 @@ public sealed class OpenGLRenderBackend : IRenderBackend
     private AutoExposure? _autoExp;
     private PostFx? _postFx;
 
-    public BackendKind Kind => BackendKind.OpenGL;
     public string Name => "OpenGL";
 
     public void Initialize(IWindow window, GameWorld world, LightingEnvironment lighting)

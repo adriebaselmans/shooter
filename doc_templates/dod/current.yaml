@@ -1,12 +1,29 @@
-id: dod-shooter-metal-visible-sky-pass-on-reverted-branch
+id: dod-shooter-remove-metal-backend
+title: DoD — Remove Metal Backend from Shooter.App
 status: approved
-parent: req-shooter-metal-visible-sky-pass-on-reverted-branch
-reviewed_at: 2026-05-03T05:08:00Z
-reviewer_role: dod-reviewer
+parent: req-shooter-remove-metal-backend
+created_at: 2026-05-06T13:10:00Z
 
-summary: >
-  The reverted Metal backend now includes a proper visible sky stage rendered in the HDR scene
-  pass. The sky is driven by the same active sun direction used by Metal lighting, improving
-  coherence relative to the earlier ambient/post-only Metal path.
+checklist:
+  - item: "Metal backend implementation removed"
+    status: done
+  - item: "Metal Objective-C interop removed"
+    status: done
+  - item: "Metal backend selection/startup logic removed"
+    status: done
+  - item: "OpenGL-only startup preserved and working"
+    status: done
+  - item: "Build validation passed"
+    status: done
+  - item: "Format verification passed"
+    status: done
+  - item: "OpenGL smoke startup passed on dust.shmap"
+    status: done
 
-decision: approved
+evidence:
+  build: "dotnet build shooter.slnx -nologo"
+  format: "dotnet format shooter.slnx --verify-no-changes --severity warn -v minimal"
+  smoke: "dotnet run --project src/Shooter.App -- dust.shmap"
+
+notes:
+  - "Metal-specific support files and factory/enum plumbing were deleted as dead code after simplifying Shooter.App to a single OpenGL runtime path."

@@ -5,7 +5,6 @@ namespace Shooter.RenderSystem;
 
 public interface IRenderBackend : IDisposable
 {
-    BackendKind Kind { get; }
     string Name { get; }
 
     void Initialize(IWindow window, GameWorld world, LightingEnvironment lighting);

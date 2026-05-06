@@ -16,7 +16,6 @@ internal static class Program
     private static IWindow? _window;
     private static IInputContext? _input;
     private static IRenderBackend? _renderBackend;
-    private static BackendKind _backendKind = BackendKind.OpenGL;
 
     private static GameWorld? _world;
     private static CollisionWorld? _col;
@@ -46,21 +45,17 @@ internal static class Program
     {
         foreach (var arg in args)
         {
-            if (arg.StartsWith("--backend=", StringComparison.OrdinalIgnoreCase))
-                _backendKind = RenderBackendFactory.Parse(arg[10..]);
-            else if (!arg.StartsWith("--", StringComparison.Ordinal))
+            if (!arg.StartsWith("--", StringComparison.Ordinal))
                 _mapPath = arg;
         }
         if (string.IsNullOrEmpty(_mapPath)) _mapPath = ResolveDefaultMap();
 
-        var api = _backendKind == BackendKind.Metal
-            ? new GraphicsAPI(ContextAPI.None, ContextProfile.Core, ContextFlags.Default, new APIVersion(0, 0))
-            : new GraphicsAPI(ContextAPI.OpenGL, ContextProfile.Core, ContextFlags.ForwardCompatible, new APIVersion(3, 3));
+        var api = new GraphicsAPI(ContextAPI.OpenGL, ContextProfile.Core, ContextFlags.ForwardCompatible, new APIVersion(3, 3));
 
         var opts = WindowOptions.Default with
         {
             Size = new Vector2D<int>(1280, 720),
-            Title = $"Shooter ({_backendKind})",
+            Title = "Shooter (OpenGL)",
             VSync = true,
             API = api,
         };
@@ -128,16 +123,16 @@ internal static class Program
             : Vector3.Zero;
         _player.Position = SnapSpawnToFloor(spawnPoint, _col);
 
-        _renderBackend = RenderBackendFactory.Create(_backendKind);
+        _renderBackend = new OpenGLRenderBackend();
         try
         {
             _renderBackend.Initialize(_window!, _world, _lighting);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Renderer] {_backendKind} initialization failed: {ex.Message}");
+            Console.WriteLine($"[Renderer] OpenGL initialization failed: {ex.Message}");
             _backendInitFailed = true;
-            _window!.Title = $"Shooter ({_backendKind}) - backend init failed";
+            _window!.Title = "Shooter (OpenGL) - backend init failed";
             _window.Close();
             return;
         }

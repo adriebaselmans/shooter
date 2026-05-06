@@ -1,35 +1,36 @@
-id: req-shooter-metal-sky-tuning-and-stable-shadows
-title: Metal Sky Tuning and Stable Sun-Driven Shadows
+id: req-shooter-remove-metal-backend
+title: Remove Metal Backend from Shooter.App
 status: approved
-parent: req-shooter-metal-visible-sky-pass-on-reverted-branch
-created_at: 2026-05-03T05:20:00Z
+created_at: 2026-05-06T12:55:00Z
 
 context: >
-  After adding a proper visible Metal sky pass, the sky/light cue is improved, but Metal shadows
-  still feel wrong: they appear to move while walking and do not read as stable drop shadows cast
-  from the sun. The user wants the sky tuned closer to the GL reference and the shadow projection
-  made stable and clearly sun-driven.
+  The user explicitly wants the Metal renderer removed and is done with maintaining or evaluating
+  the Metal path. Shooter.App should return to a clean OpenGL-only runtime state.
 
 functional:
-  - id: L132
-    text: "Metal sky is tuned closer to the GL visual reference while keeping the proper visible sky pass."
-  - id: L133
-    text: "Metal shadows are no longer obviously player-following or unstable while walking."
-  - id: L134
-    text: "Metal shadow projection reads as coming from the active sun direction and produces believable drop shadows on scene occluders such as pillars."
+  - id: L301
+    text: "Remove the Metal backend implementation and Metal platform interop code from Shooter.App."
+  - id: L302
+    text: "Remove Metal runtime selection/startup logic so Shooter.App runs through the OpenGL path only."
+  - id: L303
+    text: "Keep the working OpenGL renderer behavior intact."
 
 non_functional:
-  - id: NL77
-    text: "Prefer a focused Metal shadow-frustum/projection fix over reworking unrelated rendering systems."
-  - id: NL78
-    text: "Build + format clean across the solution."
+  - id: NL151
+    text: "Prefer a straightforward deletion/simplification pass over partial Metal deprecation."
+  - id: NL152
+    text: "Do not regress the current OpenGL gameplay/rendering path."
+  - id: NL153
+    text: "Build and format verification must pass after removal."
 
 acceptance_criteria:
-  - id: AC102
-    text: "Metal visible sky remains in place and is tuned closer to the GL reference."
-  - id: AC103
-    text: "Metal shadow projection is stable while walking and no longer reads as obviously detached from the sun."
-  - id: AC104
-    text: "Shooter.App still builds and starts the Metal renderer successfully on `dust.shmap` after the fix."
-  - id: AC105
-    text: "Build + format clean."
+  - id: AC301
+    text: "`MetalBootstrapBackend.cs` and Metal Objective-C interop support are removed from the Shooter.App runtime codebase."
+  - id: AC302
+    text: "Program startup no longer selects or initializes a Metal backend."
+  - id: AC303
+    text: "Shooter.App still builds and starts successfully on `dust.shmap` using OpenGL."
+  - id: AC304
+    text: "`dotnet build shooter.slnx -nologo` passes."
+  - id: AC305
+    text: "`dotnet format shooter.slnx --verify-no-changes --severity warn -v minimal` passes."

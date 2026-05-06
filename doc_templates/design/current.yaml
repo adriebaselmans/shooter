@@ -1,23 +1,23 @@
-id: design-shooter-metal-sky-tuning-and-stable-shadows
-title: Design — Metal Sky Tuning and Stable Sun-Driven Shadows
+id: design-shooter-remove-metal-backend
+title: Design — Remove Metal Backend from Shooter.App
 status: approved
-parent: req-shooter-metal-sky-tuning-and-stable-shadows
-created_at: 2026-05-03T05:22:00Z
+parent: req-shooter-remove-metal-backend
+created_at: 2026-05-06T12:57:00Z
 
 decisions:
-  Q1_shadow_strategy:
-    decision: "Keep the current Metal shadow projection math style but anchor the light-space fit to a stable scene center/bounds-derived focus point instead of the moving player position."
-    rationale: "The user's main complaint is that shadows move while walking. The existing player-centered fit is the most direct cause of that behavior."
-  Q2_coverage_strategy:
-    decision: "Widen the Metal shadow orthographic coverage enough to include Dust's main play space and pillar occluders."
-    rationale: "A stable center is not enough if the shadow frustum is still too tight to cover the relevant geometry."
-  Q3_sky_tuning:
-    decision: "Perform a modest sky-color/sun-halo tuning pass only, keeping the dedicated Metal sky stage intact."
-    rationale: "The sky stage is structurally correct now; the request is to tune it closer to GL, not replace it."
+  Q1_scope:
+    decision: "Remove Metal code completely rather than leaving a stub or unsupported backend option."
+    rationale: "The user asked to remove all Metal-related runtime code, not just disable it."
+  Q2_runtime_shape:
+    decision: "Keep the lightweight render-backend abstraction only if it remains trivial for the surviving OpenGL path."
+    rationale: "This minimizes code churn while still removing Metal-specific complexity."
+  Q3_startup:
+    decision: "Simplify program startup to always request the existing OpenGL 3.3 context and instantiate the OpenGL backend directly."
+    rationale: "Once Metal is gone, backend-selection logic becomes unnecessary runtime complexity."
 
 implementation_plan:
-  - "Compute a stable Metal shadow focus point from world bounds during initialization."
-  - "Use that focus point in Metal `BuildLightSpace(...)` instead of the moving player position."
-  - "Increase Metal shadow coverage modestly so pillars and key occluders stay inside the sun frustum."
-  - "Tune Metal sky colors/halo toward the GL reference without returning to fake post-sun behavior."
-  - "Validate with build, format verification, and Metal smoke startup on `dust.shmap`."
+  - "Delete `src/Shooter.App/RenderSystem/MetalBootstrapBackend.cs`."
+  - "Delete `src/Shooter.App/Platform/Metal/ObjCRuntime.cs`."
+  - "Simplify `Program.cs` to OpenGL-only startup."
+  - "Remove now-unused backend-selection/Metal-only support files or members if they become dead after the simplification."
+  - "Validate with build, format verification, and OpenGL smoke startup on `dust.shmap`."
