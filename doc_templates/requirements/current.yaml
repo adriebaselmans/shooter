@@ -1,41 +1,35 @@
-id: req-shooter-authored-material-properties
-title: Authored Material Properties via Map Editor and Shooter Runtime
+id: req-shooter-metal-sky-tuning-and-stable-shadows
+title: Metal Sky Tuning and Stable Sun-Driven Shadows
 status: approved
-parent: req-shooter-visual-big-pass-no-editor
-created_at: 2026-05-01T23:20:00Z
+parent: req-shooter-metal-visible-sky-pass-on-reverted-branch
+created_at: 2026-05-03T05:20:00Z
 
 context: >
-  The user wants material behavior authored directly in the map editor rather than relying on
-  runtime-only filename conventions. The system must persist those properties in .shmap, expose
-  them in the editor, and use them in Shooter.App. It must support at least standard, water, and
-  lava material behaviors, and the Dust demo map should include a water example to verify the flow.
+  After adding a proper visible Metal sky pass, the sky/light cue is improved, but Metal shadows
+  still feel wrong: they appear to move while walking and do not read as stable drop shadows cast
+  from the sun. The user wants the sky tuned closer to the GL reference and the shadow projection
+  made stable and clearly sun-driven.
 
 functional:
-  - id: L98
-    text: "The map editor exposes authored brush material properties rather than requiring runtime-only texture filename conventions."
-  - id: L99
-    text: "Brush material properties persist in .shmap and load/save without breaking older maps."
-  - id: L100
-    text: "Shooter.App consumes authored material properties as the source of truth for runtime shading behavior."
-  - id: L101
-    text: "The material system supports at least Standard, Water, and Lava behavior families."
-  - id: L102
-    text: "The Dust demo map includes a water-authored example so the new material workflow can be checked visually."
+  - id: L132
+    text: "Metal sky is tuned closer to the GL visual reference while keeping the proper visible sky pass."
+  - id: L133
+    text: "Metal shadows are no longer obviously player-following or unstable while walking."
+  - id: L134
+    text: "Metal shadow projection reads as coming from the active sun direction and produces believable drop shadows on scene occluders such as pillars."
 
 non_functional:
-  - id: NL48
-    text: "Remain backward-compatible with older maps that do not yet contain authored material_properties."
-  - id: NL49
-    text: "Keep the initial authored material model practical: brush-level properties first rather than a full per-surface authored material graph."
-  - id: NL50
+  - id: NL77
+    text: "Prefer a focused Metal shadow-frustum/projection fix over reworking unrelated rendering systems."
+  - id: NL78
     text: "Build + format clean across the solution."
 
 acceptance_criteria:
-  - id: AC60
-    text: "MapEditor.App.Avalonia builds with editable brush material properties in the properties panel."
-  - id: AC61
-    text: "Shooter.App builds and loads a .shmap using authored material properties for standard/water/lava behavior."
-  - id: AC62
-    text: "Dust demo map includes at least one water-authored brush and still loads cleanly."
-  - id: AC63
+  - id: AC102
+    text: "Metal visible sky remains in place and is tuned closer to the GL reference."
+  - id: AC103
+    text: "Metal shadow projection is stable while walking and no longer reads as obviously detached from the sun."
+  - id: AC104
+    text: "Shooter.App still builds and starts the Metal renderer successfully on `dust.shmap` after the fix."
+  - id: AC105
     text: "Build + format clean."

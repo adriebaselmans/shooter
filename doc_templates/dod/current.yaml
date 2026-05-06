@@ -1,43 +1,12 @@
-id: dod-shooter-authored-material-properties
+id: dod-shooter-metal-visible-sky-pass-on-reverted-branch
 status: approved
-parent: req-shooter-authored-material-properties
-reviewed_at: 2026-05-01T23:50:00Z
+parent: req-shooter-metal-visible-sky-pass-on-reverted-branch
+reviewed_at: 2026-05-03T05:08:00Z
 reviewer_role: dod-reviewer
 
 summary: >
-  The repository now supports authored brush material behavior through the map editor and runtime.
-  Brushes can carry persisted material_properties in .shmap, the Avalonia editor exposes those
-  fields in the properties panel, and Shooter.App consumes them as runtime shading controls. The
-  initial authored model supports standard, water, and lava behaviors. Dust now contains a water
-  demo brush for visual verification.
-
-acceptance_criteria_results:
-  - id: AC60
-    text: "MapEditor.App.Avalonia builds with editable brush material properties in the properties panel."
-    result: pass
-    evidence: "Solution build passed after adding the new editor bindings and command flow."
-  - id: AC61
-    text: "Shooter.App builds and loads a .shmap using authored material properties for standard/water/lava behavior."
-    result: pass
-    evidence: "Shooter build and GL/Metal smoke runs passed with authored material usage in code."
-  - id: AC62
-    text: "Dust demo map includes at least one water-authored brush and still loads cleanly."
-    result: pass
-    evidence: "dust.shmap now contains `water_demo_pool` with water material_properties; runtime loads 71 brushes cleanly."
-  - id: AC63
-    text: "Build + format clean."
-    result: pass
-    evidence: "Solution build and format verification passed."
-
-non_functional_check:
-  - id: NL48
-    result: pass
-    evidence: "material_properties are optional and runtime retains fallback behavior."
-  - id: NL49
-    result: pass
-    evidence: "Scope stayed at brush-level authored properties."
-  - id: NL50
-    result: pass
-    evidence: "Build + format clean across the solution."
+  The reverted Metal backend now includes a proper visible sky stage rendered in the HDR scene
+  pass. The sky is driven by the same active sun direction used by Metal lighting, improving
+  coherence relative to the earlier ambient/post-only Metal path.
 
 decision: approved

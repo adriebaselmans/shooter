@@ -104,7 +104,7 @@ public sealed class LightingEnvironment
     public float GradeSaturation { get; set; } = 0.96f;
 
     /// <summary>How much the color grade cools shadowed/dark regions.</summary>
-    public float GradeShadowCool { get; set; } = 0.06f;
+    public float GradeShadowCool { get; set; } = 0.02f;
 
     /// <summary>How much the color grade warms bright regions/highlights.</summary>
     public float GradeHighlightWarm { get; set; } = 0.08f;
@@ -116,8 +116,9 @@ public sealed class LightingEnvironment
     // Hybrid path tracing (Metal)
     // -----------------------------------------------------------------
 
-    /// <summary>Enables the Metal hybrid path-traced indirect-lighting layer.</summary>
-    public bool HybridPathTracingEnabled { get; set; } = true;
+    /// <summary>Enables the Metal hybrid path-traced indirect-lighting layer.
+    /// Disabled by default because the current experimental pass can push the Metal image toward an overall sky-blue bias.</summary>
+    public bool HybridPathTracingEnabled { get; set; } = false;
 
     /// <summary>Blend strength of the accumulated path-traced GI into the final image.</summary>
     public float HybridPathTracingStrength { get; set; } = 0.38f;

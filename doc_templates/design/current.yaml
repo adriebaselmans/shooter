@@ -1,37 +1,23 @@
-id: design-shooter-authored-material-properties
-title: Design — Authored Material Properties Through Editor and Runtime
+id: design-shooter-metal-sky-tuning-and-stable-shadows
+title: Design — Metal Sky Tuning and Stable Sun-Driven Shadows
 status: approved
-parent: req-shooter-authored-material-properties
-created_at: 2026-05-01T23:25:00Z
+parent: req-shooter-metal-sky-tuning-and-stable-shadows
+created_at: 2026-05-03T05:22:00Z
 
 decisions:
-  Q1_authoring_scope:
-    decision: "Implement brush-level authored material properties first, while leaving existing per-surface texture mapping intact."
-    rationale: "Delivers editor-driven material behavior with much lower complexity than a full per-surface authored material graph."
-  Q2_property_list:
-    decision: "Use one practical property set shared across Standard/Water/Lava: kind, roughness, specular strength, normal strength, emissive strength, opacity, flow speed, distortion strength, fresnel strength, and pulse strength."
-    rationale: "Covers the most useful stylized/runtime behaviors without inventing a full material node system."
-  Q3_persistence:
-    decision: "Persist properties as an optional `material_properties` object on each brush in .shmap (format 1.4.0), but continue loading maps that omit it."
-    rationale: "Backward-compatible and explicit."
-  Q4_runtime_use:
-    decision: "Shooter runtime treats authored material properties as the preferred source of shading behavior, falling back to legacy heuristics only when a brush still has default standard properties."
-    rationale: "Preserves old maps while moving new content to authored control."
-  Q5_demo_validation:
-    decision: "Add one water-authored demo brush to dust.shmap."
-    rationale: "Provides an immediate visual verification path."
+  Q1_shadow_strategy:
+    decision: "Keep the current Metal shadow projection math style but anchor the light-space fit to a stable scene center/bounds-derived focus point instead of the moving player position."
+    rationale: "The user's main complaint is that shadows move while walking. The existing player-centered fit is the most direct cause of that behavior."
+  Q2_coverage_strategy:
+    decision: "Widen the Metal shadow orthographic coverage enough to include Dust's main play space and pillar occluders."
+    rationale: "A stable center is not enough if the shadow frustum is still too tight to cover the relevant geometry."
+  Q3_sky_tuning:
+    decision: "Perform a modest sky-color/sun-halo tuning pass only, keeping the dedicated Metal sky stage intact."
+    rationale: "The sky stage is structurally correct now; the request is to tune it closer to GL, not replace it."
 
 implementation_plan:
-  - "Add BrushMaterialKind + BrushMaterialProperties in MapEditor.Core."
-  - "Add editable fields to the editor properties panel and a command to commit brush material changes."
-  - "Add material_properties DTO/serializer support."
-  - "Update Shooter world extraction to read authored properties and feed them into shader/material bindings."
-  - "Implement Standard/Water/Lava behavior in runtime shaders and add one water brush to Dust."
-
-risks_and_mitigations:
-  R1_scope_growth:
-    mitigation: "Stop at brush-level properties for this phase."
-  R2_old-map behavior:
-    mitigation: "Fallback to existing inferred visuals when authored properties are absent/default."
-  R3_backend drift:
-    mitigation: "Mirror the authored property usage into both OpenGL and Metal paths where practical."
+  - "Compute a stable Metal shadow focus point from world bounds during initialization."
+  - "Use that focus point in Metal `BuildLightSpace(...)` instead of the moving player position."
+  - "Increase Metal shadow coverage modestly so pillars and key occluders stay inside the sun frustum."
+  - "Tune Metal sky colors/halo toward the GL reference without returning to fake post-sun behavior."
+  - "Validate with build, format verification, and Metal smoke startup on `dust.shmap`."

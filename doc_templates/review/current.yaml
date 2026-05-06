@@ -1,68 +1,29 @@
-id: review-shooter-authored-material-properties
-title: Review — Authored Material Properties Through Editor and Runtime
+id: review-shooter-metal-visible-sky-pass-on-reverted-branch
+title: Review — Proper Visible Metal Sky Pass on Reverted Dual-Backend Branch
 status: passed
-parent: design-shooter-authored-material-properties
+parent: design-shooter-metal-visible-sky-pass-on-reverted-branch
 reviewer_role: reviewer
-reviewed_at: 2026-05-01T23:45:00Z
+reviewed_at: 2026-05-03T05:05:00Z
 
 scope_reviewed:
-  - src/MapEditor.Core/Entities/BrushTexturing.cs
-  - src/MapEditor.Core/Entities/Brush.cs
-  - src/MapEditor.Core/Commands/SceneCommands.cs
-  - src/MapEditor.Formats/Dto/MapDtos.cs
-  - src/MapEditor.Formats/MapSerializer.cs
-  - src/MapEditor.App/ViewModels/PropertiesViewModel.cs
-  - src/MapEditor.App/ViewModels/MainViewModel.cs
-  - src/MapEditor.App.Avalonia/MainWindow.axaml
-  - src/MapEditor.App.Avalonia/MainWindow.axaml.cs
-  - src/Shooter.App/Game/World.cs
-  - src/Shooter.App/Render/WorldRenderer.cs
-  - src/Shooter.App/Render/TexturedModelRenderer.cs
-  - src/Shooter.App/Render/Shaders.cs
   - src/Shooter.App/RenderSystem/MetalBootstrapBackend.cs
-  - dust.shmap
-
-requirements_traceability:
-  - id: L98
-    status: met
-    note: "Editor properties panel now exposes authored brush material properties."
-  - id: L99
-    status: met
-    note: "Brush material_properties now serialize to .shmap and remain optional for older maps."
-  - id: L100
-    status: met
-    note: "Shooter world extraction and renderers now consume authored material properties."
-  - id: L101
-    status: met
-    note: "Standard, Water, and Lava behavior families are represented in the authored material model and runtime shading."
-  - id: L102
-    status: met
-    note: "dust.shmap now contains a water-authored demo brush."
+  - src/Shooter.App/Program.cs
 
 approved:
-  - "Good tradeoff: brush-level authored properties deliver real editor control without a full material graph."
-  - "Backward-compatibility is preserved by optional serialization and runtime fallback behavior."
-  - "Water authoring is immediately testable in the demo map."
-
-feedback:
-  - "A future phase could extend authored properties to per-surface overrides if needed."
-  - "Lava support exists in the authored/runtime model but is not showcased in Dust, which is a reasonable art-direction choice."
+  - "This is the correct structural addition for the reverted branch: a dedicated Metal sky stage instead of more ambient/post-only compensation."
 
 blocking_findings: []
 rework_target: none
 
 evidence:
-  build_shooter:
-    command: "dotnet build src/Shooter.App/Shooter.App.csproj"
-    result: "passed"
   build_solution:
-    command: "dotnet build shooter.slnx"
+    command: "dotnet build shooter.slnx -nologo"
     result: "passed"
-  smoke_gl:
-    command: "dotnet run --project src/Shooter.App -- dust.shmap (10 s)"
+  format_verify:
+    command: "dotnet format shooter.slnx --verify-no-changes --severity warn -v minimal"
     result: "passed"
   smoke_metal:
-    command: "dotnet run --project src/Shooter.App -- --backend=metal dust.shmap (10 s)"
+    command: "dotnet run --project src/Shooter.App -- --backend=metal dust.shmap (8 s)"
     result: "passed"
 
 decision: approved

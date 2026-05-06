@@ -109,6 +109,7 @@ internal static class Program
             : new MapFileService().LoadAsync(_mapPath).GetAwaiter().GetResult();
 
         _world = GameWorld.FromScene(scene);
+        ApplyWorldLightingDefaults(_world, _lighting);
         _col = new CollisionWorld(_world);
         _holes = new BulletHoleManager();
         _tracers = new TracerSystem();
@@ -160,6 +161,18 @@ internal static class Program
         }
         // No floor below: keep the spawn but lift slightly so the player isn't intersecting it.
         return spawnPoint + new Vector3(0f, Player.Radius + 0.05f, 0f);
+    }
+
+    private static void ApplyWorldLightingDefaults(GameWorld world, LightingEnvironment lighting)
+    {
+        lighting.SunDirection = Vector3.Normalize(world.SunDirection);
+
+        float peak = MathF.Max(world.SunColor.X, MathF.Max(world.SunColor.Y, world.SunColor.Z));
+        if (peak > 1e-4f)
+        {
+            lighting.SunColor = world.SunColor / peak;
+            lighting.SunIntensity = peak;
+        }
     }
 
     private static MapEditor.Core.Scene BuildFallbackScene()

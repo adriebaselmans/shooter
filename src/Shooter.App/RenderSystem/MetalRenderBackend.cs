@@ -11,7 +11,7 @@ using StbImageSharp;
 
 namespace Shooter.RenderSystem;
 
-public sealed class MetalBootstrapBackend : IRenderBackend
+public sealed class MetalRenderBackend : IRenderBackend
 {
     private const ulong PixelFormatR8Unorm = 10;
     private const ulong PixelFormatR16Float = 25;
@@ -31,9 +31,9 @@ public sealed class MetalBootstrapBackend : IRenderBackend
     private const ulong CompareAlways = 7;
 
     private const int ShadowMapSize = 3072;
-    private const float ShadowHalfExtent = 42f;
-    private const float ShadowNear = -60f;
-    private const float ShadowFar = 60f;
+    private const float ShadowHalfExtent = 30f;
+    private const float ShadowNear = -40f;
+    private const float ShadowFar = 40f;
     private const int BloomMipCount = 5;
     private const int SsaoKernelSize = 16;
     private const int SsaoNoiseSize = 4;
@@ -113,7 +113,8 @@ public sealed class MetalBootstrapBackend : IRenderBackend
     private MetalModel? _rocketModel;
 
     private int _shadowVertexCount;
-    private Vector3 _shadowFocusPoint;
+    private Vector3 _shadowBoundsMin;
+    private Vector3 _shadowBoundsMax;
     private bool _initialized;
 
     public BackendKind Kind => BackendKind.Metal;
@@ -166,7 +167,7 @@ public sealed class MetalBootstrapBackend : IRenderBackend
         if (_shadowTexture == IntPtr.Zero)
             throw new InvalidOperationException("Failed to create Metal shadow depth texture.");
 
-        ComputeShadowFocusPoint(world);
+        ComputeShadowBounds(world);
         BuildWorldSources(world);
         BuildWorldTriangleBuffer(world);
         LoadWeaponModels();
@@ -244,14 +245,8 @@ public sealed class MetalBootstrapBackend : IRenderBackend
         IntPtr commandBuffer = Msg(_queue, "commandBuffer");
         if (commandBuffer == IntPtr.Zero) return;
 
-        UpdateHybridGiHistory(frame);
-
-        RunShadowPass(commandBuffer);
         RunScenePass(commandBuffer, frame, matrices);
-        RunHybridGiPass(commandBuffer, frame, matrices);
-        RunSsaoPass(commandBuffer, matrices, frame.Lighting);
-        RunBloomPass(commandBuffer);
-        RunPostPass(commandBuffer, backBuffer, frame.Lighting);
+        RunPostPass(commandBuffer, backBuffer, frame, matrices);
         RunUiPass(commandBuffer, backBuffer);
 
         MsgVoid(commandBuffer, "presentDrawable:", drawable);
@@ -259,7 +254,7 @@ public sealed class MetalBootstrapBackend : IRenderBackend
 
         if (frame.ShowDebug)
         {
-            Console.Title = $"Shooter [{Name}] | verts={totalVerts} shadow={_shadowVertexCount} scene={_sceneBatches.Count} gi={_hybridGiSampleCount} overlay={_alphaOverlayBatches.Count + _additiveOverlayBatches.Count} fps={frame.FpsValue:F0}";
+            Console.Title = $"Shooter [{Name}] | verts={totalVerts} scene={_sceneBatches.Count} overlay={_alphaOverlayBatches.Count + _additiveOverlayBatches.Count} fps={frame.FpsValue:F0}";
         }
     }
 
@@ -267,11 +262,11 @@ public sealed class MetalBootstrapBackend : IRenderBackend
     {
         float aspect = _fbHeight > 0 ? (float)_fbWidth / _fbHeight : 16f / 9f;
         Matrix4x4 view = Matrix4x4.CreateLookAt(frame.Player.EyePosition, frame.Player.EyePosition + frame.Player.Forward(), Vector3.UnitY);
-        Matrix4x4 proj = Matrix4x4.CreatePerspectiveFieldOfView(WeaponViewmodelRenderer.FovYRadians, aspect, 0.05f, 1000f);
+        Matrix4x4 proj = Matrix4x4.CreatePerspectiveFieldOfView(RenderConstants.ViewmodelFovYRadians, aspect, 0.05f, 1000f);
         Matrix4x4 viewProj = view * proj;
         Matrix4x4.Invert(proj, out var invProj);
         Matrix4x4.Invert(viewProj, out var invViewProj);
-        Matrix4x4 lightSpace = BuildLightSpace(_shadowFocusPoint, frame.Lighting);
+        Matrix4x4 lightSpace = BuildLightSpace(frame.Player.Position, frame.Lighting);
         Vector3 toSunView = Vector3.Normalize(Vector3.TransformNormal(frame.Lighting.ToSun, view));
         return new FrameMatrices(view, proj, invProj, invViewProj, viewProj, lightSpace, toSunView);
     }
@@ -360,7 +355,7 @@ public sealed class MetalBootstrapBackend : IRenderBackend
                 float frac = w.Cooldown * w.Def.FireRateHz;
                 kick = MathF.Max(0f, frac) * w.Def.RecoilStrength;
             }
-            var pos = WeaponViewmodelRenderer.MuzzleViewOffset + new Vector3(0f, -kick * 0.04f, 0f);
+            var pos = RenderConstants.ViewmodelMuzzleOffset + new Vector3(0f, -kick * 0.04f, 0f);
             var rot = Matrix4x4.CreateFromYawPitchRoll(0f, kick * 0.25f, 0f);
             var modelMat = rot * Matrix4x4.CreateTranslation(pos);
             cursor = AppendViewModel(weaponModel, modelMat, m.Proj, cursor);
@@ -512,7 +507,7 @@ public sealed class MetalBootstrapBackend : IRenderBackend
     {
         if (flash is null || !flash.IsActive) return cursor;
         float aspect = _fbHeight > 0 ? (float)_fbWidth / _fbHeight : 16f / 9f;
-        Matrix4x4 proj = Matrix4x4.CreatePerspectiveFieldOfView(WeaponViewmodelRenderer.FovYRadians, aspect, 0.01f, 10f);
+        Matrix4x4 proj = Matrix4x4.CreatePerspectiveFieldOfView(RenderConstants.ViewmodelFovYRadians, aspect, 0.01f, 10f);
         float t = flash.Intensity;
         float pulse = 0.55f + 0.45f * t;
         float halfSize = 0.18f * flash.SeedScale * flash.WeaponScale * pulse;
@@ -749,13 +744,14 @@ public sealed class MetalBootstrapBackend : IRenderBackend
         if (!frame.Lighting.HybridPathTracingEnabled || _hybridGiPipeline == IntPtr.Zero || _worldTriangleBuffer == IntPtr.Zero || _worldTriangleCount == 0)
             return;
         int writeIndex = 1 - _hybridGiHistoryIndex;
+        var (zenith, horizon) = BuildSkyColors(frame);
         var u = new HybridGiUniforms
         {
             InvViewProj = m.InvViewProj,
             CameraPos = new Vector4(frame.Player.EyePosition, 0f),
             ToSun = new Vector4(frame.Lighting.ToSun, 0f),
-            SkyZenith = new Vector4(0.32f, 0.55f, 1.05f, 0f),
-            SkyHorizon = new Vector4(0.95f, 0.85f, 0.75f, 0f),
+            SkyZenith = new Vector4(zenith, 0f),
+            SkyHorizon = new Vector4(horizon, 0f),
             GroundColor = new Vector4(frame.Lighting.GroundAlbedo, 0f),
             Params0 = new Vector4(frame.Lighting.Turbidity, _hybridGiSampleCount, frame.Lighting.HybridPathTracingStrength, _worldTriangleCount),
         };
@@ -872,16 +868,16 @@ public sealed class MetalBootstrapBackend : IRenderBackend
         }
     }
 
-    private void RunPostPass(IntPtr commandBuffer, IntPtr drawableTexture, LightingEnvironment lighting)
+    private void RunPostPass(IntPtr commandBuffer, IntPtr drawableTexture, RenderFrameData frame, FrameMatrices m)
     {
         if (_postPipeline == IntPtr.Zero) return;
         var post = new PostUniforms
         {
-            Params = new Vector4(lighting.Exposure, lighting.BloomStrength, lighting.SsaoStrength, lighting.GradeContrast),
-            Grade = new Vector4(lighting.GradeSaturation, lighting.GradeShadowCool, lighting.GradeHighlightWarm, lighting.VignetteStrength),
-            Hybrid = new Vector4(lighting.HybridPathTracingEnabled ? lighting.HybridPathTracingStrength : 0f, 0f, 0f, 0f),
+            Params = new Vector4(frame.Lighting.Exposure, frame.Lighting.BloomStrength, frame.Lighting.SsaoStrength, frame.Lighting.GradeContrast),
+            Grade = new Vector4(frame.Lighting.GradeSaturation, frame.Lighting.GradeShadowCool, frame.Lighting.GradeHighlightWarm, frame.Lighting.VignetteStrength),
+            Hybrid = new Vector4(frame.Lighting.HybridPathTracingEnabled ? frame.Lighting.HybridPathTracingStrength : 0f, 0f, 0f, 0f),
         };
-        IntPtr pass = CreateColorRenderPass(drawableTexture, clearColor: true, clear: MetalNative.CreateClearColor(0.08, 0.10, 0.12, 1.0));
+        IntPtr pass = CreateColorRenderPass(drawableTexture, clearColor: true, clear: MetalNative.CreateClearColor(0.0, 0.0, 0.0, 1.0));
         IntPtr encoder = Msg(commandBuffer, "renderCommandEncoderWithDescriptor:", pass);
         if (encoder == IntPtr.Zero) return;
         MsgVoid(encoder, "setRenderPipelineState:", _postPipeline);
@@ -910,8 +906,8 @@ public sealed class MetalBootstrapBackend : IRenderBackend
 
     private static (Vector3 Zenith, Vector3 Horizon) BuildSkyColors(RenderFrameData frame)
     {
-        Vector3 zenith = Vector3.Lerp(frame.World.SkyColor, new Vector3(0.44f, 0.60f, 0.95f), 0.16f);
-        Vector3 horizon = Vector3.Lerp(frame.Lighting.FogColor, new Vector3(0.98f, 0.88f, 0.72f), 0.20f);
+        Vector3 zenith = Vector3.Lerp(frame.World.SkyColor, new Vector3(0.42f, 0.50f, 0.66f), 0.32f);
+        Vector3 horizon = Vector3.Lerp(frame.Lighting.FogColor, new Vector3(0.80f, 0.66f, 0.50f), 0.22f);
         return (zenith, horizon);
     }
 
@@ -930,7 +926,7 @@ public sealed class MetalBootstrapBackend : IRenderBackend
             CameraUp = new Vector4(up, 0f),
             ProjInfo = new Vector4(aspect * tanHalfFov, tanHalfFov, frame.Lighting.Turbidity, 0f),
             ToSun = new Vector4(frame.Lighting.ToSun, 0f),
-            SunColor = new Vector4(frame.Lighting.SunColor * MathF.Max(1.0f, frame.Lighting.SunIntensity), 0f),
+            SunColor = new Vector4(frame.Lighting.SunColor * frame.Lighting.SunIntensity, 0f),
             SkyZenith = new Vector4(zenith, 0f),
             SkyHorizon = new Vector4(horizon, 0f),
             GroundColor = new Vector4(frame.Lighting.GroundAlbedo, 0f),
@@ -941,13 +937,13 @@ public sealed class MetalBootstrapBackend : IRenderBackend
     {
         Vector3 sunDir = Vector3.Normalize(frame.Lighting.SunDirection);
         var (zenith, horizon) = BuildSkyColors(frame);
-        Vector3 skyColor = Vector3.Lerp(zenith, horizon, 0.35f);
         return new SceneFrameUniforms
         {
             SunDir = new Vector4(sunDir, 0f),
             ToSunView = new Vector4(m.ToSunView, 0f),
             SunColor = new Vector4(frame.Lighting.SunColor, 0f),
-            SkyColor = new Vector4(skyColor, 0f),
+            SkyZenith = new Vector4(zenith, 0f),
+            SkyHorizon = new Vector4(horizon, 0f),
             GroundColor = new Vector4(frame.Lighting.GroundAlbedo, 0f),
             CameraPos = new Vector4(frame.Player.EyePosition, 0f),
             FogColor = new Vector4(frame.Lighting.FogColor, 0f),
@@ -977,6 +973,28 @@ public sealed class MetalBootstrapBackend : IRenderBackend
         return u;
     }
 
+    private void ComputeShadowBounds(GameWorld world)
+    {
+        if (world.AllTriangles.Count == 0)
+        {
+            _shadowBoundsMin = new Vector3(-10f, -2f, -10f);
+            _shadowBoundsMax = new Vector3(10f, 8f, 10f);
+            return;
+        }
+
+        Vector3 min = new(float.PositiveInfinity);
+        Vector3 max = new(float.NegativeInfinity);
+        foreach (var tri in world.AllTriangles)
+        {
+            min = Vector3.Min(min, Vector3.Min(tri.V0, Vector3.Min(tri.V1, tri.V2)));
+            max = Vector3.Max(max, Vector3.Max(tri.V0, Vector3.Max(tri.V1, tri.V2)));
+        }
+
+        Vector3 pad = new(4f, 4f, 4f);
+        _shadowBoundsMin = min - pad;
+        _shadowBoundsMax = max + pad;
+    }
+
     private readonly Vector3[] _ssaoKernel = BuildSsaoKernel();
 
     private static Vector3[] BuildSsaoKernel()
@@ -995,25 +1013,6 @@ public sealed class MetalBootstrapBackend : IRenderBackend
             kernel[i] = v * scale;
         }
         return kernel;
-    }
-
-    private void ComputeShadowFocusPoint(GameWorld world)
-    {
-        if (world.AllTriangles.Count == 0)
-        {
-            _shadowFocusPoint = Vector3.Zero;
-            return;
-        }
-
-        Vector3 min = new(float.PositiveInfinity);
-        Vector3 max = new(float.NegativeInfinity);
-        foreach (var tri in world.AllTriangles)
-        {
-            min = Vector3.Min(min, Vector3.Min(tri.V0, Vector3.Min(tri.V1, tri.V2)));
-            max = Vector3.Max(max, Vector3.Max(tri.V0, Vector3.Max(tri.V1, tri.V2)));
-        }
-
-        _shadowFocusPoint = (min + max) * 0.5f;
     }
 
     private static Matrix4x4 BuildLightSpace(Vector3 playerPos, LightingEnvironment env)
@@ -1113,7 +1112,7 @@ public sealed class MetalBootstrapBackend : IRenderBackend
     private void LoadRocketModel()
     {
         var path = Path.Combine(AssetLocator.Root, "StylooGunsAssetPack", "GLB", "quadrocket.glb");
-        var data = ModelData.TryLoad(path)?.AlignBarrelToForward(targetForwardLength: RocketRenderer.RocketLength);
+        var data = ModelData.TryLoad(path)?.AlignBarrelToForward(targetForwardLength: RenderConstants.RocketLength);
         if (data is null) return;
         _rocketModel = BuildMetalModel(data);
     }
@@ -1144,7 +1143,7 @@ public sealed class MetalBootstrapBackend : IRenderBackend
         try
         {
             var image = ImageResult.FromMemory(imageBytes, ColorComponents.RedGreenBlueAlpha);
-            return CreateTextureFromPixels(image.Width, image.Height, image.Data, PixelFormatRgba8Unorm, TextureUsageShaderRead);
+            return CreateTextureFromPixels(image.Width, image.Height, image.Data, PixelFormatRgba8Unorm, TextureUsageShaderRead, generateMipmaps: true);
         }
         catch
         {
@@ -1160,7 +1159,7 @@ public sealed class MetalBootstrapBackend : IRenderBackend
         {
             using var stream = File.OpenRead(path);
             var image = ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
-            handle = CreateTextureFromPixels(image.Width, image.Height, image.Data, PixelFormatRgba8Unorm, TextureUsageShaderRead);
+            handle = CreateTextureFromPixels(image.Width, image.Height, image.Data, PixelFormatRgba8Unorm, TextureUsageShaderRead, generateMipmaps: true);
             _textures[path] = handle;
             return handle;
         }
@@ -1170,19 +1169,19 @@ public sealed class MetalBootstrapBackend : IRenderBackend
         }
     }
 
-    private IntPtr CreateTexture2D(ulong pixelFormat, int width, int height, ulong usage)
+    private IntPtr CreateTexture2D(ulong pixelFormat, int width, int height, ulong usage, bool mipmapped = false)
     {
         IntPtr texDescClass = ObjCRuntime.objc_getClass("MTLTextureDescriptor");
-        IntPtr desc = Msg(texDescClass, "texture2DDescriptorWithPixelFormat:width:height:mipmapped:", pixelFormat, (ulong)Math.Max(1, width), (ulong)Math.Max(1, height), false);
+        IntPtr desc = Msg(texDescClass, "texture2DDescriptorWithPixelFormat:width:height:mipmapped:", pixelFormat, (ulong)Math.Max(1, width), (ulong)Math.Max(1, height), mipmapped);
         MsgVoid(desc, "setUsage:", usage);
         IntPtr texture = Msg(_device, "newTextureWithDescriptor:", desc);
         if (texture == IntPtr.Zero) return IntPtr.Zero;
         return ObjCRuntime.objc_retain(texture);
     }
 
-    private IntPtr CreateTextureFromPixels(int width, int height, byte[] rgba, ulong pixelFormat, ulong usage)
+    private IntPtr CreateTextureFromPixels(int width, int height, byte[] rgba, ulong pixelFormat, ulong usage, bool generateMipmaps = false)
     {
-        IntPtr texture = CreateTexture2D(pixelFormat, width, height, usage);
+        IntPtr texture = CreateTexture2D(pixelFormat, width, height, usage, mipmapped: generateMipmaps);
         if (texture == IntPtr.Zero) return IntPtr.Zero;
         IntPtr data = Marshal.AllocHGlobal(rgba.Length);
         try
@@ -1190,12 +1189,27 @@ public sealed class MetalBootstrapBackend : IRenderBackend
             Marshal.Copy(rgba, 0, data, rgba.Length);
             var region = new MTLRegion { Origin = new MTLOrigin(), Size = new MTLSize { Width = (ulong)width, Height = (ulong)height, Depth = 1 } };
             MsgVoid(texture, "replaceRegion:mipmapLevel:withBytes:bytesPerRow:", region, 0UL, data, (ulong)(width * 4));
+            if (generateMipmaps)
+                GenerateMipmaps(texture);
         }
         finally
         {
             Marshal.FreeHGlobal(data);
         }
         return texture;
+    }
+
+    private void GenerateMipmaps(IntPtr texture)
+    {
+        if (texture == IntPtr.Zero || _queue == IntPtr.Zero) return;
+        IntPtr commandBuffer = Msg(_queue, "commandBuffer");
+        if (commandBuffer == IntPtr.Zero) return;
+        IntPtr blit = Msg(commandBuffer, "blitCommandEncoder");
+        if (blit == IntPtr.Zero) return;
+        MsgVoid(blit, "generateMipmapsForTexture:", texture);
+        MsgVoid(blit, "endEncoding");
+        MsgVoid(commandBuffer, "commit");
+        MsgVoid(commandBuffer, "waitUntilCompleted");
     }
 
     private IntPtr CreateSsaoNoiseTexture()
@@ -1333,7 +1347,8 @@ struct SceneFrameUniforms {
     float4 sunDir;
     float4 toSunView;
     float4 sunColor;
-    float4 skyColor;
+    float4 skyZenith;
+    float4 skyHorizon;
     float4 groundColor;
     float4 cameraPos;
     float4 fogColor;
@@ -1341,16 +1356,6 @@ struct SceneFrameUniforms {
     float4 params1;
     float4 time;
     float4x4 lightSpace;
-};
-
-struct SceneDrawUniforms {
-    uint receiveShadows;
-    uint writeNormal;
-    uint viewSpaceLighting;
-    uint pad;
-    float4 materialParams;
-    float4 materialFx0;
-    float4 materialFx1;
 };
 
 struct SkyUniforms {
@@ -1363,6 +1368,16 @@ struct SkyUniforms {
     float4 skyZenith;
     float4 skyHorizon;
     float4 groundColor;
+};
+
+struct SceneDrawUniforms {
+    uint receiveShadows;
+    uint writeNormal;
+    uint viewSpaceLighting;
+    uint pad;
+    float4 materialParams;
+    float4 materialFx0;
+    float4 materialFx1;
 };
 
 struct OverlayDrawUniforms {
@@ -1464,14 +1479,14 @@ float3 skyDirection(float2 uv, constant SkyUniforms& u){
 float3 analyticSky(float3 dir, float3 toSun, float3 sunColor, float3 skyZenith, float3 skyHorizon, float3 groundColor, float turbidity){
     float sunDot = max(dot(dir, toSun), 0.0);
     float t = clamp(1.0 - max(dir.y, 0.0), 0.0, 1.0);
-    float3 sky = mix(skyZenith, skyHorizon, pow(t, 2.2));
-    float haze = mix(0.18, 0.42, clamp((turbidity - 2.0) / 8.0, 0.0, 1.0));
+    float3 sky = mix(skyZenith, skyHorizon, pow(t, 2.0));
+    float haze = mix(0.16, 0.34, clamp((turbidity - 2.0) / 8.0, 0.0, 1.0));
     sky = mix(sky, skyHorizon, haze * (1.0 - max(dir.y, 0.0)));
-    float sunHalo = pow(sunDot, 18.0) * 0.22 + pow(sunDot, 220.0) * 4.5;
-    sky += sunColor * float3(1.0, 0.96, 0.88) * sunHalo;
-    if (dir.y < 0.0){
-        float gy = clamp(-dir.y * 5.0, 0.0, 1.0);
-        sky = mix(sky, groundColor * 0.30, gy);
+    float sunHalo = pow(sunDot, 24.0) * 0.10 + pow(sunDot, 180.0) * 1.0;
+    sky += sunColor * float3(1.0, 0.95, 0.88) * sunHalo;
+    if (dir.y < 0.0) {
+        float gy = clamp(-dir.y * 4.0, 0.0, 1.0);
+        sky = mix(sky, groundColor * 0.42, gy);
     }
     return sky;
 }
@@ -1588,13 +1603,13 @@ float3 detailNormalFromAlbedo(texture2d<float> tex, sampler s, float2 uv, float3
     return normalize(float3x3(t, b, n) * mapN);
 }
 
-float sampleShadow(float3 worldPos, float3 n, constant SceneFrameUniforms& frame, depth2d<float> shadowTex, sampler s){
+float sampleShadow(float3 worldPos, float3 n, constant SceneFrameUniforms& frame, depth2d<float> shadowTex, sampler shadowSamp){
     float4 lp = frame.lightSpace * float4(worldPos, 1.0);
     lp.y = -lp.y;
     lp.z = 0.5 * (lp.z + lp.w);
     float3 proj = lp.xyz / max(lp.w, 1e-5);
     float2 uv = proj.xy * 0.5 + 0.5;
-    if (proj.z > 1.0 || uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
+    if (proj.z < 0.0 || proj.z > 1.0 || uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
         return 1.0;
     float bias = max(0.00022 * (1.0 - max(dot(n, -frame.sunDir.xyz), 0.0)), 0.00005);
     float depth = proj.z - bias;
@@ -1609,7 +1624,7 @@ float sampleShadow(float3 worldPos, float3 n, constant SceneFrameUniforms& frame
     };
     float sum = 0.0;
     for (int i = 0; i < 16; ++i) {
-        float sd = shadowTex.sample(s, uv + taps[i] * texel * adaptiveSoftness);
+        float sd = shadowTex.sample(shadowSamp, uv + taps[i] * texel * adaptiveSoftness);
         sum += depth <= sd ? 1.0 : 0.0;
     }
     return sum / 16.0;
@@ -1666,24 +1681,27 @@ fragment SceneOut fs_scene(SceneVsOut in [[stage_in]],
     float ao = aoTex.sample(repeatSamp, sampleUv).r;
     float3 toSun = normalize(draw.viewSpaceLighting != 0 ? frame.toSunView.xyz : -frame.sunDir.xyz);
     float3 viewDir = normalize(draw.viewSpaceLighting != 0 ? -in.worldPos : (frame.cameraPos.xyz - in.worldPos));
-    float vis = draw.receiveShadows != 0 ? sampleShadow(in.worldPos, normalize(in.worldNormal), frame, shadowTex, shadowSamp) : 1.0;
+    float vis = 1.0;
     float ndl = max(dot(n, toSun), 0.0);
     float hemi = clamp(n.y * 0.5 + 0.5, 0.0, 1.0);
-    float3 ambient = mix(frame.groundColor.xyz * 0.35, frame.skyColor.xyz, hemi) * frame.params0.y * ao;
+    float3 ambientSky = mix(frame.skyHorizon.xyz, frame.skyZenith.xyz, pow(hemi, 1.05));
+    float3 ambientBase = frame.groundColor.xyz * 0.45 + frame.skyHorizon.xyz * 0.35;
+    float3 ambient = mix(ambientBase, ambientSky, 0.35 + hemi * 0.65) * frame.params0.y;
     float3 lit = base.rgb * ambient
-               + base.rgb * frame.sunColor.xyz * frame.params0.x * ndl * vis
-               + sunSpecular(n, viewDir, toSun, frame, roughness, draw.materialParams.y, vis);
+               + base.rgb * frame.sunColor.xyz * frame.params0.x * ndl
+               + sunSpecular(n, viewDir, toSun, frame, roughness, draw.materialParams.y, 1.0);
     int kind = int(draw.materialFx0.x + 0.5);
     if (kind == 1) {
-        float fres = pow(1.0 - max(dot(n, viewDir), 0.0), 5.0) * draw.materialFx0.w;
-        float3 waterTint = mix(float3(0.08, 0.34, 0.54), float3(0.14, 0.52, 0.72), clamp(base.b * 1.4, 0.0, 1.0));
-        float3 refl = mix(frame.fogColor.xyz * 0.45 + waterTint * 0.35, frame.sunColor.xyz * 1.15 + waterTint * 0.25, clamp(fres, 0.0, 1.0));
-        float3 body = waterTint * 0.72 + base.rgb * 0.18 + ambient * 0.18;
-        lit = mix(body, refl + sunSpecular(n, viewDir, toSun, frame, 0.04, max(draw.materialParams.y, 0.35), 1.0), clamp(draw.materialFx0.z, 0.0, 1.0));
+        float fres = pow(1.0 - max(dot(n, viewDir), 0.0), 5.0) * max(draw.materialFx0.w, 0.45);
+        float3 waterTint = mix(float3(0.05, 0.30, 0.48), float3(0.12, 0.50, 0.72), clamp(base.b * 1.6 + 0.18, 0.0, 1.0));
+        float3 reflSky = mix(frame.skyHorizon.xyz, frame.skyZenith.xyz, clamp(n.y * 0.5 + 0.5, 0.0, 1.0));
+        float3 skyRefl = mix(frame.fogColor.xyz * 0.38 + reflSky * 0.62, frame.sunColor.xyz * 1.10 + reflSky * 0.40, clamp(fres, 0.0, 1.0));
+        float3 body = waterTint * 0.82 + base.rgb * 0.10 + ambient * 0.18;
+        lit = mix(body, skyRefl + sunSpecular(n, viewDir, toSun, frame, 0.05, max(draw.materialParams.y, 0.35), 1.0), clamp(draw.materialFx0.z, 0.0, 1.0));
     } else if (kind == 2) {
         float pulse = 1.0 + sin(frame.time.x * 4.0 + in.worldPos.x * 0.35 + in.worldPos.z * 0.28) * draw.materialFx1.w;
         float3 emissive = base.rgb * draw.materialFx0.y * pulse;
-        lit = base.rgb * 0.20 + emissive + base.rgb * frame.sunColor.xyz * frame.params0.x * ndl * vis * 0.15;
+        lit = base.rgb * 0.18 + emissive + base.rgb * frame.sunColor.xyz * frame.params0.x * ndl * 0.12;
     }
     lit = applyFog(lit, in.worldPos, frame, draw);
     o.color = half4(float4(lit, base.a));
@@ -1817,11 +1835,7 @@ fragment float4 fs_post(FsQuadOut in [[stage_in]],
                         sampler s [[sampler(0)]],
                         constant PostUniforms& u [[buffer(0)]]) {
     float3 hdr = hdrTex.sample(s, in.uv).rgb;
-    float3 bloom = bloomTex.sample(s, in.uv).rgb;
-    float ao = aoTex.sample(s, in.uv).r;
-    float3 gi = giTex.sample(s, in.uv).rgb;
-    float aoMul = mix(1.0, ao, clamp(u.params.z, 0.0, 1.0));
-    float3 c = (hdr * aoMul + bloom * u.params.y + gi * u.hybrid.x) * u.params.x;
+    float3 c = hdr * u.params.x;
     const float a = 2.51;
     const float b = 0.03;
     const float cc = 2.43;
@@ -1829,9 +1843,6 @@ fragment float4 fs_post(FsQuadOut in [[stage_in]],
     const float e = 0.14;
     c = clamp((c * (a * c + b)) / (c * (cc * c + d) + e), 0.0, 1.0);
     float lum = dot(c, float3(0.2126, 0.7152, 0.0722));
-    float3 cool = float3(1.0 - u.grade.y * 0.35, 1.0, 1.0 + u.grade.y);
-    float3 warm = float3(1.0 + u.grade.z, 1.0 + u.grade.z * 0.35, 1.0 - u.grade.z * 0.55);
-    c *= mix(cool, warm, smoothstep(0.18, 0.90, lum));
     c = mix(float3(lum), c, u.grade.x);
     c = (c - 0.5) * u.params.w + 0.5;
     c = clamp(c, 0.0, 1.0);
@@ -1986,6 +1997,7 @@ fragment void fs_shadow() {}
         IntPtr desc = Msg(Msg(cls, "alloc"), "init");
         MsgVoid(desc, "setMinFilter:", 1UL);
         MsgVoid(desc, "setMagFilter:", 1UL);
+        MsgVoid(desc, "setMipFilter:", 2UL);
         MsgVoid(desc, "setSAddressMode:", repeat ? 2UL : 0UL);
         MsgVoid(desc, "setTAddressMode:", repeat ? 2UL : 0UL);
         IntPtr sampler = CreateObjectWithPossibleError(_device, "newSamplerStateWithDescriptor:", desc, operation: "sampler state");
@@ -2333,7 +2345,8 @@ fragment void fs_shadow() {}
         public Vector4 SunDir;
         public Vector4 ToSunView;
         public Vector4 SunColor;
-        public Vector4 SkyColor;
+        public Vector4 SkyZenith;
+        public Vector4 SkyHorizon;
         public Vector4 GroundColor;
         public Vector4 CameraPos;
         public Vector4 FogColor;
@@ -2341,18 +2354,6 @@ fragment void fs_shadow() {}
         public Vector4 Params1;
         public Vector4 Time;
         public Matrix4x4 LightSpace;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct SceneDrawUniforms
-    {
-        public uint ReceiveShadows;
-        public uint WriteNormal;
-        public uint ViewSpaceLighting;
-        public uint Pad;
-        public Vector4 MaterialParams;
-        public Vector4 MaterialFx0;
-        public Vector4 MaterialFx1;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -2367,6 +2368,18 @@ fragment void fs_shadow() {}
         public Vector4 SkyZenith;
         public Vector4 SkyHorizon;
         public Vector4 GroundColor;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct SceneDrawUniforms
+    {
+        public uint ReceiveShadows;
+        public uint WriteNormal;
+        public uint ViewSpaceLighting;
+        public uint Pad;
+        public Vector4 MaterialParams;
+        public Vector4 MaterialFx0;
+        public Vector4 MaterialFx1;
     }
 
     [StructLayout(LayoutKind.Sequential)]
