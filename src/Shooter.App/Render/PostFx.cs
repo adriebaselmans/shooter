@@ -19,7 +19,7 @@ public sealed class PostFx : IDisposable
     }
 
     public void Draw(uint hdrTex, uint bloomTex, uint aoTex, LightingEnvironment env,
-        float aoStrength, float exposure, int targetWidth, int targetHeight)
+        float bloomStrength, float aoStrength, float exposure, bool fxaaEnabled, int targetWidth, int targetHeight)
     {
         _gl.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
         _gl.Viewport(0, 0, (uint)targetWidth, (uint)targetHeight);
@@ -30,13 +30,14 @@ public sealed class PostFx : IDisposable
 
         _shader.Use();
         _gl.Uniform1(_shader.U("uExposure"), exposure);
-        _gl.Uniform1(_shader.U("uBloomStrength"), env.BloomStrength);
+        _gl.Uniform1(_shader.U("uBloomStrength"), bloomStrength);
         _gl.Uniform1(_shader.U("uAoStrength"), aoStrength);
         _gl.Uniform1(_shader.U("uContrast"), env.GradeContrast);
         _gl.Uniform1(_shader.U("uSaturation"), env.GradeSaturation);
         _gl.Uniform1(_shader.U("uShadowCool"), env.GradeShadowCool);
         _gl.Uniform1(_shader.U("uHighlightWarm"), env.GradeHighlightWarm);
         _gl.Uniform1(_shader.U("uVignetteStrength"), env.VignetteStrength);
+        _gl.Uniform1(_shader.U("uFxaaEnabled"), fxaaEnabled ? 1 : 0);
 
         _gl.ActiveTexture(TextureUnit.Texture0);
         _gl.BindTexture(TextureTarget.Texture2D, hdrTex);

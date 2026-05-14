@@ -1,22 +1,23 @@
-id: design-shooter-three-worker-refactor-batch
-title: Design — Three-Worker Refactor Batch
+id: design-shooter-anisotropy-and-fxaa
+title: Design — Anisotropic Filtering and FXAA
 status: approved
-parent: req-shooter-three-worker-refactor-batch
-created_at: 2026-05-06T17:07:00Z
+parent: req-shooter-anisotropy-and-fxaa
+created_at: 2026-05-06T20:47:00Z
 
 decisions:
-  Q1_renderer_resources:
-    decision: "Introduce focused OpenGL resource-group collaborators for scene renderers, lighting resources, and post-processing resources, then compose them from OpenGLRenderResources."
-    rationale: "This reduces the remaining flat resource-owner surface while preserving current renderer call sites through composition."
-  Q2_world_factory:
-    decision: "Introduce WorldBrushFactory and SceneWorldMetadataExtractor, then reduce GameWorldFactory to orchestration."
-    rationale: "Brush conversion and scene metadata extraction are distinct concerns."
-  Q3_program_input:
-    decision: "Introduce GameInputBinder to own low-level Silk input event hookup and mouse delta accumulation for InputState."
-    rationale: "Program should coordinate app lifecycle, not contain raw input binding mechanics."
+  Q1_texture_filtering:
+    decision: "Set world/material textures to anisotropic filtering at upload time."
+    rationale: "This improves floor/wall clarity at shallow viewing angles."
+  Q2_aa_technique:
+    decision: "Use FXAA in the existing tone-map pass."
+    rationale: "FXAA is lightweight, easy to toggle, and fits the current single-pass post-processing design."
+  Q3_menu:
+    decision: "Expose FXAA as a live in-game menu toggle alongside the other render features."
+    rationale: "This keeps tuning ergonomic without adding a new UI layer."
 
 implementation_plan:
-  - "Worker 1: add OpenGLSceneResources, OpenGLLightingResources, and OpenGLPostProcessResources; refactor OpenGLRenderResources/OpenGLFrameRenderer to use them."
-  - "Worker 2: add WorldBrushFactory and SceneWorldMetadataExtractor; refactor GameWorldFactory to orchestrate them."
-  - "Worker 3: add GameInputBinder and simplify Program.cs accordingly."
-  - "Validate the combined batch with build, format verification, and OpenGL smoke startup."
+  - "Apply anisotropic filtering in TextureCache after each texture upload."
+  - "Add FXAA enable state to LightingEnvironment and wire it through the post process."
+  - "Extend the tone-map shader with a simple FXAA resolve."
+  - "Add an FXAA item to the in-game menu."
+  - "Validate with build, format verification, and OpenGL smoke startup."

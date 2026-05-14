@@ -6,10 +6,12 @@ internal static class MaterialMapConventions
     private static readonly string[] NormalSuffixes = ["_normal", "_nor", "_n", "-normal"];
     private static readonly string[] RoughnessSuffixes = ["_roughness", "_rough", "_r", "-roughness"];
     private static readonly string[] AoSuffixes = ["_ao", "_occlusion", "_ambientocclusion", "-ao"];
+    private static readonly string[] HeightSuffixes = ["_height", "_disp", "_displacement", "-height"];
 
     public static string? ResolveNormal(string? baseColorPath) => ResolveCompanion(baseColorPath, NormalSuffixes);
     public static string? ResolveRoughness(string? baseColorPath) => ResolveCompanion(baseColorPath, RoughnessSuffixes);
     public static string? ResolveAo(string? baseColorPath) => ResolveCompanion(baseColorPath, AoSuffixes);
+    public static string? ResolveHeight(string? baseColorPath) => ResolveCompanion(baseColorPath, HeightSuffixes);
 
     private static string? ResolveCompanion(string? baseColorPath, IReadOnlyList<string> suffixes)
     {

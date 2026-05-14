@@ -58,6 +58,33 @@ void main(){
 }
 """;
 
+    public const string HudTextVert = """
+#version 330 core
+layout(location=0) in vec2 aPos;
+layout(location=1) in vec2 aUv;
+layout(location=2) in vec4 aColor;
+out vec2 vUv;
+out vec4 vColor;
+void main(){
+    vUv = aUv;
+    vColor = aColor;
+    gl_Position = vec4(aPos, 0.0, 1.0);
+}
+""";
+
+    public const string HudTextFrag = """
+#version 330 core
+in vec2 vUv;
+in vec4 vColor;
+out vec4 FragColor;
+uniform sampler2D uAtlas;
+void main(){
+    float a = texture(uAtlas, vUv).a;
+    if (a <= 0.01) discard;
+    FragColor = vec4(vColor.rgb, vColor.a * a);
+}
+""";
+
     public const string ParticleVert = """
 #version 330 core
 layout(location=0) in vec3 aPos;

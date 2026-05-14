@@ -4,28 +4,32 @@ using Silk.NET.OpenGL;
 
 namespace Shooter.Render;
 
-/// <summary>2D HUD: crosshair, health bar, ammo bar, weapon slots. Coordinates are clip-space (-1..1).</summary>
+/// <summary>2D HUD: crosshair, health bar, ammo bar, weapon slots, and the pause/options menu.
+/// Coordinates are clip-space (-1..1).</summary>
 public sealed class HudRenderer : IDisposable
 {
     private readonly GL _gl;
-    private readonly ShaderProgram _shader;
+    private readonly ShaderProgram _rectShader;
     private readonly DynamicPosBuffer _buffer;
+    private readonly FontAtlasTextRenderer _text;
 
     public HudRenderer(GL gl)
     {
         _gl = gl;
-        _shader = new ShaderProgram(gl, Shaders.HudVert, Shaders.HudFrag);
+        _rectShader = new ShaderProgram(gl, Shaders.HudVert, Shaders.HudFrag);
         _buffer = new DynamicPosBuffer(gl, componentsPerVertex: 2);
+        _text = new FontAtlasTextRenderer(gl);
     }
 
-    public unsafe void Draw(int viewportWidth, int viewportHeight, Player player, WeaponSystem weapons)
+    public unsafe void Draw(int viewportWidth, int viewportHeight, Player player, WeaponSystem weapons,
+        LightingEnvironment env, bool menuOpen, int menuSelection)
     {
         _gl.Disable(EnableCap.DepthTest);
         _gl.Disable(EnableCap.CullFace);
         _gl.Enable(EnableCap.Blend);
         _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
-        _shader.Use();
+        _rectShader.Use();
 
         float pxX = 2f / viewportWidth;
         float pxY = 2f / viewportHeight;
@@ -126,11 +130,91 @@ public sealed class HudRenderer : IDisposable
             }
         }
 
+        if (menuOpen)
+            DrawMenuOverlay(viewportWidth, viewportHeight, env, menuSelection);
+
         _gl.Disable(EnableCap.Blend);
         _gl.Enable(EnableCap.DepthTest);
     }
 
-    private void SetColor(float r, float g, float b, float a) => _gl.Uniform4(_shader.U("uColor"), r, g, b, a);
+    private void DrawMenuOverlay(int viewportWidth, int viewportHeight, LightingEnvironment env, int selection)
+    {
+        // Dim background and panel.
+        SetColor(0f, 0f, 0f, 0.45f);
+        DrawRect(-1f, 1f, 1f, -1f);
+
+        float panelW = 0.76f;
+        float panelH = 0.98f;
+        float panelX = -panelW * 0.5f;
+        float panelY = panelH * 0.5f;
+        SetColor(0.08f, 0.09f, 0.10f, 0.92f);
+        DrawRect(panelX, panelY, panelX + panelW, panelY - panelH);
+
+        _text.BeginFrame(viewportWidth, viewportHeight);
+        _text.DrawText("SETTINGS", panelX + 0.04f, panelY - 0.06f, 30f, new Vector4(0.98f, 0.95f, 0.82f, 1f));
+        _text.DrawText("ESC CLOSE", panelX + panelW - 0.18f, panelY - 0.06f, 12f, new Vector4(0.80f, 0.82f, 0.86f, 1f));
+
+        float rowX = panelX + 0.05f;
+        float rowY = panelY - 0.12f;
+        float rowH = 0.070f;
+
+        DrawMenuToggleRow(viewportWidth, viewportHeight, rowX, rowY, rowH, selection == 0, "RELIEF", env.ParallaxEnabled ? "ON" : "OFF", env.ParallaxEnabled);
+        DrawMenuToggleRow(viewportWidth, viewportHeight, rowX, rowY - rowH, rowH, selection == 1, "SSAO", env.SsaoEnabled ? "ON" : "OFF", env.SsaoEnabled);
+        DrawMenuToggleRow(viewportWidth, viewportHeight, rowX, rowY - rowH * 2f, rowH, selection == 2, "BLOOM", env.BloomEnabled ? "ON" : "OFF", env.BloomEnabled);
+        DrawMenuToggleRow(viewportWidth, viewportHeight, rowX, rowY - rowH * 3f, rowH, selection == 3, "SHADOWS", env.ShadowsEnabled ? "ON" : "OFF", env.ShadowsEnabled);
+        DrawMenuToggleRow(viewportWidth, viewportHeight, rowX, rowY - rowH * 4f, rowH, selection == 4, "AUTO EXPOSURE", env.AutoExposureEnabled ? "ON" : "OFF", env.AutoExposureEnabled);
+        DrawMenuToggleRow(viewportWidth, viewportHeight, rowX, rowY - rowH * 5f, rowH, selection == 5, "FXAA", env.FxaaEnabled ? "ON" : "OFF", env.FxaaEnabled);
+        DrawMenuSliderRow(viewportWidth, viewportHeight, rowX, rowY - rowH * 6f, rowH, selection == 6, "RELIEF STRENGTH", env.PomScale, 0f, 0.12f);
+        DrawMenuActionRow(viewportWidth, viewportHeight, rowX, rowY - rowH * 7f, rowH, selection == 7, "QUIT GAME", true);
+
+        _text.DrawText("UP/DOWN SELECT", panelX + 0.05f, panelY - panelH + 0.14f, 11f, new Vector4(0.82f, 0.84f, 0.88f, 0.9f));
+        _text.DrawText("LEFT/RIGHT CHANGE", panelX + 0.05f, panelY - panelH + 0.105f, 11f, new Vector4(0.82f, 0.84f, 0.88f, 0.9f));
+        _text.DrawText("ENTER TOGGLE", panelX + panelW - 0.20f, panelY - panelH + 0.14f, 11f, new Vector4(0.82f, 0.84f, 0.88f, 0.9f));
+        _text.Flush();
+    }
+
+    private void DrawMenuToggleRow(int viewportWidth, int viewportHeight, float x, float y, float h, bool selected, string label, string value, bool enabled)
+    {
+        if (selected)
+        {
+            SetColor(0.18f, 0.20f, 0.24f, 0.88f);
+            DrawRect(x - 0.015f, y + 0.012f, x + 0.62f, y - h + 0.010f);
+        }
+        _text.DrawText(label, x, y - 0.015f, 22f, new Vector4(0.92f, 0.92f, 0.92f, 1f));
+        _text.DrawText(value, x + 0.43f, y - 0.015f, 22f, new Vector4(enabled ? 0.50f : 0.76f, enabled ? 0.94f : 0.78f, enabled ? 0.50f : 0.78f, 1f));
+    }
+
+    private void DrawMenuSliderRow(int viewportWidth, int viewportHeight, float x, float y, float h, bool selected, string label, float value, float min, float max)
+    {
+        if (selected)
+        {
+            SetColor(0.18f, 0.20f, 0.24f, 0.88f);
+            DrawRect(x - 0.015f, y + 0.012f, x + 0.62f, y - h + 0.010f);
+        }
+        _text.DrawText(label, x, y - 0.015f, 22f, new Vector4(0.92f, 0.92f, 0.92f, 1f));
+
+        float sliderX = x + 0.42f;
+        float sliderW = 0.18f;
+        float t = max > min ? Math.Clamp((value - min) / (max - min), 0f, 1f) : 0f;
+        SetColor(0.22f, 0.22f, 0.22f, 0.95f);
+        DrawRect(sliderX, y - 0.012f, sliderX + sliderW, y - 0.035f);
+        SetColor(0.94f, 0.74f, 0.32f, 1f);
+        DrawRect(sliderX, y - 0.012f, sliderX + sliderW * t, y - 0.035f);
+        _text.DrawText(value.ToString("0.000"), sliderX + sliderW + 0.02f, y - 0.015f, 20f, new Vector4(0.92f, 0.92f, 0.92f, 1f));
+    }
+
+    private void DrawMenuActionRow(int viewportWidth, int viewportHeight, float x, float y, float h, bool selected, string label, bool destructive)
+    {
+        if (selected)
+        {
+            SetColor(destructive ? 0.28f : 0.18f, destructive ? 0.10f : 0.20f, destructive ? 0.10f : 0.24f, 0.92f);
+            DrawRect(x - 0.015f, y + 0.012f, x + 0.62f, y - h + 0.010f);
+        }
+        _text.DrawText(label, x, y - 0.015f, 22f, new Vector4(destructive ? 1.0f : 0.95f, destructive ? 0.50f : 0.92f, destructive ? 0.46f : 0.92f, 1f));
+        _text.DrawText("ENTER", x + 0.43f, y - 0.015f, 22f, new Vector4(0.76f, 0.78f, 0.82f, 1f));
+    }
+
+    private void SetColor(float r, float g, float b, float a) => _gl.Uniform4(_rectShader.U("uColor"), r, g, b, a);
 
     private void DrawRect(float x0, float y0, float x1, float y1)
     {
@@ -146,7 +230,8 @@ public sealed class HudRenderer : IDisposable
 
     public void Dispose()
     {
-        _shader.Dispose();
+        _text.Dispose();
+        _rectShader.Dispose();
         _buffer.Dispose();
     }
 }

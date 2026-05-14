@@ -11,6 +11,10 @@ public sealed class GameSession
     private float _fpsAccum;
     private int _fpsFrames;
     private float _fpsValue;
+    private bool _menuOpen;
+    private int _menuSelection;
+
+    private const int MenuItemCount = 8;
 
     public GameWorld World { get; }
     public Player Player { get; }
@@ -24,6 +28,9 @@ public sealed class GameSession
     public ParticleSystem Particles { get; }
     public LightingEnvironment Lighting { get; }
     public bool ShowDebug { get; private set; }
+    public bool MenuOpen => _menuOpen;
+    public int MenuSelection => _menuSelection;
+    public bool QuitRequested { get; private set; }
 
     internal GameSession(
         GameWorld world,
@@ -59,6 +66,17 @@ public sealed class GameSession
 
     public void Update(float dt, InputState input)
     {
+        if (input.WasPressed(InputKey.Esc))
+            _menuOpen = !_menuOpen;
+
+        if (_menuOpen)
+        {
+            HandleMenuInput(input);
+            UpdateFps(dt);
+            input.EndFrame();
+            return;
+        }
+
         Player.Update(dt, input, _collision);
         Weapons.Update(dt);
         Weapons.HandleSelectInput(input);
@@ -87,7 +105,49 @@ public sealed class GameSession
         Particles,
         Lighting,
         ShowDebug,
-        _fpsValue);
+        _fpsValue,
+        _menuOpen,
+        _menuSelection);
+
+    private void HandleMenuInput(InputState input)
+    {
+        if (input.WasPressed(InputKey.Up)) _menuSelection = (_menuSelection - 1 + MenuItemCount) % MenuItemCount;
+        if (input.WasPressed(InputKey.Down)) _menuSelection = (_menuSelection + 1) % MenuItemCount;
+
+        bool increase = input.WasPressed(InputKey.Right) || input.WasPressed(InputKey.Enter);
+        bool decrease = input.WasPressed(InputKey.Left);
+
+        switch (_menuSelection)
+        {
+            case 0:
+                if (increase || decrease) Lighting.ParallaxEnabled = !Lighting.ParallaxEnabled;
+                break;
+            case 1:
+                if (increase || decrease) Lighting.SsaoEnabled = !Lighting.SsaoEnabled;
+                break;
+            case 2:
+                if (increase || decrease) Lighting.BloomEnabled = !Lighting.BloomEnabled;
+                break;
+            case 3:
+                if (increase || decrease) Lighting.ShadowsEnabled = !Lighting.ShadowsEnabled;
+                break;
+            case 4:
+                if (increase || decrease) Lighting.AutoExposureEnabled = !Lighting.AutoExposureEnabled;
+                break;
+            case 5:
+                if (increase || decrease) Lighting.FxaaEnabled = !Lighting.FxaaEnabled;
+                break;
+            case 6:
+                float step = 0.005f;
+                if (increase) Lighting.PomScale = Math.Clamp(Lighting.PomScale + step, 0f, 0.12f);
+                if (decrease) Lighting.PomScale = Math.Clamp(Lighting.PomScale - step, 0f, 0.12f);
+                break;
+            case 7:
+                if (increase || input.WasPressed(InputKey.Enter))
+                    QuitRequested = true;
+                break;
+        }
+    }
 
     private void UpdateFps(float dt)
     {

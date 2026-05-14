@@ -38,20 +38,63 @@ uniform sampler2D uBaseColor;
 uniform sampler2D uNormalMap;
 uniform sampler2D uRoughnessMap;
 uniform sampler2D uAoMap;
+uniform sampler2D uHeightMap;
 uniform int uHasTexture;
 uniform int uHasNormalMap;
 uniform int uHasRoughnessMap;
 uniform int uHasAoMap;
+uniform int uHasHeightMap;
+uniform int uEnableParallax;
 uniform vec3 uTint;
 uniform float uSelfIllum;
 uniform vec2 uTexelSize;
+uniform float uParallaxScale;
 uniform vec4 uMaterialParams;
 uniform vec4 uMaterialFx0;
 uniform vec4 uMaterialFx1;
 """ + "\n" + LightingHeader + "\n" + """
+float heightFromMap(vec2 uv){
+    return texture(uHeightMap, uv).r;
+}
+
+vec3 reliefNormal(vec2 uv, vec3 geomN, float strength){
+    if (uEnableParallax == 0 || uHasHeightMap == 0 || strength <= 0.0001)
+        return normalize(geomN);
+    vec2 texel = max(uTexelSize, vec2(0.0005));
+    float left  = heightFromMap(uv - vec2(texel.x, 0.0));
+    float right = heightFromMap(uv + vec2(texel.x, 0.0));
+    float down  = heightFromMap(uv - vec2(0.0, texel.y));
+    float up    = heightFromMap(uv + vec2(0.0, texel.y));
+    vec3 t = tangentFromNormal(geomN);
+    vec3 b = normalize(cross(geomN, t));
+    vec3 mapN = normalize(vec3((left - right) * strength * 10.0, (down - up) * strength * 10.0, 1.0));
+    return normalize(mat3(t, b, geomN) * mapN);
+}
+
+float reliefShadowTerm(vec2 uv, float strength){
+    if (uEnableParallax == 0 || uHasHeightMap == 0 || strength <= 0.0001)
+        return 1.0;
+    vec2 texel = max(uTexelSize, vec2(0.0005));
+    float center = heightFromMap(uv);
+    float left   = heightFromMap(uv - vec2(texel.x, 0.0));
+    float right  = heightFromMap(uv + vec2(texel.x, 0.0));
+    float down   = heightFromMap(uv - vec2(0.0, texel.y));
+    float up     = heightFromMap(uv + vec2(0.0, texel.y));
+    float crevice = clamp(1.0 - center, 0.0, 1.0);
+    float slope = clamp((abs(left - right) + abs(up - down)) * 1.6, 0.0, 1.0);
+    float shadow = 1.0 - (crevice * 0.22 + slope * 0.10) * clamp(strength * 6.0, 0.0, 1.0);
+    return clamp(shadow, 0.72, 1.0);
+}
+
 void main(){
-    vec2 flowUvA = vUv + uMaterialFx1.xy * uTime;
-    vec2 flowUvB = vUv - uMaterialFx1.xy * (uTime * 0.73 + 0.17);
+    vec3 viewDir = normalize(uCameraPos - vWorldPos);
+    vec3 baseN = normalize(vNormal);
+    int kind = int(uMaterialFx0.x + 0.5);
+    bool useRelief = (kind == 0 && uEnableParallax == 1 && uHasHeightMap == 1);
+    float reliefShadow = 1.0;
+    vec2 baseUv = vUv;
+    vec2 flowUvA = baseUv + uMaterialFx1.xy * uTime;
+    vec2 flowUvB = baseUv - uMaterialFx1.xy * (uTime * 0.73 + 0.17);
     vec2 rippleA = vec2(
         sin((vWorldPos.x + uTime * 0.9) * 1.7),
         cos((vWorldPos.z - uTime * 0.7) * 1.4)) * (uMaterialFx1.z * 0.06);
@@ -60,25 +103,26 @@ void main(){
         sin((vWorldPos.x - uTime * 0.5) * 1.5)) * (uMaterialFx1.z * 0.04);
     vec2 sampleUv = flowUvA + rippleA;
     vec2 sampleUv2 = flowUvB - rippleB;
-    vec3 baseN = normalize(vNormal);
     vec3 texA = (uHasTexture == 1) ? texture(uBaseColor, sampleUv).rgb : vec3(1.0);
     vec3 texB = (uHasTexture == 1) ? texture(uBaseColor, sampleUv2).rgb : vec3(1.0);
     vec3 tex = mix(texA, texB, 0.35);
     vec3 albedo = tex * uTint;
-    vec3 n = (uHasNormalMap == 1)
-        ? normalFromMap(uNormalMap, vWorldPos, sampleUv, baseN)
+    vec3 detailN = useRelief
+        ? reliefNormal(sampleUv, baseN, max(0.08, uMaterialParams.z * 0.55 + uParallaxScale * 4.5))
         : detailNormalFromAlbedo(uBaseColor, sampleUv, uTexelSize, baseN, uMaterialParams.z, uHasTexture);
+    vec3 n = (uHasNormalMap == 1)
+        ? normalize(mix(normalFromMap(uNormalMap, vWorldPos, sampleUv, baseN), detailN, useRelief ? 0.20 : 0.08))
+        : detailN;
     float roughness = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, sampleUv).r : uMaterialParams.x;
     roughness = clamp(max(roughness, uMaterialParams.x * 0.45), 0.02, 1.0);
     float ao = (uHasAoMap == 1) ? texture(uAoMap, sampleUv).r : 1.0;
     float vis = pcfShadow(vWorldPos, n);
-    vec3 viewDir = normalize(uCameraPos - vWorldPos);
-    vec3 ambient = albedo * iblAmbient(n) * ao;
+    reliefShadow = useRelief ? reliefShadowTerm(sampleUv, max(0.08, uMaterialParams.z * 0.55 + uParallaxScale * 4.5)) : 1.0;
+    vec3 ambient = albedo * iblAmbient(n) * ao * reliefShadow;
     vec3 lit = ambient
-             + directSun(n, albedo, vis)
-             + sunSpecular(n, viewDir, -uSunDir, roughness, uMaterialParams.y, vis)
+             + directSun(n, albedo, vis) * mix(0.68, 1.0, reliefShadow)
+             + sunSpecular(n, viewDir, -uSunDir, roughness, uMaterialParams.y, vis) * mix(0.82, 1.0, reliefShadow)
              + albedo * uSelfIllum;
-    int kind = int(uMaterialFx0.x + 0.5);
     if (kind == 1) {
         float fres = pow(1.0 - max(dot(n, viewDir), 0.0), 5.0) * max(0.25, uMaterialFx0.w);
         float sparkle = pow(max(dot(reflect(-viewDir, n), -uSunDir), 0.0), 24.0);

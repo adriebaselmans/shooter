@@ -5,6 +5,7 @@ namespace Shooter.Input;
 public enum InputKey
 {
     W, A, S, D, Space, Shift, Ctrl, Esc, F1,
+    Up, Down, Left, Right, Enter,
     Num1, Num2, Num3,
     MouseLeft,
 }

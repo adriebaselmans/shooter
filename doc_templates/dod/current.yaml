@@ -1,15 +1,15 @@
-id: dod-shooter-three-worker-refactor-batch
-title: DoD — Three-Worker Refactor Batch
+id: dod-shooter-anisotropy-and-fxaa
+title: DoD — Anisotropic Filtering and FXAA
 status: approved
-parent: req-shooter-three-worker-refactor-batch
-created_at: 2026-05-06T17:24:00Z
+parent: req-shooter-anisotropy-and-fxaa
+created_at: 2026-05-06T20:52:00Z
 
 checklist:
-  - item: "Renderer resources decomposed into scene, lighting, and post-processing groups"
+  - item: "Anisotropic filtering enabled for world/material textures"
     status: done
-  - item: "World factory decomposed into brush-building and scene-metadata collaborators"
+  - item: "FXAA implemented in the post process"
     status: done
-  - item: "Program input binding extracted into dedicated helper"
+  - item: "FXAA toggle added to the in-game menu"
     status: done
   - item: "Build validation passed"
     status: done
@@ -24,4 +24,5 @@ evidence:
   smoke: "dotnet run --project src/Shooter.App -- dust.shmap"
 
 notes:
-  - "Representative post-batch line counts: Program 109, OpenGLRenderResources 61, GameWorldFactory 34, GameInputBinder 92."
+  - "Anisotropic filtering is applied during texture upload in TextureCache."
+  - "FXAA is a lightweight toggle integrated into the existing tone-map pass."

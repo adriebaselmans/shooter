@@ -17,6 +17,7 @@ uniform float uSaturation;
 uniform float uShadowCool;
 uniform float uHighlightWarm;
 uniform float uVignetteStrength;
+uniform int uFxaaEnabled;
 
 vec3 aces(vec3 x){
     const float a = 2.51;
@@ -26,10 +27,10 @@ vec3 aces(vec3 x){
     const float e = 0.14;
     return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
 }
-void main(){
-    vec3 hdr = texture(uHdr, vUv).rgb;
-    vec3 bloom = texture(uBloom, vUv).rgb;
-    float ao = texture(uAo, vUv).r;
+vec3 tonemap(vec2 uv){
+    vec3 hdr = texture(uHdr, uv).rgb;
+    vec3 bloom = texture(uBloom, uv).rgb;
+    float ao = texture(uAo, uv).r;
     float aoMul = mix(1.0, ao, clamp(uAoStrength, 0.0, 1.0));
     vec3 c = (hdr * aoMul + bloom * uBloomStrength) * uExposure;
     c = aces(c);
@@ -39,7 +40,37 @@ void main(){
     c *= mix(cool, warm, smoothstep(0.18, 0.90, lum));
     c = mix(vec3(lum), c, uSaturation);
     c = (c - 0.5) * uContrast + 0.5;
-    c = clamp(c, 0.0, 1.0);
+    return clamp(c, 0.0, 1.0);
+}
+
+float luma(vec3 c){ return dot(c, vec3(0.299, 0.587, 0.114)); }
+
+void main(){
+    vec3 c = tonemap(vUv);
+    if (uFxaaEnabled == 1) {
+        vec2 texel = 1.0 / vec2(textureSize(uHdr, 0));
+        vec3 rgbNW = tonemap(vUv + texel * vec2(-1.0, -1.0));
+        vec3 rgbNE = tonemap(vUv + texel * vec2( 1.0, -1.0));
+        vec3 rgbSW = tonemap(vUv + texel * vec2(-1.0,  1.0));
+        vec3 rgbSE = tonemap(vUv + texel * vec2( 1.0,  1.0));
+        float lumaNW = luma(rgbNW);
+        float lumaNE = luma(rgbNE);
+        float lumaSW = luma(rgbSW);
+        float lumaSE = luma(rgbSE);
+        float lumaM  = luma(c);
+        float lumaMin = min(lumaM, min(min(lumaNW, lumaNE), min(lumaSW, lumaSE)));
+        float lumaMax = max(lumaM, max(max(lumaNW, lumaNE), max(lumaSW, lumaSE)));
+        vec2 dir;
+        dir.x = -((lumaNW + lumaNE) - (lumaSW + lumaSE));
+        dir.y =  ((lumaNW + lumaSW) - (lumaNE + lumaSE));
+        float dirReduce = max((lumaNW + lumaNE + lumaSW + lumaSE) * 0.25 * 0.25, 0.0001);
+        float rcpDirMin = 1.0 / (min(abs(dir.x), abs(dir.y)) + dirReduce);
+        dir = clamp(dir * rcpDirMin * texel * 1.5, -8.0 * texel, 8.0 * texel);
+        vec3 rgbA = 0.5 * (tonemap(vUv + dir * (1.0 / 3.0 - 0.5)) + tonemap(vUv + dir * (2.0 / 3.0 - 0.5)));
+        vec3 rgbB = rgbA * 0.5 + 0.25 * (tonemap(vUv + dir * -0.5) + tonemap(vUv + dir * 0.5));
+        float lumaB = luma(rgbB);
+        c = (lumaB < lumaMin || lumaB > lumaMax) ? rgbA : rgbB;
+    }
     c = pow(c, vec3(1.0 / 2.2));
     vec2 q = vUv * 2.0 - 1.0;
     float vignette = 1.0 - dot(q, q) * 0.22 * uVignetteStrength;

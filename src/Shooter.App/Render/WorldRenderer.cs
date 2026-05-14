@@ -50,12 +50,15 @@ public sealed class WorldRenderer : IDisposable
         BindLighting(_shader, env, shadow, ibl, cameraPos, view);
         UploadMatrix(_shader.U("uViewProj"), viewProj);
         UploadMatrix(_shader.U("uView"), view);
-        _gl.Uniform1(_shader.U("uReceiveShadows"), 1);
+        _gl.Uniform1(_shader.U("uReceiveShadows"), env.ShadowsEnabled ? 1 : 0);
         _gl.Uniform1(_shader.U("uBaseColor"), 0);
         _gl.Uniform1(_shader.U("uNormalMap"), 1);
         _gl.Uniform1(_shader.U("uRoughnessMap"), 2);
         _gl.Uniform1(_shader.U("uAoMap"), 3);
+        _gl.Uniform1(_shader.U("uHeightMap"), 6);
         _gl.Uniform1(_shader.U("uSelfIllum"), 0f);
+        _gl.Uniform1(_shader.U("uEnableParallax"), env.ParallaxEnabled ? 1 : 0);
+        _gl.Uniform1(_shader.U("uParallaxScale"), env.ParallaxScale);
 
         foreach (var wb in world.Brushes)
         {
@@ -72,10 +75,13 @@ public sealed class WorldRenderer : IDisposable
             _gl.BindTexture(TextureTarget.Texture2D, material.RoughnessHandle);
             _gl.ActiveTexture(TextureUnit.Texture3);
             _gl.BindTexture(TextureTarget.Texture2D, material.AoHandle);
+            _gl.ActiveTexture(TextureUnit.Texture6);
+            _gl.BindTexture(TextureTarget.Texture2D, material.HeightHandle);
             _gl.Uniform1(_shader.U("uHasTexture"), _textures.HasTexture(wb.TexturePath) ? 1 : 0);
             _gl.Uniform1(_shader.U("uHasNormalMap"), material.HasNormalMap ? 1 : 0);
             _gl.Uniform1(_shader.U("uHasRoughnessMap"), material.HasRoughnessMap ? 1 : 0);
             _gl.Uniform1(_shader.U("uHasAoMap"), material.HasAoMap ? 1 : 0);
+            _gl.Uniform1(_shader.U("uHasHeightMap"), material.HasHeightMap ? 1 : 0);
             _gl.Uniform2(_shader.U("uTexelSize"), material.TexelSizeX, material.TexelSizeY);
             _gl.Uniform4(_shader.U("uMaterialParams"), wb.Roughness, wb.SpecularStrength, wb.DetailNormalStrength, 1f);
             _gl.Uniform4(_shader.U("uMaterialFx0"), (float)wb.MaterialKind, wb.EmissiveStrength, wb.Opacity, wb.FresnelStrength);
@@ -91,6 +97,7 @@ public sealed class WorldRenderer : IDisposable
         _gl.Uniform1(_shader.U("uHasNormalMap"), 0);
         _gl.Uniform1(_shader.U("uHasRoughnessMap"), 0);
         _gl.Uniform1(_shader.U("uHasAoMap"), 0);
+        _gl.Uniform1(_shader.U("uHasHeightMap"), 0);
         _gl.Uniform2(_shader.U("uTexelSize"), 0f, 0f);
         _gl.Uniform4(_shader.U("uMaterialParams"), 0.68f, 0.18f, 0.0f, 1f);
         _gl.Uniform4(_shader.U("uMaterialFx0"), 0f, 0f, 1f, 0f);

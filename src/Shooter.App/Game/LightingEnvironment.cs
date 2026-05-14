@@ -113,6 +113,35 @@ public sealed class LightingEnvironment
     public float VignetteStrength { get; set; } = 0.07f;
 
     // -----------------------------------------------------------------
+    // Surface relief (OpenGL world materials)
+    // -----------------------------------------------------------------
+
+    /// <summary>Enables subtle relief shading from height textures on standard world materials.</summary>
+    public bool ParallaxEnabled { get; set; } = true;
+
+    /// <summary>Relief strength. Keep conservative; this now drives bump-like normal detail and crevice shadowing, not UV warp.</summary>
+    public float ParallaxScale { get; set; } = 0.045f;
+
+    /// <summary>Relief strength alias for the menu / feature naming.</summary>
+    public float PomScale
+    {
+        get => ParallaxScale;
+        set => ParallaxScale = value;
+    }
+
+    /// <summary>Enables the directional shadow-map pass and shadow sampling in lit shaders.</summary>
+    public bool ShadowsEnabled { get; set; } = true;
+
+    /// <summary>Enables the SSAO fullscreen pass and AO modulation in tone mapping.</summary>
+    public bool SsaoEnabled { get; set; } = true;
+
+    /// <summary>Enables the bloom post-pass contribution.</summary>
+    public bool BloomEnabled { get; set; } = true;
+
+    /// <summary>Enables a lightweight FXAA pass in the final post process.</summary>
+    public bool FxaaEnabled { get; set; } = true;
+
+    // -----------------------------------------------------------------
     // Hybrid path tracing (Metal)
     // -----------------------------------------------------------------
 

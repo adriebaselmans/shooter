@@ -15,4 +15,6 @@ public sealed record RenderFrameData(
     ParticleSystem Particles,
     LightingEnvironment Lighting,
     bool ShowDebug,
-    float FpsValue);
+    float FpsValue,
+    bool MenuOpen,
+    int MenuSelection);

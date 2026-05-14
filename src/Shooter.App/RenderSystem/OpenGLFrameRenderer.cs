@@ -17,7 +17,8 @@ internal sealed class OpenGLFrameRenderer
         var proj = Matrix4x4.CreatePerspectiveFieldOfView(WeaponViewmodelRenderer.FovYRadians, aspect, 0.05f, 1000f);
         var viewProj = view * proj;
 
-        RunShadowPass(resources, frame);
+        if (frame.Lighting.ShadowsEnabled)
+            RunShadowPass(resources, frame);
         RunScenePass(resources, frame, view, proj, viewProj, fb.X, fb.Y);
         RunPostPass(resources, frame, proj, dt, fb.X, fb.Y);
         RunHudPass(resources, frame, fb.X, fb.Y);
@@ -55,23 +56,27 @@ internal sealed class OpenGLFrameRenderer
 
     private static void RunPostPass(OpenGLRenderResources resources, RenderFrameData frame, Matrix4x4 proj, double dt, int fbWidth, int fbHeight)
     {
-        resources.Post.SsaoPass.Run(resources.Post.HdrTarget.DepthTex, resources.Post.HdrTarget.NormalTex, proj, frame.Lighting.SsaoRadius, frame.Lighting.SsaoBias);
-        resources.Post.Bloom.Run(resources.Post.HdrTarget.ColorTex);
+        if (frame.Lighting.SsaoEnabled)
+            resources.Post.SsaoPass.Run(resources.Post.HdrTarget.DepthTex, resources.Post.HdrTarget.NormalTex, proj, frame.Lighting.SsaoRadius, frame.Lighting.SsaoBias);
+        if (frame.Lighting.BloomEnabled)
+            resources.Post.Bloom.Run(resources.Post.HdrTarget.ColorTex);
         resources.Post.AutoExposure.Run(resources.Post.HdrTarget.ColorTex, frame.Lighting, (float)dt);
         resources.Post.PostFx.Draw(
             resources.Post.HdrTarget.ColorTex,
             resources.Post.Bloom.OutputTex,
             resources.Post.SsaoPass.AoTex,
             frame.Lighting,
-            frame.Lighting.SsaoStrength,
+            frame.Lighting.BloomEnabled ? frame.Lighting.BloomStrength : 0f,
+            frame.Lighting.SsaoEnabled ? frame.Lighting.SsaoStrength : 0f,
             resources.Post.AutoExposure.CurrentExposure,
+            frame.Lighting.FxaaEnabled,
             fbWidth,
             fbHeight);
     }
 
     private static void RunHudPass(OpenGLRenderResources resources, RenderFrameData frame, int fbWidth, int fbHeight)
     {
-        resources.Scene.HudRenderer.Draw(fbWidth, fbHeight, frame.Player, frame.Weapons);
+        resources.Scene.HudRenderer.Draw(fbWidth, fbHeight, frame.Player, frame.Weapons, frame.Lighting, frame.MenuOpen, frame.MenuSelection);
     }
 
     private static void UpdateDebugTitle(RenderFrameData frame)

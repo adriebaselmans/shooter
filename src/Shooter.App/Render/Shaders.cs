@@ -64,6 +64,19 @@ vec3 detailNormalFromAlbedo(sampler2D tex, vec2 uv, vec2 texel, vec3 n, float st
     return normalize(mat3(t, b, n) * mapN);
 }
 
+vec3 detailNormalFromHeight(sampler2D heightMap, vec2 uv, vec2 texel, vec3 n, float strength, int hasHeightMap){
+    if (hasHeightMap == 0 || strength <= 0.0001 || texel.x <= 0.0 || texel.y <= 0.0)
+        return normalize(n);
+    float left  = texture(heightMap, uv - vec2(texel.x, 0.0)).r;
+    float right = texture(heightMap, uv + vec2(texel.x, 0.0)).r;
+    float down  = texture(heightMap, uv - vec2(0.0, texel.y)).r;
+    float up    = texture(heightMap, uv + vec2(0.0, texel.y)).r;
+    vec3 t = tangentFromNormal(n);
+    vec3 b = normalize(cross(n, t));
+    vec3 mapN = normalize(vec3((left - right) * strength * 8.0, (down - up) * strength * 8.0, 1.0));
+    return normalize(mat3(t, b, n) * mapN);
+}
+
 float pcfShadow(vec3 worldPos, vec3 n){
     if (uReceiveShadows == 0) return 1.0;
     vec4 lp = uLightSpace * vec4(worldPos, 1.0);

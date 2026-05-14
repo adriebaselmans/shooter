@@ -80,6 +80,11 @@ internal sealed class GameInputBinder
             Key.ControlLeft or Key.ControlRight => InputKey.Ctrl,
             Key.Escape => InputKey.Esc,
             Key.F1 => InputKey.F1,
+            Key.Up => InputKey.Up,
+            Key.Down => InputKey.Down,
+            Key.Left => InputKey.Left,
+            Key.Right => InputKey.Right,
+            Key.Enter => InputKey.Enter,
             Key.Number1 or Key.Keypad1 => InputKey.Num1,
             Key.Number2 or Key.Keypad2 => InputKey.Num2,
             Key.Number3 or Key.Keypad3 => InputKey.Num3,
@@ -88,5 +93,11 @@ internal sealed class GameInputBinder
 
         if (mapped is { } inputKey)
             _inputState.SetDown(inputKey, down);
+    }
+
+    public void SetMenuOpen(bool open)
+    {
+        if (PrimaryMouse is null) return;
+        PrimaryMouse.Cursor.CursorMode = open ? CursorMode.Normal : CursorMode.Raw;
     }
 }

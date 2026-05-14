@@ -31,7 +31,7 @@ public sealed class RocketRenderer : IDisposable
 
         // Rockets are world-space objects: receive shadows and write normals for SSAO.
         _modelRen.BeginPass(view, viewProj, clearDepthFirst: false, env, shadow, ibl, worldRen,
-            receiveShadows: true, writeNormal: true, viewSpaceLighting: false, applyFog: true,
+            receiveShadows: env.ShadowsEnabled, writeNormal: true, viewSpaceLighting: false, applyFog: true,
             roughness: 0.34f, specularStrength: 0.26f);
         foreach (var r in rockets.Active)
         {

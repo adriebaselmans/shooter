@@ -1,31 +1,24 @@
-id: review-shooter-three-worker-refactor-batch
-title: Review — Three-Worker Refactor Batch
+id: review-shooter-anisotropy-and-fxaa
+title: Review — Anisotropic Filtering and FXAA
 status: approved
-parent: design-shooter-three-worker-refactor-batch
-created_at: 2026-05-06T17:22:00Z
+parent: design-shooter-anisotropy-and-fxaa
+created_at: 2026-05-06T20:50:00Z
 
 summary:
   outcome: approved
   scope_reviewed:
-    - src/Shooter.App/RenderSystem/OpenGLRenderResources.cs
-    - src/Shooter.App/RenderSystem/OpenGLSceneResources.cs
-    - src/Shooter.App/RenderSystem/OpenGLLightingResources.cs
-    - src/Shooter.App/RenderSystem/OpenGLPostProcessResources.cs
+    - src/Shooter.App/Game/LightingEnvironment.cs
+    - src/Shooter.App/Game/GameSession.cs
+    - src/Shooter.App/Render/TextureCache.cs
+    - src/Shooter.App/Render/PostFx.cs
+    - src/Shooter.App/Render/Shaders.Tonemap.cs
+    - src/Shooter.App/Render/HudRenderer.cs
     - src/Shooter.App/RenderSystem/OpenGLFrameRenderer.cs
-    - src/Shooter.App/Game/GameWorldFactory.cs
-    - src/Shooter.App/Game/WorldBrushFactory.cs
-    - src/Shooter.App/Game/SceneWorldMetadataExtractor.cs
-    - src/Shooter.App/Input/GameInputBinder.cs
-    - src/Shooter.App/Program.cs
 
 findings:
   - severity: info
-    note: "Worker 1 succeeded: OpenGLRenderResources now composes scene, lighting, and post-processing resource groups instead of owning one flat member set."
+    note: "World/material textures now use anisotropic filtering at upload time."
   - severity: info
-    note: "Worker 2 succeeded: GameWorldFactory now orchestrates dedicated WorldBrushFactory and SceneWorldMetadataExtractor collaborators."
+    note: "FXAA is wired through the tone-map post pass and can be toggled from the menu."
   - severity: info
-    note: "Worker 3 succeeded: Program no longer owns low-level Silk input event binding or mouse-delta bookkeeping; GameInputBinder owns that detail."
-
-risks:
-  - severity: low
-    note: "The remaining refactor opportunities are now increasingly fine-grained; the major ownership tangles targeted in this batch were resolved without behavior change."
+    note: "The menu now includes an FXAA entry and the existing relief / quit items remain intact."

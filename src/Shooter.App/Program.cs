@@ -89,10 +89,15 @@ internal static class Program
         if (_backendInitFailed || _session is null) return;
         float fdt = MathF.Min((float)dt, 1f / 30f);
 
-        if (_inputState.WasPressed(InputKey.Esc)) { _window?.Close(); return; }
         if (_inputState.WasPressed(InputKey.F1)) _session.ToggleDebug();
 
         _session.Update(fdt, _inputState);
+        _inputBinder?.SetMenuOpen(_session.MenuOpen);
+        if (_session.QuitRequested)
+        {
+            _window?.Close();
+            return;
+        }
     }
 
     private static void OnRender(double dt)
