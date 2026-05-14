@@ -1,5 +1,6 @@
 using System.Numerics;
 using SharpGLTF.Schema2;
+using MapEditor.Core.Geometry;
 
 namespace Shooter.Render;
 
@@ -41,16 +42,18 @@ public sealed class ModelData
                     if (indexAcc is null) continue;
                     var idx = indexAcc.AsIndicesArray();
 
-                    var verts = new float[pos.Count * 8];
+                    var verts = new float[pos.Count * MapEditor.Core.Geometry.Mesh.FloatsPerVertex];
                     for (int i = 0; i < pos.Count; i++)
                     {
                         var p = pos[i];
                         var n = nrm is not null && i < nrm.Count ? nrm[i] : Vector3.UnitY;
                         var t = uv0 is not null && i < uv0.Count ? uv0[i] : Vector2.Zero;
-                        int o = i * 8;
+                        int o = i * MapEditor.Core.Geometry.Mesh.FloatsPerVertex;
                         verts[o + 0] = p.X; verts[o + 1] = p.Y; verts[o + 2] = p.Z;
                         verts[o + 3] = n.X; verts[o + 4] = n.Y; verts[o + 5] = n.Z;
                         verts[o + 6] = t.X; verts[o + 7] = t.Y;
+                        verts[o + 8] = 0f; verts[o + 9] = 0f; verts[o + 10] = 0f;
+                        verts[o + 11] = 0f; verts[o + 12] = 0f; verts[o + 13] = 0f;
                     }
 
                     var indices = new uint[idx.Count];
@@ -104,7 +107,7 @@ public sealed class ModelData
         Vector3 min = new(float.PositiveInfinity), max = new(float.NegativeInfinity);
         foreach (var pr in Primitives)
         {
-            for (int i = 0; i < pr.Vertices.Length; i += 8)
+            for (int i = 0; i < pr.Vertices.Length; i += MapEditor.Core.Geometry.Mesh.FloatsPerVertex)
             {
                 var p = new Vector3(pr.Vertices[i], pr.Vertices[i + 1], pr.Vertices[i + 2]);
                 min = Vector3.Min(min, p); max = Vector3.Max(max, p);
@@ -129,8 +132,8 @@ public sealed class ModelData
         Vector3 nMin = new(float.PositiveInfinity), nMax = new(float.NegativeInfinity);
         foreach (var pr in Primitives)
         {
-            var rot = new Vector3[pr.Vertices.Length / 8];
-            for (int i = 0, vi = 0; i < pr.Vertices.Length; i += 8, vi++)
+            var rot = new Vector3[pr.Vertices.Length / MapEditor.Core.Geometry.Mesh.FloatsPerVertex];
+            for (int i = 0, vi = 0; i < pr.Vertices.Length; i += MapEditor.Core.Geometry.Mesh.FloatsPerVertex, vi++)
             {
                 var p = new Vector3(pr.Vertices[i], pr.Vertices[i + 1], pr.Vertices[i + 2]);
                 var q = new Vector3(Vector3.Dot(right, p), Vector3.Dot(up, p), -Vector3.Dot(forward, p));
@@ -154,7 +157,7 @@ public sealed class ModelData
             var rot = rotatedPrims[p];
             var dst = new float[src.Vertices.Length];
             Array.Copy(src.Vertices, dst, src.Vertices.Length);
-            for (int i = 0, vi = 0; i < dst.Length; i += 8, vi++)
+            for (int i = 0, vi = 0; i < dst.Length; i += MapEditor.Core.Geometry.Mesh.FloatsPerVertex, vi++)
             {
                 var q = rot[vi];
                 dst[i + 0] = (q.X - ncx) * s;
@@ -164,6 +167,14 @@ public sealed class ModelData
                 var n = new Vector3(src.Vertices[i + 3], src.Vertices[i + 4], src.Vertices[i + 5]);
                 var nr = new Vector3(Vector3.Dot(right, n), Vector3.Dot(up, n), -Vector3.Dot(forward, n));
                 dst[i + 3] = nr.X; dst[i + 4] = nr.Y; dst[i + 5] = nr.Z;
+                
+                var t = new Vector3(src.Vertices[i + 8], src.Vertices[i + 9], src.Vertices[i + 10]);
+                var tr = new Vector3(Vector3.Dot(right, t), Vector3.Dot(up, t), -Vector3.Dot(forward, t));
+                dst[i + 8] = tr.X; dst[i + 9] = tr.Y; dst[i + 10] = tr.Z;
+                
+                var b = new Vector3(src.Vertices[i + 11], src.Vertices[i + 12], src.Vertices[i + 13]);
+                var br = new Vector3(Vector3.Dot(right, b), Vector3.Dot(up, b), -Vector3.Dot(forward, b));
+                dst[i + 11] = br.X; dst[i + 12] = br.Y; dst[i + 13] = br.Z;
             }
             outPrims.Add(new PrimitiveData
             {
