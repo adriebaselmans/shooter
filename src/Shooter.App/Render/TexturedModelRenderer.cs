@@ -46,7 +46,7 @@ public sealed class TexturedModelRenderer : IDisposable
         _gl.Uniform1(Shader.U("uNormalMap"), 1);
         _gl.Uniform1(Shader.U("uRoughnessMap"), 2);
         _gl.Uniform1(Shader.U("uMetallicMap"), 3);
-        _gl.Uniform1(Shader.U("uAoMap"), 4);
+        _gl.Uniform1(Shader.U("uAoMap"), 6);
         _gl.Uniform1(Shader.U("uHasNormalMap"), 0);
         _gl.Uniform1(Shader.U("uHasRoughnessMap"), 0);
         _gl.Uniform1(Shader.U("uHasMetallicMap"), 0);

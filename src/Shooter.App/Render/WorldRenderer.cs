@@ -55,8 +55,8 @@ public sealed class WorldRenderer : IDisposable
         _gl.Uniform1(_shader.U("uNormalMap"), 1);
         _gl.Uniform1(_shader.U("uRoughnessMap"), 2);
         _gl.Uniform1(_shader.U("uMetallicMap"), 3);
-        _gl.Uniform1(_shader.U("uAoMap"), 4);
-        _gl.Uniform1(_shader.U("uHeightMap"), 6);
+        _gl.Uniform1(_shader.U("uAoMap"), 6);
+        _gl.Uniform1(_shader.U("uHeightMap"), 7);
         _gl.Uniform1(_shader.U("uSelfIllum"), 0f);
         _gl.Uniform1(_shader.U("uEnableParallax"), env.ParallaxEnabled ? 1 : 0);
         _gl.Uniform1(_shader.U("uParallaxScale"), env.ParallaxScale);
@@ -76,9 +76,9 @@ public sealed class WorldRenderer : IDisposable
             _gl.BindTexture(TextureTarget.Texture2D, material.RoughnessHandle);
             _gl.ActiveTexture(TextureUnit.Texture3);
             _gl.BindTexture(TextureTarget.Texture2D, material.MetallicHandle);
-            _gl.ActiveTexture(TextureUnit.Texture4);
-            _gl.BindTexture(TextureTarget.Texture2D, material.AoHandle);
             _gl.ActiveTexture(TextureUnit.Texture6);
+            _gl.BindTexture(TextureTarget.Texture2D, material.AoHandle);
+            _gl.ActiveTexture(TextureUnit.Texture7);
             _gl.BindTexture(TextureTarget.Texture2D, material.HeightHandle);
             _gl.Uniform1(_shader.U("uHasTexture"), _textures.HasTexture(wb.TexturePath) ? 1 : 0);
             _gl.Uniform1(_shader.U("uHasNormalMap"), material.HasNormalMap ? 1 : 0);
