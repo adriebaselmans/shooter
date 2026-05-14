@@ -37,6 +37,10 @@ public sealed class GlMesh : IDisposable
         gl.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, stride, (void*)(3 * sizeof(float)));
         gl.EnableVertexAttribArray(2);
         gl.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, stride, (void*)(6 * sizeof(float)));
+        gl.EnableVertexAttribArray(3);
+        gl.VertexAttribPointer(3, 3, VertexAttribPointerType.Float, false, stride, (void*)(8 * sizeof(float)));
+        gl.EnableVertexAttribArray(4);
+        gl.VertexAttribPointer(4, 3, VertexAttribPointerType.Float, false, stride, (void*)(11 * sizeof(float)));
 
         gl.BindVertexArray(0);
         IndexCount = mesh.Indices.Length;

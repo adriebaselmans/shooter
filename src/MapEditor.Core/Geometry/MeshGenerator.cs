@@ -283,33 +283,36 @@ public static class MeshGenerator
         builder.AddSurface(surfaceId, () =>
         {
             var mapping = brush.GetEffectiveSurfaceMapping(surfaceId);
-            uint centerIndex = builder.GetNextVertexIndex();
+            var centerPos = new Vector3(0f, y, 0f);
             var centerUv = ApplyMapping(Vector2.Zero, mapping);
-            builder.AddVertex(new Vector3(0f, y, 0f), normal, centerUv);
 
             for (int i = 0; i < CylinderSegments; i++)
             {
-                float a = MathF.PI * 2 * i / CylinderSegments;
-                var position = new Vector3(MathF.Cos(a) * 0.5f, y, MathF.Sin(a) * 0.5f);
-                var uv = ApplyMapping(
+                float a0 = MathF.PI * 2 * i / CylinderSegments;
+                float a1 = MathF.PI * 2 * ((i + 1) % CylinderSegments) / CylinderSegments;
+
+                var p0 = new Vector3(MathF.Cos(a0) * 0.5f, y, MathF.Sin(a0) * 0.5f);
+                var p1 = new Vector3(MathF.Cos(a1) * 0.5f, y, MathF.Sin(a1) * 0.5f);
+
+                var uv0 = ApplyMapping(
                     mapping.TextureLocked
-                        ? new Vector2((position.X * radiusX) / TextureWorldSize, (position.Z * radiusZ) / TextureWorldSize)
-                        : new Vector2(position.X + 0.5f, position.Z + 0.5f),
+                        ? new Vector2((p0.X * radiusX) / TextureWorldSize, (p0.Z * radiusZ) / TextureWorldSize)
+                        : new Vector2(p0.X + 0.5f, p0.Z + 0.5f),
                     mapping);
-                builder.AddVertex(position, normal, uv);
-            }
 
-            for (int i = 0; i < CylinderSegments; i++)
-            {
-                uint a = centerIndex + 1 + (uint)i;
-                uint b = centerIndex + 1 + (uint)((i + 1) % CylinderSegments);
+                var uv1 = ApplyMapping(
+                    mapping.TextureLocked
+                        ? new Vector2((p1.X * radiusX) / TextureWorldSize, (p1.Z * radiusZ) / TextureWorldSize)
+                        : new Vector2(p1.X + 0.5f, p1.Z + 0.5f),
+                    mapping);
+
                 if (flipWinding)
                 {
-                    builder.AddTriangleIndices(centerIndex, b, a);
+                    builder.AddTriangleVertices(centerPos, normal, centerUv, p1, normal, uv1, p0, normal, uv0);
                 }
                 else
                 {
-                    builder.AddTriangleIndices(centerIndex, a, b);
+                    builder.AddTriangleVertices(centerPos, normal, centerUv, p0, normal, uv0, p1, normal, uv1);
                 }
             }
         });
@@ -329,14 +332,14 @@ public static class MeshGenerator
         var mapping = brush.GetEffectiveSurfaceMapping(surfaceId);
         builder.AddSurface(surfaceId, () =>
         {
-            for (int i = 0; i < corners.Count; i++)
+            for (int i = 0; i < corners.Count; i += 4)
             {
-                var uv = BuildPlanarUv(corners[i], axisU, axisV, dimensionU, dimensionV, mapping);
-                builder.AddVertex(corners[i], normal, uv);
+                var uv0 = BuildPlanarUv(corners[i], axisU, axisV, dimensionU, dimensionV, mapping);
+                var uv1 = BuildPlanarUv(corners[i + 1], axisU, axisV, dimensionU, dimensionV, mapping);
+                var uv2 = BuildPlanarUv(corners[i + 2], axisU, axisV, dimensionU, dimensionV, mapping);
+                var uv3 = BuildPlanarUv(corners[i + 3], axisU, axisV, dimensionU, dimensionV, mapping);
+                builder.AddQuadVertices(corners[i], normal, uv0, corners[i + 1], normal, uv1, corners[i + 2], normal, uv2, corners[i + 3], normal, uv3);
             }
-
-            uint baseIndex = builder.GetNextVertexIndex() - 4;
-            builder.AddQuadIndices(baseIndex);
         });
     }
 
@@ -356,11 +359,10 @@ public static class MeshGenerator
         var mapping = brush.GetEffectiveSurfaceMapping(surfaceId);
         builder.AddSurface(surfaceId, () =>
         {
-            builder.AddVertex(p0, normal, BuildPlanarUv(p0, axisU, axisV, dimensionU, dimensionV, mapping));
-            builder.AddVertex(p1, normal, BuildPlanarUv(p1, axisU, axisV, dimensionU, dimensionV, mapping));
-            builder.AddVertex(p2, normal, BuildPlanarUv(p2, axisU, axisV, dimensionU, dimensionV, mapping));
-            uint baseIndex = builder.GetNextVertexIndex() - 3;
-            builder.AddTriangleIndices(baseIndex, baseIndex + 1, baseIndex + 2);
+            var uv0 = BuildPlanarUv(p0, axisU, axisV, dimensionU, dimensionV, mapping);
+            var uv1 = BuildPlanarUv(p1, axisU, axisV, dimensionU, dimensionV, mapping);
+            var uv2 = BuildPlanarUv(p2, axisU, axisV, dimensionU, dimensionV, mapping);
+            builder.AddTriangleVertices(p0, normal, uv0, p1, normal, uv1, p2, normal, uv2);
         });
     }
 
@@ -382,24 +384,17 @@ public static class MeshGenerator
 
         builder.AddSurface(face.Id, () =>
         {
-            uint baseIndex = builder.GetNextVertexIndex();
-            foreach (var (vertex, scaledVertex) in vertices.Zip(scaledVertices))
-            {
-                var uv = BuildExplicitFaceUv(
-                    scaledVertex,
-                    axisU,
-                    axisV,
-                    minU,
-                    maxU,
-                    minV,
-                    maxV,
-                    mapping);
-                builder.AddVertex(vertex, normal, uv);
-            }
-
             for (uint i = 1; i < vertices.Length - 1; i++)
             {
-                builder.AddTriangleIndices(baseIndex, baseIndex + i, baseIndex + i + 1);
+                var v0 = scaledVertices[0];
+                var v1 = scaledVertices[i];
+                var v2 = scaledVertices[i + 1];
+
+                var uv0 = BuildExplicitFaceUv(v0, axisU, axisV, minU, maxU, minV, maxV, mapping);
+                var uv1 = BuildExplicitFaceUv(v1, axisU, axisV, minU, maxU, minV, maxV, mapping);
+                var uv2 = BuildExplicitFaceUv(v2, axisU, axisV, minU, maxU, minV, maxV, mapping);
+
+                builder.AddTriangleVertices(vertices[0], normal, uv0, vertices[i], normal, uv1, vertices[i + 1], normal, uv2);
             }
         }, face.IsCutterFace);
     }
@@ -561,7 +556,7 @@ public static class MeshGenerator
             _surfaces.Add(new MeshSurfaceRange(surfaceId, start, _indices.Count - start, isCutterFace));
         }
 
-        public void AddVertex(Vector3 position, Vector3 normal, Vector2 uv)
+        public void AddVertex(Vector3 position, Vector3 normal, Vector2 uv, Vector3 tangent, Vector3 bitangent)
         {
             _vertices.Add(position.X);
             _vertices.Add(position.Y);
@@ -571,6 +566,12 @@ public static class MeshGenerator
             _vertices.Add(normal.Z);
             _vertices.Add(uv.X);
             _vertices.Add(uv.Y);
+            _vertices.Add(tangent.X);
+            _vertices.Add(tangent.Y);
+            _vertices.Add(tangent.Z);
+            _vertices.Add(bitangent.X);
+            _vertices.Add(bitangent.Y);
+            _vertices.Add(bitangent.Z);
         }
 
         public void AddTriangleIndices(uint i0, uint i1, uint i2)
@@ -590,15 +591,57 @@ public static class MeshGenerator
             _indices.Add(baseIndex + 3);
         }
 
+        public static (Vector3 Tangent, Vector3 Bitangent) CalculateTangents(
+            Vector3 p0, Vector2 uv0,
+            Vector3 p1, Vector2 uv1,
+            Vector3 p2, Vector2 uv2,
+            Vector3 n)
+        {
+            Vector3 edge1 = p1 - p0;
+            Vector3 edge2 = p2 - p0;
+            Vector2 deltaUV1 = uv1 - uv0;
+            Vector2 deltaUV2 = uv2 - uv0;
+
+            float f = 1.0f / (deltaUV1.X * deltaUV2.Y - deltaUV2.X * deltaUV1.Y);
+            if (float.IsInfinity(f) || float.IsNaN(f))
+            {
+                Vector3 up = MathF.Abs(n.Y) < 0.999f ? Vector3.UnitY : Vector3.UnitX;
+                Vector3 t = Vector3.Normalize(Vector3.Cross(up, n));
+                Vector3 b = Vector3.Normalize(Vector3.Cross(n, t));
+                return (t, b);
+            }
+
+            Vector3 tangent = new Vector3(
+                f * (deltaUV2.Y * edge1.X - deltaUV1.Y * edge2.X),
+                f * (deltaUV2.Y * edge1.Y - deltaUV1.Y * edge2.Y),
+                f * (deltaUV2.Y * edge1.Z - deltaUV1.Y * edge2.Z)
+            );
+            tangent = Vector3.Normalize(tangent - n * Vector3.Dot(n, tangent));
+
+            Vector3 bitangent = new Vector3(
+                f * (-deltaUV2.X * edge1.X + deltaUV1.X * edge2.X),
+                f * (-deltaUV2.X * edge1.Y + deltaUV1.X * edge2.Y),
+                f * (-deltaUV2.X * edge1.Z + deltaUV1.X * edge2.Z)
+            );
+            bitangent = Vector3.Normalize(bitangent - n * Vector3.Dot(n, bitangent));
+            if (Vector3.Dot(Vector3.Cross(n, tangent), bitangent) < 0.0f)
+            {
+                tangent *= -1.0f;
+            }
+
+            return (tangent, bitangent);
+        }
+
         public void AddTriangleVertices(
             Vector3 p0, Vector3 n0, Vector2 uv0,
             Vector3 p1, Vector3 n1, Vector2 uv1,
             Vector3 p2, Vector3 n2, Vector2 uv2)
         {
             uint baseIndex = GetNextVertexIndex();
-            AddVertex(p0, n0, uv0);
-            AddVertex(p1, n1, uv1);
-            AddVertex(p2, n2, uv2);
+            var (t, b) = CalculateTangents(p0, uv0, p1, uv1, p2, uv2, n0);
+            AddVertex(p0, n0, uv0, t, b);
+            AddVertex(p1, n1, uv1, t, b);
+            AddVertex(p2, n2, uv2, t, b);
             AddTriangleIndices(baseIndex, baseIndex + 1, baseIndex + 2);
         }
 
@@ -609,10 +652,11 @@ public static class MeshGenerator
             Vector3 p3, Vector3 n3, Vector2 uv3)
         {
             uint baseIndex = GetNextVertexIndex();
-            AddVertex(p0, n0, uv0);
-            AddVertex(p1, n1, uv1);
-            AddVertex(p2, n2, uv2);
-            AddVertex(p3, n3, uv3);
+            var (t, b) = CalculateTangents(p0, uv0, p1, uv1, p2, uv2, n0);
+            AddVertex(p0, n0, uv0, t, b);
+            AddVertex(p1, n1, uv1, t, b);
+            AddVertex(p2, n2, uv2, t, b);
+            AddVertex(p3, n3, uv3, t, b);
             AddQuadIndices(baseIndex);
         }
 

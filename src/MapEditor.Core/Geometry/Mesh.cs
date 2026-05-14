@@ -8,9 +8,9 @@ public readonly record struct MeshSurfaceRange(string SurfaceId, int IndexStart,
 /// </summary>
 public sealed class Mesh
 {
-    public const int FloatsPerVertex = 8;
+    public const int FloatsPerVertex = 14;
 
-    /// <summary>Interleaved position + normal + UV data: [x,y,z,nx,ny,nz,u,v, ...].</summary>
+    /// <summary>Interleaved position + normal + UV + tangent + bitangent data: [x,y,z,nx,ny,nz,u,v,tx,ty,tz,bx,by,bz, ...].</summary>
     public float[] Vertices { get; }
 
     /// <summary>Triangle indices into the vertex array (3 indices per triangle).</summary>

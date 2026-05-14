@@ -7,6 +7,8 @@ internal static partial class Shaders
 layout(location=0) in vec3 aPos;
 layout(location=1) in vec3 aNormal;
 layout(location=2) in vec2 aUv;
+layout(location=3) in vec3 aTangent;
+layout(location=4) in vec3 aBitangent;
 uniform mat4 uModel;
 uniform mat4 uView;
 uniform mat4 uViewProj;
@@ -15,13 +17,17 @@ out vec3 vWorldPos;
 out vec3 vNormal;
 out vec3 vViewNormal;
 out vec2 vUv;
+out mat3 vTbn;
 void main(){
     vec4 wp = uModel * vec4(aPos,1.0);
     vWorldPos = wp.xyz;
     vec3 wn = normalize((uNormalMat * vec4(aNormal,0.0)).xyz);
+    vec3 wt = normalize((uNormalMat * vec4(aTangent,0.0)).xyz);
+    vec3 wb = normalize((uNormalMat * vec4(aBitangent,0.0)).xyz);
     vNormal = wn;
     vViewNormal = mat3(uView) * wn;
     vUv = aUv;
+    vTbn = mat3(wt, wb, wn);
     gl_Position = uViewProj * wp;
 }
 """;
@@ -32,6 +38,7 @@ in vec3 vWorldPos;
 in vec3 vNormal;
 in vec3 vViewNormal;
 in vec2 vUv;
+in mat3 vTbn;
 layout(location=0) out vec4 oColor;
 layout(location=1) out vec4 oViewNormal;
 uniform sampler2D uBaseColor;
@@ -112,8 +119,9 @@ void main(){
     vec3 detailN = useRelief
         ? reliefNormal(sampleUv, baseN, max(0.08, uMaterialParams.z * 0.55 + uParallaxScale * 4.5))
         : detailNormalFromAlbedo(uBaseColor, sampleUv, uTexelSize, baseN, uMaterialParams.z, uHasTexture);
+    vec3 mapN = texture(uNormalMap, sampleUv).xyz * 2.0 - 1.0;
     vec3 n = (uHasNormalMap == 1)
-        ? normalize(mix(normalFromMap(uNormalMap, vWorldPos, sampleUv, baseN), detailN, useRelief ? 0.20 : 0.08))
+        ? normalize(mix(normalize(vTbn * mapN), detailN, useRelief ? 0.20 : 0.08))
         : detailN;
     float roughness = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, sampleUv).r : uMaterialParams.x;
     roughness = clamp(max(roughness, uMaterialParams.x * 0.45), 0.02, 1.0);
@@ -162,6 +170,7 @@ in vec3 vWorldPos;
 in vec3 vNormal;
 in vec3 vViewNormal;
 in vec2 vUv;
+in mat3 vTbn;
 layout(location=0) out vec4 oColor;
 layout(location=1) out vec4 oViewNormal;
 uniform sampler2D uBaseColor;
@@ -188,8 +197,9 @@ void main(){
     if (base.a < 0.05) discard;
     vec3 pos = vWorldPos;
     vec3 geomN = normalize(uViewSpaceLighting == 1 ? vViewNormal : vNormal);
+    vec3 mapN = texture(uNormalMap, vUv).xyz * 2.0 - 1.0;
     vec3 n = (uHasNormalMap == 1)
-        ? normalFromMap(uNormalMap, pos, vUv, geomN)
+        ? normalize(vTbn * mapN)
         : detailNormalFromAlbedo(uBaseColor, vUv, uTexelSize, geomN, uMaterialParams.z, uHasTexture);
     float roughness = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, vUv).r : uMaterialParams.x;
     float metallic = (uHasMetallicMap == 1) ? texture(uMetallicMap, vUv).r : uMaterialParams.y;
