@@ -1,30 +1,31 @@
-id: review-shooter-clean-code-refactor-pass
-title: Review — Clean Code Refactor Pass for Shooter.App
+id: review-shooter-three-worker-refactor-batch
+title: Review — Three-Worker Refactor Batch
 status: approved
-parent: design-shooter-clean-code-refactor-pass
-created_at: 2026-05-06T14:40:00Z
+parent: design-shooter-three-worker-refactor-batch
+created_at: 2026-05-06T17:22:00Z
 
 summary:
   outcome: approved
   scope_reviewed:
+    - src/Shooter.App/RenderSystem/OpenGLRenderResources.cs
+    - src/Shooter.App/RenderSystem/OpenGLSceneResources.cs
+    - src/Shooter.App/RenderSystem/OpenGLLightingResources.cs
+    - src/Shooter.App/RenderSystem/OpenGLPostProcessResources.cs
+    - src/Shooter.App/RenderSystem/OpenGLFrameRenderer.cs
+    - src/Shooter.App/Game/GameWorldFactory.cs
+    - src/Shooter.App/Game/WorldBrushFactory.cs
+    - src/Shooter.App/Game/SceneWorldMetadataExtractor.cs
+    - src/Shooter.App/Input/GameInputBinder.cs
     - src/Shooter.App/Program.cs
-    - src/Shooter.App/Game/GameSession.cs
-    - src/Shooter.App/Game/FallbackSceneFactory.cs
-    - src/Shooter.App/Render/Shaders.cs
-    - src/Shooter.App/Render/Shaders.World.cs
-    - src/Shooter.App/Render/Shaders.Sky.cs
-    - src/Shooter.App/Render/Shaders.Effects.cs
 
 findings:
   - severity: info
-    note: "Program.cs was reduced from 417 lines to 156 lines and now mainly owns window/input/bootstrap concerns."
+    note: "Worker 1 succeeded: OpenGLRenderResources now composes scene, lighting, and post-processing resource groups instead of owning one flat member set."
   - severity: info
-    note: "GameSession now owns gameplay/session orchestration, update flow, fire handling, and frame-data creation."
+    note: "Worker 2 succeeded: GameWorldFactory now orchestrates dedicated WorldBrushFactory and SceneWorldMetadataExtractor collaborators."
   - severity: info
-    note: "FallbackSceneFactory now owns procedural fallback content instead of embedding it in Program.cs."
-  - severity: info
-    note: "The shader monolith was converted into a partial static class split across focused files while preserving the existing shader API used by renderers."
+    note: "Worker 3 succeeded: Program no longer owns low-level Silk input event binding or mouse-delta bookkeeping; GameInputBinder owns that detail."
 
 risks:
   - severity: low
-    note: "Shaders.Effects.cs is still the largest remaining shader file and could be split further later, but the main monolith debt has been materially reduced already."
+    note: "The remaining refactor opportunities are now increasingly fine-grained; the major ownership tangles targeted in this batch were resolved without behavior change."

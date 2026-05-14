@@ -1,41 +1,39 @@
-id: req-shooter-clean-code-refactor-pass
-title: Clean Code Refactor Pass for Shooter.App
+id: req-shooter-three-worker-refactor-batch
+title: Three-Worker Refactor Batch
 status: approved
-created_at: 2026-05-06T14:20:00Z
+created_at: 2026-05-06T17:05:00Z
 
 context: >
-  The user requested a serious clean-code refactor in the OpenGL-only codebase. The largest
-  current debts are oversized application orchestration in Program.cs, fallback scene creation
-  mixed into startup code, and the monolithic shader source file.
+  The user asked to continue the refactor "for all, in 3 parallel workers". The next highest-value
+  independent workstreams are renderer-resource decomposition, world-factory decomposition, and
+  Program/input bootstrap cleanup.
 
 functional:
-  - id: L501
-    text: "Refactor runtime orchestration so Program.cs is no longer responsible for most gameplay/session update logic."
-  - id: L502
-    text: "Extract fallback scene creation into a dedicated component instead of keeping it embedded in Program.cs."
-  - id: L503
-    text: "Split the monolithic shader source definition into focused files while preserving shader behavior."
+  - id: L551
+    text: "Split OpenGLRenderResources into smaller collaborators with explicit scene, lighting, and post-processing ownership boundaries."
+  - id: L552
+    text: "Split GameWorldFactory into smaller collaborators with explicit brush-building and scene-metadata extraction responsibilities."
+  - id: L553
+    text: "Extract Program input/bootstrap helper logic into a dedicated collaborator so Program.cs sheds more event-binding detail."
 
 non_functional:
-  - id: NL251
-    text: "Preserve current OpenGL runtime behavior during the refactor."
-  - id: NL252
-    text: "Prefer cohesion, small responsibilities, and readable ownership boundaries over broad architectural reinvention."
-  - id: NL253
-    text: "Build, format verification, and OpenGL smoke startup must pass after the refactor."
+  - id: NL301
+    text: "Treat the three workstreams as structurally independent refactors with no intended runtime behavior change."
+  - id: NL302
+    text: "Prefer cohesive collaborators and deletion of duplicated glue over larger monolithic replacements."
+  - id: NL303
+    text: "Build, format verification, and OpenGL smoke startup must pass."
 
 acceptance_criteria:
-  - id: AC501
-    text: "Program.cs becomes substantially smaller and primarily handles window/input/bootstrap responsibilities."
-  - id: AC502
-    text: "Gameplay/session update responsibilities are owned by a dedicated runtime class."
-  - id: AC503
-    text: "Fallback scene generation is owned by a dedicated file/class."
-  - id: AC504
-    text: "Shader source definitions are split across multiple focused files instead of a single giant file."
-  - id: AC505
+  - id: AC551
+    text: "OpenGLRenderResources no longer directly owns all scene, lighting, and post-processing members in one flat class."
+  - id: AC552
+    text: "GameWorldFactory no longer directly owns both brush-building and scene metadata extraction details."
+  - id: AC553
+    text: "Program.cs no longer directly owns the low-level input event binding and mouse-delta bookkeeping logic."
+  - id: AC554
     text: "dotnet build shooter.slnx -nologo passes."
-  - id: AC506
+  - id: AC555
     text: "dotnet format shooter.slnx --verify-no-changes --severity warn -v minimal passes."
-  - id: AC507
+  - id: AC556
     text: "dotnet run --project src/Shooter.App -- dust.shmap still starts successfully."

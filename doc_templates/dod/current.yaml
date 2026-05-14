@@ -1,17 +1,15 @@
-id: dod-shooter-clean-code-refactor-pass
-title: DoD — Clean Code Refactor Pass for Shooter.App
+id: dod-shooter-three-worker-refactor-batch
+title: DoD — Three-Worker Refactor Batch
 status: approved
-parent: req-shooter-clean-code-refactor-pass
-created_at: 2026-05-06T14:42:00Z
+parent: req-shooter-three-worker-refactor-batch
+created_at: 2026-05-06T17:24:00Z
 
 checklist:
-  - item: "Program.cs reduced to host/bootstrap responsibilities"
+  - item: "Renderer resources decomposed into scene, lighting, and post-processing groups"
     status: done
-  - item: "Dedicated runtime/session orchestration class added"
+  - item: "World factory decomposed into brush-building and scene-metadata collaborators"
     status: done
-  - item: "Fallback scene creation extracted"
-    status: done
-  - item: "Shader source split across multiple focused files"
+  - item: "Program input binding extracted into dedicated helper"
     status: done
   - item: "Build validation passed"
     status: done
@@ -26,5 +24,4 @@ evidence:
   smoke: "dotnet run --project src/Shooter.App -- dust.shmap"
 
 notes:
-  - "Behavior remained stable while the main clean-code debts were reduced."
-  - "Line counts after refactor: Program.cs 156, Shaders.cs 117, GameSession.cs 220, FallbackSceneFactory.cs 79."
+  - "Representative post-batch line counts: Program 109, OpenGLRenderResources 61, GameWorldFactory 34, GameInputBinder 92."

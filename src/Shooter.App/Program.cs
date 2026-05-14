@@ -1,4 +1,3 @@
-using System.Numerics;
 using MapEditor.Formats;
 using Shooter.Game;
 using Shooter.Input;
@@ -16,9 +15,7 @@ internal static class Program
     private static IRenderBackend? _renderBackend;
     private static GameSession? _session;
     private static InputState _inputState = new();
-    private static IMouse? _mouse;
-    private static Vector2 _lastMouse;
-    private static bool _firstMouse = true;
+    private static GameInputBinder? _inputBinder;
     private static bool _backendInitFailed;
 
     private static string _mapPath = "";
@@ -62,29 +59,14 @@ internal static class Program
     private static void OnLoad()
     {
         _input = _window!.CreateInput();
-
-        // Capture mouse for FPS look.
-        if (_input.Mice.Count > 0)
-        {
-            _mouse = _input.Mice[0];
-            _mouse.Cursor.CursorMode = CursorMode.Raw;
-            _mouse.MouseMove += OnMouseMove;
-            _mouse.MouseDown += (m, b) => { if (b == MouseButton.Left) _inputState.SetDown(InputKey.MouseLeft, true); };
-            _mouse.MouseUp += (m, b) => { if (b == MouseButton.Left) _inputState.SetDown(InputKey.MouseLeft, false); };
-            _mouse.Scroll += (m, s) => _inputState.ScrollDelta += s.Y;
-        }
-        foreach (var kb in _input.Keyboards)
-        {
-            kb.KeyDown += (k, key, _) => SetKey(key, true);
-            kb.KeyUp += (k, key, _) => SetKey(key, false);
-        }
+        _inputBinder = new GameInputBinder(_input, _inputState);
 
         Console.WriteLine($"[Shooter] Loading map: {_mapPath}");
         var scene = string.IsNullOrEmpty(_mapPath) || !File.Exists(_mapPath)
             ? FallbackSceneFactory.Build()
             : new MapFileService().LoadAsync(_mapPath).GetAwaiter().GetResult();
 
-        _session = GameSession.Create(scene);
+        _session = GameSessionFactory.Create(scene);
         _renderBackend = new OpenGLRenderBackend();
         try
         {
@@ -100,35 +82,6 @@ internal static class Program
         }
 
         Console.WriteLine($"[Shooter] World: {_session.World.Brushes.Count} brushes, {_session.World.AllTriangles.Count} tris, {_session.World.PlayerSpawns.Count} spawns, {_session.World.Pickups.Count} pickups.");
-    }
-
-    private static void OnMouseMove(IMouse m, Vector2 pos)
-    {
-        if (_firstMouse) { _lastMouse = pos; _firstMouse = false; return; }
-        var d = pos - _lastMouse;
-        _lastMouse = pos;
-        _inputState.MouseDelta += d;
-    }
-
-    private static void SetKey(Key key, bool down)
-    {
-        InputKey? mapped = key switch
-        {
-            Key.W => InputKey.W,
-            Key.A => InputKey.A,
-            Key.S => InputKey.S,
-            Key.D => InputKey.D,
-            Key.Space => InputKey.Space,
-            Key.ShiftLeft or Key.ShiftRight => InputKey.Shift,
-            Key.ControlLeft or Key.ControlRight => InputKey.Ctrl,
-            Key.Escape => InputKey.Esc,
-            Key.F1 => InputKey.F1,
-            Key.Number1 or Key.Keypad1 => InputKey.Num1,
-            Key.Number2 or Key.Keypad2 => InputKey.Num2,
-            Key.Number3 or Key.Keypad3 => InputKey.Num3,
-            _ => null,
-        };
-        if (mapped is { } mk) _inputState.SetDown(mk, down);
     }
 
     private static void OnUpdate(double dt)
@@ -151,6 +104,7 @@ internal static class Program
     private static void OnClosing()
     {
         _renderBackend?.Dispose();
+        _inputBinder = null;
         _input?.Dispose();
     }
 }
