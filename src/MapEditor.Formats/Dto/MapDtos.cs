@@ -141,6 +141,9 @@ public sealed class MaterialPropertiesDto
     [JsonPropertyName("roughness")]
     public float Roughness { get; set; } = 0.86f;
 
+    [JsonPropertyName("metallic")]
+    public float Metallic { get; set; } = 0.0f;
+
     [JsonPropertyName("specular_strength")]
     public float SpecularStrength { get; set; } = 0.04f;
 

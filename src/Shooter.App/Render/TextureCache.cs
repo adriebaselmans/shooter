@@ -13,6 +13,7 @@ public sealed class TextureCache : IDisposable
     private readonly GL _gl;
     private readonly Dictionary<string, MaterialTextureSet> _materials = new(StringComparer.OrdinalIgnoreCase);
     private CachedTexture _white;
+    private CachedTexture _black;
     private CachedTexture _flatNormal;
 
     public TextureCache(GL gl)
@@ -29,8 +30,10 @@ public sealed class TextureCache : IDisposable
                 white.Handle,
                 GetFlatNormal().Handle,
                 white.Handle,
+                GetBlack().Handle,
                 white.Handle,
                 white.Handle,
+                false,
                 false,
                 false,
                 false,
@@ -46,11 +49,13 @@ public sealed class TextureCache : IDisposable
         var baseColor = Upload(baseColorImage);
         string? normalPath = MaterialMapConventions.ResolveNormal(filePath);
         string? roughnessPath = MaterialMapConventions.ResolveRoughness(filePath);
+        string? metallicPath = MaterialMapConventions.ResolveMetallic(filePath);
         string? aoPath = MaterialMapConventions.ResolveAo(filePath);
         string? heightPath = MaterialMapConventions.ResolveHeight(filePath);
 
         var normal = LoadOptional(normalPath, GetFlatNormal());
         var rough = LoadOptional(roughnessPath, GetWhite());
+        var metal = LoadOptional(metallicPath, GetBlack());
         var ao = LoadOptional(aoPath, GetWhite());
         var height = LoadOrGenerateHeight(baseColorImage, normalPath, heightPath);
 
@@ -58,10 +63,12 @@ public sealed class TextureCache : IDisposable
             baseColor.Handle,
             normal.Texture.Handle,
             rough.Texture.Handle,
+            metal.Texture.Handle,
             ao.Texture.Handle,
             height.Texture.Handle,
             normal.FromFile,
             rough.FromFile,
+            metal.FromFile,
             ao.FromFile,
             true,
             1f / Math.Max(1, baseColor.Width),
@@ -86,6 +93,13 @@ public sealed class TextureCache : IDisposable
         if (_white.Handle != 0) return _white;
         _white = UploadSolid([255, 255, 255, 255]);
         return _white;
+    }
+
+    private CachedTexture GetBlack()
+    {
+        if (_black.Handle != 0) return _black;
+        _black = UploadSolid([0, 0, 0, 255]);
+        return _black;
     }
 
     private CachedTexture GetFlatNormal()
@@ -192,6 +206,7 @@ public sealed class TextureCache : IDisposable
             released.Add(material.BaseColorHandle);
             if (material.HasNormalMap) released.Add(material.NormalHandle);
             if (material.HasRoughnessMap) released.Add(material.RoughnessHandle);
+            if (material.HasMetallicMap) released.Add(material.MetallicHandle);
             if (material.HasAoMap) released.Add(material.AoHandle);
             released.Add(material.HeightHandle);
         }
@@ -202,6 +217,11 @@ public sealed class TextureCache : IDisposable
         {
             _gl.DeleteTexture(_white.Handle);
             _white = default;
+        }
+        if (_black.Handle != 0)
+        {
+            _gl.DeleteTexture(_black.Handle);
+            _black = default;
         }
         if (_flatNormal.Handle != 0)
         {
@@ -214,10 +234,12 @@ public sealed class TextureCache : IDisposable
         uint BaseColorHandle,
         uint NormalHandle,
         uint RoughnessHandle,
+        uint MetallicHandle,
         uint AoHandle,
         uint HeightHandle,
         bool HasNormalMap,
         bool HasRoughnessMap,
+        bool HasMetallicMap,
         bool HasAoMap,
         bool HasHeightMap,
         float TexelSizeX,

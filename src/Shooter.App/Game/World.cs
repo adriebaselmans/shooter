@@ -22,6 +22,7 @@ public sealed class WorldBrush
     public Vector3 TintColor { get; init; } = new(0.75f, 0.75f, 0.78f);
     public BrushMaterialKind MaterialKind { get; init; } = BrushMaterialKind.Standard;
     public float Roughness { get; init; } = 0.85f;
+    public float Metallic { get; init; } = 0.0f;
     public float SpecularStrength { get; init; } = 0.04f;
     public float DetailNormalStrength { get; init; } = 0.0f;
     public float EmissiveStrength { get; init; } = 0.0f;
@@ -67,5 +68,5 @@ public sealed class GameWorld
     public static GameWorld FromScene(MapEditor.Core.Scene scene) => GameWorldFactory.FromScene(scene);
 }
 
-public readonly record struct SurfaceVisuals(float Roughness, float SpecularStrength, float DetailNormalStrength);
+public readonly record struct SurfaceVisuals(float Roughness, float Metallic, float SpecularStrength, float DetailNormalStrength);
 public readonly record struct PickupSpec(Guid Id, PickupKind Kind, Vector3 Position);

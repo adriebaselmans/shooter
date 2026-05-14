@@ -15,6 +15,7 @@ public enum BrushMaterialKind
 public readonly record struct BrushMaterialProperties(
     BrushMaterialKind Kind,
     float Roughness,
+    float Metallic,
     float SpecularStrength,
     float NormalStrength,
     float EmissiveStrength,
@@ -31,6 +32,7 @@ public readonly record struct BrushMaterialProperties(
         BrushMaterialKind.Water => new(
             kind,
             Roughness: 0.05f,
+            Metallic: 0.0f,
             SpecularStrength: 0.68f,
             NormalStrength: 0.95f,
             EmissiveStrength: 0.00f,
@@ -42,6 +44,7 @@ public readonly record struct BrushMaterialProperties(
         BrushMaterialKind.Lava => new(
             kind,
             Roughness: 0.22f,
+            Metallic: 0.0f,
             SpecularStrength: 0.10f,
             NormalStrength: 0.55f,
             EmissiveStrength: 4.20f,
@@ -53,6 +56,7 @@ public readonly record struct BrushMaterialProperties(
         _ => new(
             kind,
             Roughness: 0.82f,
+            Metallic: 0.0f,
             SpecularStrength: 0.05f,
             NormalStrength: 0.20f,
             EmissiveStrength: 0.00f,

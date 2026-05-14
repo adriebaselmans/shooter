@@ -218,6 +218,7 @@ public static class MapSerializer
         return preset with
         {
             Roughness = dto.Roughness,
+            Metallic = dto.Metallic,
             SpecularStrength = dto.SpecularStrength,
             NormalStrength = dto.NormalStrength,
             EmissiveStrength = dto.EmissiveStrength,
@@ -233,6 +234,7 @@ public static class MapSerializer
     {
         Kind = props.Kind.ToString().ToLowerInvariant(),
         Roughness = props.Roughness,
+        Metallic = props.Metallic,
         SpecularStrength = props.SpecularStrength,
         NormalStrength = props.NormalStrength,
         EmissiveStrength = props.EmissiveStrength,

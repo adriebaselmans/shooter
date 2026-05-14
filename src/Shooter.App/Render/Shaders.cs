@@ -101,21 +101,55 @@ float pcfShadow(vec3 worldPos, vec3 n){
     return sum / 16.0;
 }
 
-vec3 directSun(vec3 n, vec3 albedo, float visibility){
+vec3 directSun(vec3 n, vec3 diffuseColor, float visibility){
     float ndl = max(dot(n, -uSunDir), 0.0);
-    return albedo * uSunColor * uSunIntensity * ndl * visibility;
+    return diffuseColor * uSunColor * uSunIntensity * ndl * visibility;
 }
 
-vec3 sunSpecular(vec3 n, vec3 viewDir, vec3 lightDir, float roughness, float specularStrength, float visibility){
+// GGX NDF
+float D_GGX(float ndh, float roughness) {
+    float a = roughness * roughness;
+    float a2 = a * a;
+    float ndh2 = ndh * ndh;
+    float num = ndh2 * (a2 - 1.0) + 1.0;
+    return a2 / (3.14159265 * num * num);
+}
+
+// Smith Geometry
+float G_SchlickGGX(float ndv, float roughness) {
+    float r = roughness + 1.0;
+    float k = (r * r) / 8.0;
+    return ndv / (ndv * (1.0 - k) + k);
+}
+float GeometrySmith(float ndv, float ndl, float roughness) {
+    float ggx1 = G_SchlickGGX(ndv, roughness);
+    float ggx2 = G_SchlickGGX(ndl, roughness);
+    return ggx1 * ggx2;
+}
+
+// Fresnel Schlick
+vec3 fresnelSchlick(float cosTheta, vec3 f0) {
+    return f0 + (1.0 - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+vec3 sunSpecular(vec3 n, vec3 viewDir, vec3 lightDir, float roughness, vec3 f0, float visibility){
     float ndl = max(dot(n, lightDir), 0.0);
     float ndv = max(dot(n, viewDir), 0.0);
-    if (ndl <= 0.0 || ndv <= 0.0 || specularStrength <= 0.0001) return vec3(0.0);
+    if (ndl <= 0.0 || ndv <= 0.0) return vec3(0.0);
+    
     vec3 h = normalize(viewDir + lightDir);
     float ndh = max(dot(n, h), 0.0);
-    float shininess = mix(96.0, 12.0, clamp(roughness, 0.0, 1.0));
-    float spec = pow(ndh, shininess) * ndl * visibility;
-    float fres = mix(0.04, 1.0, pow(1.0 - ndv, 5.0));
-    return uSunColor * uSunIntensity * spec * fres * specularStrength;
+    float hdv = max(dot(h, viewDir), 0.0);
+
+    float NDF = D_GGX(ndh, roughness);
+    float G = GeometrySmith(ndv, ndl, roughness);
+    vec3 F = fresnelSchlick(hdv, f0);
+
+    vec3 numerator = NDF * G * F;
+    float denominator = 4.0 * ndv * ndl + 0.0001;
+    vec3 specular = numerator / denominator;
+
+    return uSunColor * uSunIntensity * specular * ndl * visibility;
 }
 
 vec3 applyFog(vec3 color, vec3 worldPos, float applyAmount){

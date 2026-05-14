@@ -269,6 +269,8 @@
                           SelectionChanged="OnMaterialKindChanged" />
                 <TextBlock Text="Roughness" />
                 <TextBox Text="{Binding Properties.MaterialRoughnessText, UpdateSourceTrigger=PropertyChanged}" KeyDown="OnMaterialEditorKeyDown" LostFocus="OnMaterialEditorLostFocus" />
+                <TextBlock Text="Metallic" />
+                <TextBox Text="{Binding Properties.MaterialMetallicText, UpdateSourceTrigger=PropertyChanged}" KeyDown="OnMaterialEditorKeyDown" LostFocus="OnMaterialEditorLostFocus" />
                 <TextBlock Text="Specular" />
                 <TextBox Text="{Binding Properties.MaterialSpecularText, UpdateSourceTrigger=PropertyChanged}" KeyDown="OnMaterialEditorKeyDown" LostFocus="OnMaterialEditorLostFocus" />
                 <TextBlock Text="Normal Strength" />

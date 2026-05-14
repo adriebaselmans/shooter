@@ -35,6 +35,7 @@ internal static class WorldBrushFactory
             TintColor = WorldMaterialResolver.ResolveTintColor(brush.MaterialName, texturePath),
             MaterialKind = useAuthored ? authored.Kind : BrushMaterialKind.Standard,
             Roughness = useAuthored ? authored.Roughness : visuals.Roughness,
+            Metallic = useAuthored ? authored.Metallic : visuals.Metallic,
             SpecularStrength = useAuthored ? authored.SpecularStrength : visuals.SpecularStrength,
             DetailNormalStrength = useAuthored ? authored.NormalStrength : visuals.DetailNormalStrength,
             EmissiveStrength = useAuthored ? authored.EmissiveStrength : 0.0f,

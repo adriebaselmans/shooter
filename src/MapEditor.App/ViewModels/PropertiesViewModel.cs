@@ -33,6 +33,7 @@ public sealed partial class PropertiesViewModel : ObservableObject
     [ObservableProperty] private bool _textureLockEnabled = true;
     [ObservableProperty] private string _materialKind = "Standard";
     [ObservableProperty] private string _materialRoughnessText = string.Empty;
+    [ObservableProperty] private string _materialMetallicText = string.Empty;
     [ObservableProperty] private string _materialSpecularText = string.Empty;
     [ObservableProperty] private string _materialNormalStrengthText = string.Empty;
     [ObservableProperty] private string _materialEmissiveText = string.Empty;
@@ -72,6 +73,7 @@ public sealed partial class PropertiesViewModel : ObservableObject
         TextureLockEnabled = true;
         MaterialKind = brush.MaterialProperties.Kind.ToString();
         MaterialRoughnessText = FormatFloat(brush.MaterialProperties.Roughness);
+        MaterialMetallicText = FormatFloat(brush.MaterialProperties.Metallic);
         MaterialSpecularText = FormatFloat(brush.MaterialProperties.SpecularStrength);
         MaterialNormalStrengthText = FormatFloat(brush.MaterialProperties.NormalStrength);
         MaterialEmissiveText = FormatFloat(brush.MaterialProperties.EmissiveStrength);
@@ -144,6 +146,7 @@ public sealed partial class PropertiesViewModel : ObservableObject
         TextureLockEnabled = true;
         MaterialKind = "Standard";
         MaterialRoughnessText = string.Empty;
+        MaterialMetallicText = string.Empty;
         MaterialSpecularText = string.Empty;
         MaterialNormalStrengthText = string.Empty;
         MaterialEmissiveText = string.Empty;

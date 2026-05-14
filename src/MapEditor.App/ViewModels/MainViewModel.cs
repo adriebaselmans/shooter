@@ -596,6 +596,7 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
 
         if (!Enum.TryParse<BrushMaterialKind>(_propertiesVm.MaterialKind, ignoreCase: true, out var kind) ||
             !PropertiesViewModel.TryParseFloat(_propertiesVm.MaterialRoughnessText, out var roughness) ||
+            !PropertiesViewModel.TryParseFloat(_propertiesVm.MaterialMetallicText, out var metallic) ||
             !PropertiesViewModel.TryParseFloat(_propertiesVm.MaterialSpecularText, out var specular) ||
             !PropertiesViewModel.TryParseFloat(_propertiesVm.MaterialNormalStrengthText, out var normalStrength) ||
             !PropertiesViewModel.TryParseFloat(_propertiesVm.MaterialEmissiveText, out var emissive) ||
@@ -614,6 +615,7 @@ public sealed partial class MainViewModel : ObservableObject, IEditorShortcutTar
         var props = new BrushMaterialProperties(
             kind,
             roughness,
+            metallic,
             specular,
             normalStrength,
             emissive,

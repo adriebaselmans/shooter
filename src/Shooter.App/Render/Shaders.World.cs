@@ -37,11 +37,13 @@ layout(location=1) out vec4 oViewNormal;
 uniform sampler2D uBaseColor;
 uniform sampler2D uNormalMap;
 uniform sampler2D uRoughnessMap;
+uniform sampler2D uMetallicMap;
 uniform sampler2D uAoMap;
 uniform sampler2D uHeightMap;
 uniform int uHasTexture;
 uniform int uHasNormalMap;
 uniform int uHasRoughnessMap;
+uniform int uHasMetallicMap;
 uniform int uHasAoMap;
 uniform int uHasHeightMap;
 uniform int uEnableParallax;
@@ -115,13 +117,17 @@ void main(){
         : detailN;
     float roughness = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, sampleUv).r : uMaterialParams.x;
     roughness = clamp(max(roughness, uMaterialParams.x * 0.45), 0.02, 1.0);
+    float metallic = (uHasMetallicMap == 1) ? texture(uMetallicMap, sampleUv).r : uMaterialParams.y;
     float ao = (uHasAoMap == 1) ? texture(uAoMap, sampleUv).r : 1.0;
     float vis = pcfShadow(vWorldPos, n);
     reliefShadow = useRelief ? reliefShadowTerm(sampleUv, max(0.08, uMaterialParams.z * 0.55 + uParallaxScale * 4.5)) : 1.0;
-    vec3 ambient = albedo * iblAmbient(n) * ao * reliefShadow;
+    
+    vec3 f0 = mix(vec3(0.04), albedo, metallic);
+    vec3 diffuseColor = albedo * (1.0 - metallic);
+    vec3 ambient = diffuseColor * iblAmbient(n) * ao * reliefShadow;
     vec3 lit = ambient
-             + directSun(n, albedo, vis) * mix(0.68, 1.0, reliefShadow)
-             + sunSpecular(n, viewDir, -uSunDir, roughness, uMaterialParams.y, vis) * mix(0.82, 1.0, reliefShadow)
+             + directSun(n, diffuseColor, vis) * mix(0.68, 1.0, reliefShadow)
+             + sunSpecular(n, viewDir, -uSunDir, roughness, f0, vis) * mix(0.82, 1.0, reliefShadow)
              + albedo * uSelfIllum;
     if (kind == 1) {
         float fres = pow(1.0 - max(dot(n, viewDir), 0.0), 5.0) * max(0.25, uMaterialFx0.w);
@@ -131,7 +137,8 @@ void main(){
         vec3 waterTint = mix(waterDeep, waterShallow, clamp(tex.g * 0.9 + tex.b * 1.1 + 0.10, 0.0, 1.0));
         vec3 reflection = mix(uFogColor * 0.32 + iblAmbient(n) * 0.78, uSunColor * (1.05 + sparkle * 1.8) + iblAmbient(n), clamp(fres + sparkle * 0.35, 0.0, 1.0));
         vec3 body = waterTint * 0.84 + tex * 0.10 + iblAmbient(n) * 0.16;
-        lit = mix(body, reflection + sunSpecular(n, viewDir, -uSunDir, 0.035, max(uMaterialParams.y, 0.42), 1.0), clamp(0.28 + fres * 0.78, 0.0, 1.0));
+        vec3 waterF0 = mix(vec3(0.04), waterDeep, uMaterialParams.y);
+        lit = mix(body, reflection + sunSpecular(n, viewDir, -uSunDir, 0.035, waterF0, 1.0), clamp(0.28 + fres * 0.78, 0.0, 1.0));
         lit += waterTint * sparkle * 0.28;
     } else if (kind == 2) {
         float pulse = 1.0 + sin(uTime * 4.0 + vWorldPos.x * 0.35 + vWorldPos.z * 0.28) * uMaterialFx1.w;
@@ -160,11 +167,13 @@ layout(location=1) out vec4 oViewNormal;
 uniform sampler2D uBaseColor;
 uniform sampler2D uNormalMap;
 uniform sampler2D uRoughnessMap;
+uniform sampler2D uMetallicMap;
 uniform sampler2D uAoMap;
 uniform vec4 uBaseColorFactor;
 uniform int  uHasTexture;
 uniform int  uHasNormalMap;
 uniform int  uHasRoughnessMap;
+uniform int  uHasMetallicMap;
 uniform int  uHasAoMap;
 uniform int  uWriteNormal;
 uniform int  uViewSpaceLighting;
@@ -183,13 +192,19 @@ void main(){
         ? normalFromMap(uNormalMap, pos, vUv, geomN)
         : detailNormalFromAlbedo(uBaseColor, vUv, uTexelSize, geomN, uMaterialParams.z, uHasTexture);
     float roughness = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, vUv).r : uMaterialParams.x;
+    float metallic = (uHasMetallicMap == 1) ? texture(uMetallicMap, vUv).r : uMaterialParams.y;
     float ao = (uHasAoMap == 1) ? texture(uAoMap, vUv).r : 1.0;
     vec3 lightDir = normalize(uViewSpaceLighting == 1 ? uToSunView : -uSunDir);
     vec3 viewDir = normalize(uViewSpaceLighting == 1 ? -vWorldPos : (uCameraPos - vWorldPos));
     float vis = (uViewSpaceLighting == 1) ? 1.0 : pcfShadow(vWorldPos, normalize(vNormal));
-    vec3 lit = base.rgb * iblAmbient(n) * ao
-             + base.rgb * uSunColor * uSunIntensity * max(dot(n, lightDir), 0.0) * vis
-             + sunSpecular(n, viewDir, lightDir, roughness, uMaterialParams.y, vis);
+    
+    vec3 albedo = base.rgb;
+    vec3 f0 = mix(vec3(0.04), albedo, metallic);
+    vec3 diffuseColor = albedo * (1.0 - metallic);
+
+    vec3 lit = diffuseColor * iblAmbient(n) * ao
+             + diffuseColor * uSunColor * uSunIntensity * max(dot(n, lightDir), 0.0) * vis
+             + sunSpecular(n, viewDir, lightDir, roughness, f0, vis);
     if (uApplyFog == 1)
         lit = applyFog(lit, vWorldPos, uMaterialParams.w);
     oColor = vec4(lit, base.a);
