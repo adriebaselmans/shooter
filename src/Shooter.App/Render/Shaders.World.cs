@@ -171,12 +171,14 @@ void main(){
         float fres = pow(1.0 - max(dot(n, viewDir), 0.0), 5.0) * max(0.25, uMaterialFx0.w);
         float sparkle = pow(max(dot(reflect(-viewDir, n), -uSunDir), 0.0), 32.0);
         
-        vec3 body = tex;
+        // Add a slight blue/cyan tint so the water actually looks like water, not brown sludge
+        vec3 waterTint = vec3(0.05, 0.25, 0.35); 
+        vec3 body = mix(tex * 0.3, waterTint, 0.7);
         
         vec3 reflection = mix(uFogColor * 0.4 + iblAmbient(n), uSunColor * (1.2 + sparkle), clamp(fres + sparkle * 0.5, 0.0, 1.0));
-        vec3 waterF0 = mix(vec3(0.02), tex, uMaterialParams.y);
+        vec3 waterF0 = mix(vec3(0.02), waterTint, uMaterialParams.y);
         lit = mix(body, reflection + sunSpecular(n, viewDir, -uSunDir, 0.04, waterF0, 1.0), clamp(0.1 + fres * 0.7, 0.0, 1.0));
-        lit += tex * sparkle * 0.5;
+        lit += body * sparkle * 0.5;
     } else if (kind == 2) {
         float pulse = 1.0 + sin(uTime * 4.0 + vWorldPos.x * 0.35 + vWorldPos.z * 0.28) * uMaterialFx1.w;
         float heat = 0.65 + 0.35 * sin(uTime * 2.5 + vWorldPos.x * 0.42 - vWorldPos.z * 0.33);
