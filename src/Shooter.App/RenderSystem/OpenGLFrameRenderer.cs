@@ -18,20 +18,6 @@ internal sealed class OpenGLFrameRenderer
         var view = Matrix4x4.CreateLookAt(frame.Player.EyePosition, frame.Player.EyePosition + frame.Player.Forward(), Vector3.UnitY);
         var proj = Matrix4x4.CreatePerspectiveFieldOfView(WeaponViewmodelRenderer.FovYRadians, aspect, 0.05f, 1000f);
 
-        // Apply TAA Jitter
-        if (frame.Lighting.TaaEnabled)
-        {
-            var jitter = resources.Post.TaaPass.GetJitter();
-            float jx = jitter.jx * 2f / fb.X;
-            float jy = jitter.jy * 2f / fb.Y;
-            proj.M31 += jx;
-            proj.M32 += jy;
-        }
-        else
-        {
-            resources.Post.TaaPass.Initialized = false;
-        }
-
         var viewProj = view * proj;
 
         if (frame.Lighting.ShadowsEnabled)
@@ -42,7 +28,6 @@ internal sealed class OpenGLFrameRenderer
         UpdateDebugTitle(frame);
 
         _prevViewProj = viewProj;
-        resources.Post.TaaPass.FrameIndex++;
     }
 
     private static void RunShadowPass(OpenGLRenderResources resources, RenderFrameData frame)
@@ -63,13 +48,13 @@ internal sealed class OpenGLFrameRenderer
         viewNoTrans.M43 = 0f;
 
         resources.Scene.SkyRenderer.Draw(viewNoTrans, proj, frame.Lighting);
-        resources.Scene.WorldRenderer.Draw(view, viewProj, _prevViewProj, frame.World, frame.Pickups, frame.Lighting, resources.Lighting.ShadowMap, resources.Lighting.IblProbe);
+        resources.Scene.WorldRenderer.Draw(view, viewProj, frame.World, frame.Pickups, frame.Lighting, resources.Lighting.ShadowMap, resources.Lighting.IblProbe);
         resources.Scene.DecalRenderer.Draw(viewProj, frame.Holes);
         resources.Scene.ScorchRenderer.Draw(viewProj, frame.Scorches);
         resources.Scene.TracerRenderer.Draw(viewProj, frame.Tracers);
-        resources.Scene.RocketRenderer.Draw(view, viewProj, _prevViewProj, frame.Rockets, frame.Lighting, resources.Lighting.ShadowMap, resources.Lighting.IblProbe, resources.Scene.WorldRenderer);
+        resources.Scene.RocketRenderer.Draw(view, viewProj, frame.Rockets, frame.Lighting, resources.Lighting.ShadowMap, resources.Lighting.IblProbe, resources.Scene.WorldRenderer);
         resources.Scene.ParticleRenderer.Draw(viewProj, frame.Player.Right(), Vector3.Cross(frame.Player.Right(), frame.Player.Forward()), frame.Particles);
-        resources.Scene.WeaponViewmodelRenderer.Draw(fbWidth, fbHeight, proj, frame.Weapons, frame.Lighting, resources.Lighting.ShadowMap, resources.Lighting.IblProbe, resources.Scene.WorldRenderer);
+        resources.Scene.WeaponViewmodelRenderer.Draw(fbWidth, fbHeight, frame.Weapons, frame.Lighting, resources.Lighting.ShadowMap, resources.Lighting.IblProbe, resources.Scene.WorldRenderer);
         if (frame.MuzzleFlash is not null)
             resources.Scene.MuzzleFlashRenderer.Draw(fbWidth, fbHeight, frame.MuzzleFlash);
     }
@@ -80,14 +65,8 @@ internal sealed class OpenGLFrameRenderer
             resources.Post.SsaoPass.Run(resources.Post.HdrTarget.DepthTex, resources.Post.HdrTarget.NormalTex, proj, frame.Lighting.SsaoRadius, frame.Lighting.SsaoBias);
         if (frame.Lighting.BloomEnabled)
             resources.Post.Bloom.Run(resources.Post.HdrTarget.ColorTex);
-            
-        // TAA Resolve
+
         uint finalHdrTex = resources.Post.HdrTarget.ColorTex;
-        if (frame.Lighting.TaaEnabled)
-        {
-            resources.Post.TaaPass.Resolve(resources.Post.HdrTarget.ColorTex, resources.Post.HdrTarget.VelocityTex);
-            finalHdrTex = resources.Post.TaaPass.OutputTex;
-        }
 
         resources.Post.AutoExposure.Run(finalHdrTex, frame.Lighting, (float)dt);
         resources.Post.PostFx.Draw(

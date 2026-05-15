@@ -36,7 +36,7 @@ public sealed class WorldRenderer : IDisposable
         _pickupCube = new GlMesh(gl, cubeMesh);
     }
 
-    public unsafe void Draw(Matrix4x4 view, Matrix4x4 viewProj, Matrix4x4 prevViewProj, GameWorld world, PickupSystem pickups,
+    public unsafe void Draw(Matrix4x4 view, Matrix4x4 viewProj, GameWorld world, PickupSystem pickups,
         LightingEnvironment env, ShadowMap shadow, IblProbe ibl)
     {
         Matrix4x4.Invert(view, out var invView);
@@ -49,7 +49,6 @@ public sealed class WorldRenderer : IDisposable
         _shader.Use();
         BindLighting(_shader, env, shadow, ibl, cameraPos, view);
         UploadMatrix(_shader.U("uViewProj"), viewProj);
-        UploadMatrix(_shader.U("uPrevViewProj"), prevViewProj);
         UploadMatrix(_shader.U("uView"), view);
         _gl.Uniform1(_shader.U("uReceiveShadows"), env.ShadowsEnabled ? 1 : 0);
         _gl.Uniform1(_shader.U("uBaseColor"), 0);
@@ -66,7 +65,6 @@ public sealed class WorldRenderer : IDisposable
         {
             var glMesh = _brushMeshes[wb.BrushId];
             UploadMatrix(_shader.U("uModel"), wb.Model);
-            UploadMatrix(_shader.U("uPrevModel"), wb.Model); // Static brushes don't move
             UploadMatrix(_shader.U("uNormalMat"), wb.NormalMatrix);
             _gl.Uniform3(_shader.U("uTint"), wb.TintColor.X, wb.TintColor.Y, wb.TintColor.Z);
             var material = _textures.GetMaterialSet(wb.TexturePath);
@@ -160,7 +158,6 @@ public sealed class WorldRenderer : IDisposable
         _gl.Uniform1(s.U("uFogHeightFalloff"), env.FogHeightFalloff);
         _gl.Uniform1(s.U("uFogBaseHeight"), env.FogBaseHeight);
         _gl.Uniform1(s.U("uTime"), Environment.TickCount / 1000f);
-        _gl.Uniform1(s.U("uTaaMipBias"), env.TaaEnabled ? -1.0f : 0f);
 
         _gl.ActiveTexture(TextureUnit.Texture0); // leave unit 0 active for downstream textures
     }

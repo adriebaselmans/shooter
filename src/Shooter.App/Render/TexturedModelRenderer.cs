@@ -25,7 +25,7 @@ public sealed class TexturedModelRenderer : IDisposable
     /// <summary>Begins a draw pass with the textured shader bound, lighting/shadow/IBL uniforms
     /// configured. <paramref name="receiveShadows"/> = false disables shadow lookup entirely
     /// for this pass (used by the view-space weapon viewmodel).</summary>
-    public void BeginPass(Matrix4x4 view, Matrix4x4 viewProj, Matrix4x4 prevViewProj, bool clearDepthFirst, LightingEnvironment env,
+    public void BeginPass(Matrix4x4 view, Matrix4x4 viewProj, bool clearDepthFirst, LightingEnvironment env,
         ShadowMap shadow, IblProbe ibl, WorldRenderer worldRen, bool receiveShadows, bool writeNormal,
         bool viewSpaceLighting, bool applyFog, float roughness, float specularStrength)
     {
@@ -37,7 +37,6 @@ public sealed class TexturedModelRenderer : IDisposable
         Shader.Use();
         worldRen.BindLighting(Shader, env, shadow, ibl, cameraPos, view);
         UploadMatrix(Shader.U("uViewProj"), viewProj);
-        UploadMatrix(Shader.U("uPrevViewProj"), prevViewProj);
         UploadMatrix(Shader.U("uView"), view);
         _gl.Uniform1(Shader.U("uReceiveShadows"), receiveShadows ? 1 : 0);
         _gl.Uniform1(Shader.U("uWriteNormal"), writeNormal ? 1 : 0);
@@ -64,12 +63,11 @@ public sealed class TexturedModelRenderer : IDisposable
         _gl.ActiveTexture(TextureUnit.Texture0);
     }
 
-    public unsafe void DrawModel(GpuModel model, Matrix4x4 modelMatrix, Matrix4x4 prevModelMatrix)
+    public unsafe void DrawModel(GpuModel model, Matrix4x4 modelMatrix)
     {
         Matrix4x4.Invert(modelMatrix, out var inv);
         var normalMat = Matrix4x4.Transpose(inv);
         UploadMatrix(Shader.U("uModel"), modelMatrix);
-        UploadMatrix(Shader.U("uPrevModel"), prevModelMatrix);
         UploadMatrix(Shader.U("uNormalMat"), normalMat);
 
         foreach (var prim in model.Primitives)

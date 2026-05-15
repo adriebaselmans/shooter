@@ -24,13 +24,13 @@ public sealed class RocketRenderer : IDisposable
         Console.WriteLine($"[Rocket] Loaded quadrocket.glb ({_model.Primitives.Count} prims).");
     }
 
-    public void Draw(Matrix4x4 view, Matrix4x4 viewProj, Matrix4x4 prevViewProj, RocketSystem rockets,
+    public void Draw(Matrix4x4 view, Matrix4x4 viewProj, RocketSystem rockets,
         LightingEnvironment env, ShadowMap shadow, IblProbe ibl, WorldRenderer worldRen)
     {
         if (_model is null || rockets.Active.Count == 0) return;
 
         // Rockets are world-space objects: receive shadows and write normals for SSAO.
-        _modelRen.BeginPass(view, viewProj, prevViewProj, clearDepthFirst: false, env, shadow, ibl, worldRen,
+        _modelRen.BeginPass(view, viewProj, clearDepthFirst: false, env, shadow, ibl, worldRen,
             receiveShadows: env.ShadowsEnabled, writeNormal: true, viewSpaceLighting: false, applyFog: true,
             roughness: 0.34f, specularStrength: 0.26f);
         foreach (var r in rockets.Active)
@@ -52,7 +52,7 @@ public sealed class RocketRenderer : IDisposable
             var model = rot * Matrix4x4.CreateTranslation(r.Position);
             // Rockets move fast, but we'd need to store prev pos to do TAA right.
             // For now just pass the current model matrix for prevModel as well.
-            _modelRen.DrawModel(_model, model, model);
+            _modelRen.DrawModel(_model, model);
         }
     }
 

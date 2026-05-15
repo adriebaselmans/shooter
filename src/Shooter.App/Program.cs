@@ -37,6 +37,8 @@ internal static class Program
             Title = "Shooter (OpenGL)",
             VSync = true,
             API = api,
+            PreferredDepthBufferBits = 24,
+            Samples = 4, // 4x MSAA
         };
         _window = Window.Create(opts);
         _window.Load += OnLoad;

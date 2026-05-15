@@ -10,18 +10,14 @@ layout(location=2) in vec2 aUv;
 layout(location=3) in vec3 aTangent;
 layout(location=4) in vec3 aBitangent;
 uniform mat4 uModel;
-uniform mat4 uPrevModel;
 uniform mat4 uView;
 uniform mat4 uViewProj;
-uniform mat4 uPrevViewProj;
 uniform mat4 uNormalMat;
 out vec3 vWorldPos;
 out vec3 vNormal;
 out vec3 vViewNormal;
 out vec2 vUv;
 out mat3 vTbn;
-out vec4 vClipPos;
-out vec4 vPrevClipPos;
 void main(){
     vec4 wp = uModel * vec4(aPos,1.0);
     vWorldPos = wp.xyz;
@@ -32,9 +28,7 @@ void main(){
     vViewNormal = mat3(uView) * wn;
     vUv = aUv;
     vTbn = mat3(wt, wb, wn);
-    vClipPos = uViewProj * wp;
-    vPrevClipPos = uPrevViewProj * (uPrevModel * vec4(aPos,1.0));
-    gl_Position = vClipPos;
+    gl_Position = uViewProj * wp;
 }
 """;
 
@@ -45,11 +39,8 @@ in vec3 vNormal;
 in vec3 vViewNormal;
 in vec2 vUv;
 in mat3 vTbn;
-in vec4 vClipPos;
-in vec4 vPrevClipPos;
 layout(location=0) out vec4 oColor;
 layout(location=1) out vec4 oViewNormal;
-layout(location=2) out vec2 oVelocity;
 uniform sampler2D uBaseColor;
 uniform sampler2D uNormalMap;
 uniform sampler2D uRoughnessMap;
@@ -67,13 +58,12 @@ uniform vec3 uTint;
 uniform float uSelfIllum;
 uniform vec2 uTexelSize;
 uniform float uParallaxScale;
-uniform float uTaaMipBias;
 uniform vec4 uMaterialParams;
 uniform vec4 uMaterialFx0;
 uniform vec4 uMaterialFx1;
 """ + "\n" + LightingHeader + "\n" + """
 float heightFromMap(vec2 uv){
-    return texture(uHeightMap, uv, uTaaMipBias).r;
+    return texture(uHeightMap, uv).r;
 }
 
 vec3 reliefNormal(vec2 uv, vec3 geomN, float strength){
@@ -122,21 +112,21 @@ void main(){
         sin((vWorldPos.x - uTime * 0.5) * 1.5)) * (uMaterialFx1.z * 0.04);
     vec2 sampleUv = flowUvA + rippleA;
     vec2 sampleUv2 = flowUvB - rippleB;
-    vec3 texA = (uHasTexture == 1) ? texture(uBaseColor, sampleUv, uTaaMipBias).rgb : vec3(1.0);
-    vec3 texB = (uHasTexture == 1) ? texture(uBaseColor, sampleUv2, uTaaMipBias).rgb : vec3(1.0);
+    vec3 texA = (uHasTexture == 1) ? texture(uBaseColor, sampleUv).rgb : vec3(1.0);
+    vec3 texB = (uHasTexture == 1) ? texture(uBaseColor, sampleUv2).rgb : vec3(1.0);
     vec3 tex = mix(texA, texB, 0.35);
     vec3 albedo = tex * uTint;
     vec3 detailN = useRelief
         ? reliefNormal(sampleUv, baseN, max(0.08, uMaterialParams.z * 0.55 + uParallaxScale * 4.5))
         : detailNormalFromAlbedo(uBaseColor, sampleUv, uTexelSize, baseN, uMaterialParams.z, uHasTexture);
-    vec3 mapN = texture(uNormalMap, sampleUv, uTaaMipBias).xyz * 2.0 - 1.0;
+    vec3 mapN = texture(uNormalMap, sampleUv).xyz * 2.0 - 1.0;
     vec3 n = (uHasNormalMap == 1)
         ? normalize(mix(normalize(vTbn * mapN), detailN, useRelief ? 0.20 : 0.08))
         : detailN;
-    float roughness = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, sampleUv, uTaaMipBias).r : uMaterialParams.x;
+    float roughness = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, sampleUv).r : uMaterialParams.x;
     roughness = clamp(max(roughness, uMaterialParams.x * 0.45), 0.02, 1.0);
-    float metallic = (uHasMetallicMap == 1) ? texture(uMetallicMap, sampleUv, uTaaMipBias).r : uMaterialParams.y;
-    float ao = (uHasAoMap == 1) ? texture(uAoMap, sampleUv, uTaaMipBias).r : 1.0;
+    float metallic = (uHasMetallicMap == 1) ? texture(uMetallicMap, sampleUv).r : uMaterialParams.y;
+    float ao = (uHasAoMap == 1) ? texture(uAoMap, sampleUv).r : 1.0;
     float vis = pcfShadow(vWorldPos, n);
     reliefShadow = useRelief ? reliefShadowTerm(sampleUv, max(0.08, uMaterialParams.z * 0.55 + uParallaxScale * 4.5)) : 1.0;
     
@@ -168,9 +158,6 @@ void main(){
     lit = applyFog(lit, vWorldPos, uMaterialParams.w);
     oColor = vec4(lit, 1.0);
     oViewNormal = vec4(normalize(vViewNormal), 1.0);
-    vec2 ndc = (vClipPos.xy / vClipPos.w);
-    vec2 prevNdc = (vPrevClipPos.xy / vPrevClipPos.w);
-    oVelocity = (ndc - prevNdc) * 0.5;
 }
 """;
 
@@ -184,11 +171,8 @@ in vec3 vNormal;
 in vec3 vViewNormal;
 in vec2 vUv;
 in mat3 vTbn;
-in vec4 vClipPos;
-in vec4 vPrevClipPos;
 layout(location=0) out vec4 oColor;
 layout(location=1) out vec4 oViewNormal;
-layout(location=2) out vec2 oVelocity;
 uniform sampler2D uBaseColor;
 uniform sampler2D uNormalMap;
 uniform sampler2D uRoughnessMap;
@@ -204,23 +188,22 @@ uniform int  uWriteNormal;
 uniform int  uViewSpaceLighting;
 uniform int  uApplyFog;
 uniform vec2 uTexelSize;
-uniform float uTaaMipBias;
 uniform vec4 uMaterialParams;
 uniform vec4 uMaterialFx0;
 uniform vec4 uMaterialFx1;
 """ + "\n" + LightingHeader + "\n" + """
 void main(){
-    vec4 base = (uHasTexture == 1) ? texture(uBaseColor, vUv, uTaaMipBias) * uBaseColorFactor : uBaseColorFactor;
+    vec4 base = (uHasTexture == 1) ? texture(uBaseColor, vUv) * uBaseColorFactor : uBaseColorFactor;
     if (base.a < 0.05) discard;
     vec3 pos = vWorldPos;
     vec3 geomN = normalize(uViewSpaceLighting == 1 ? vViewNormal : vNormal);
-    vec3 mapN = texture(uNormalMap, vUv, uTaaMipBias).xyz * 2.0 - 1.0;
+    vec3 mapN = texture(uNormalMap, vUv).xyz * 2.0 - 1.0;
     vec3 n = (uHasNormalMap == 1)
         ? normalize(vTbn * mapN)
         : detailNormalFromAlbedo(uBaseColor, vUv, uTexelSize, geomN, uMaterialParams.z, uHasTexture);
-    float roughness = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, vUv, uTaaMipBias).r : uMaterialParams.x;
-    float metallic = (uHasMetallicMap == 1) ? texture(uMetallicMap, vUv, uTaaMipBias).r : uMaterialParams.y;
-    float ao = (uHasAoMap == 1) ? texture(uAoMap, vUv, uTaaMipBias).r : 1.0;
+    float roughness = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, vUv).r : uMaterialParams.x;
+    float metallic = (uHasMetallicMap == 1) ? texture(uMetallicMap, vUv).r : uMaterialParams.y;
+    float ao = (uHasAoMap == 1) ? texture(uAoMap, vUv).r : 1.0;
     vec3 lightDir = normalize(uViewSpaceLighting == 1 ? uToSunView : -uSunDir);
     vec3 viewDir = normalize(uViewSpaceLighting == 1 ? -vWorldPos : (uCameraPos - vWorldPos));
     float vis = (uViewSpaceLighting == 1) ? 1.0 : pcfShadow(vWorldPos, normalize(vNormal));

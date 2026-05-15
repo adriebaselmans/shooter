@@ -113,7 +113,6 @@ public sealed class HdrTarget : IDisposable
         if (Fbo != 0) { _gl.DeleteFramebuffer(Fbo); Fbo = 0; }
         if (ColorTex != 0) { _gl.DeleteTexture(ColorTex); ColorTex = 0; }
         if (NormalTex != 0) { _gl.DeleteTexture(NormalTex); NormalTex = 0; }
-        if (VelocityTex != 0) { _gl.DeleteTexture(VelocityTex); VelocityTex = 0; }
         if (DepthTex != 0) { _gl.DeleteTexture(DepthTex); DepthTex = 0; }
         Width = 0; Height = 0;
     }
