@@ -171,7 +171,8 @@ void main(){
         vec3 reflection = iblAmbient(n) * 1.5; // Skybox reflection
         
         // PBR mix: Look straight down -> see base texture. Look across -> see reflection mirror.
-        lit = mix(tex, reflection, clamp(fresnel, 0.0, 1.0));
+        // We use 'albedo' so the texture's natural authored tint is respected.
+        lit = mix(albedo, reflection, clamp(fresnel, 0.0, 1.0));
         lit += uSunColor * sparkle * vis * 1.5; // Add sun glint
     } else if (kind == 2) {
         float pulse = 1.0 + sin(uTime * 4.0 + vWorldPos.x * 0.35 + vWorldPos.z * 0.28) * uMaterialFx1.w;
