@@ -8,6 +8,7 @@ namespace Shooter.RenderSystem;
 internal sealed class OpenGLSceneResources : IDisposable
 {
     public WorldRenderer WorldRenderer { get; }
+    public WorldGBufferRenderer WorldGBufferRenderer { get; }
     public DecalRenderer DecalRenderer { get; }
     public TracerRenderer TracerRenderer { get; }
     public HudRenderer HudRenderer { get; }
@@ -20,6 +21,7 @@ internal sealed class OpenGLSceneResources : IDisposable
 
     private OpenGLSceneResources(
         WorldRenderer worldRenderer,
+        WorldGBufferRenderer worldGBufferRenderer,
         DecalRenderer decalRenderer,
         TracerRenderer tracerRenderer,
         HudRenderer hudRenderer,
@@ -31,6 +33,7 @@ internal sealed class OpenGLSceneResources : IDisposable
         SkyRenderer skyRenderer)
     {
         WorldRenderer = worldRenderer;
+        WorldGBufferRenderer = worldGBufferRenderer;
         DecalRenderer = decalRenderer;
         TracerRenderer = tracerRenderer;
         HudRenderer = hudRenderer;
@@ -42,17 +45,22 @@ internal sealed class OpenGLSceneResources : IDisposable
         SkyRenderer = skyRenderer;
     }
 
-    public static OpenGLSceneResources Create(GL gl, GameWorld world) => new(
-        new WorldRenderer(gl, world),
-        new DecalRenderer(gl),
+    public static OpenGLSceneResources Create(GL gl, GameWorld world)
+    {
+        var worldRenderer = new WorldRenderer(gl, world);
+        return new OpenGLSceneResources(
+            worldRenderer,
+            new WorldGBufferRenderer(gl, world, worldRenderer.BrushMeshes),
+            new DecalRenderer(gl),
         new TracerRenderer(gl),
         new HudRenderer(gl),
         new WeaponViewmodelRenderer(gl),
         new RocketRenderer(gl),
         new MuzzleFlashRenderer(gl),
         new ScorchRenderer(gl),
-        new ParticleRenderer(gl),
-        new SkyRenderer(gl));
+            new ParticleRenderer(gl),
+            new SkyRenderer(gl));
+    }
 
     public void Dispose()
     {
@@ -64,6 +72,7 @@ internal sealed class OpenGLSceneResources : IDisposable
         HudRenderer.Dispose();
         TracerRenderer.Dispose();
         DecalRenderer.Dispose();
+        WorldGBufferRenderer.Dispose();
         WorldRenderer.Dispose();
         SkyRenderer.Dispose();
     }

@@ -43,7 +43,7 @@ public sealed class TexturedModelRenderer : IDisposable
         _gl.Uniform1(Shader.U("uViewSpaceLighting"), viewSpaceLighting ? 1 : 0);
         _gl.Uniform1(Shader.U("uApplyFog"), applyFog ? 1 : 0);
         _gl.Uniform1(Shader.U("uBaseColor"), 0); // texture unit 0
-        _gl.Uniform1(Shader.U("uNormalMap"), 1);
+        _gl.Uniform1(Shader.U("uNormalMap"), 14);
         _gl.Uniform1(Shader.U("uRoughnessMap"), 2);
         _gl.Uniform1(Shader.U("uMetallicMap"), 3);
         _gl.Uniform1(Shader.U("uAoMap"), 6);
@@ -54,7 +54,7 @@ public sealed class TexturedModelRenderer : IDisposable
         _gl.Uniform4(Shader.U("uMaterialParams"), roughness, 0.0f, 0.0f, applyFog ? 1f : 0f);
         _gl.Uniform4(Shader.U("uMaterialFx0"), 0f, 0f, 1f, 0f);
         _gl.Uniform4(Shader.U("uMaterialFx1"), 0f, 0f, 0f, 0f);
-        _gl.ActiveTexture(TextureUnit.Texture1);
+        _gl.ActiveTexture(TextureUnit.Texture14);
         _gl.BindTexture(TextureTarget.Texture2D, _flatNormalTex);
         _gl.ActiveTexture(TextureUnit.Texture2);
         _gl.BindTexture(TextureTarget.Texture2D, _whiteTex);

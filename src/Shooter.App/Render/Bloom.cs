@@ -60,6 +60,8 @@ public sealed class Bloom : IDisposable
                 _gl.TexImage2D(TextureTarget.Texture2D, 0, InternalFormat.Rgba16f,
                     (uint)w, (uint)h, 0, PixelFormat.Rgba, PixelType.HalfFloat, (void*)0);
             }
+            _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBaseLevel, 0);
+            _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, 0);
             _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)GLEnum.Linear);
             _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)GLEnum.Linear);
             _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)GLEnum.ClampToEdge);

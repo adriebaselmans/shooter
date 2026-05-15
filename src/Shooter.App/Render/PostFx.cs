@@ -42,9 +42,9 @@ public sealed class PostFx : IDisposable
         _gl.BindTexture(TextureTarget.Texture2D, hdrTex);
         _gl.Uniform1(_shader.U("uHdr"), 0);
 
-        _gl.ActiveTexture(TextureUnit.Texture1);
+        _gl.ActiveTexture(TextureUnit.Texture13);
         _gl.BindTexture(TextureTarget.Texture2D, bloomTex);
-        _gl.Uniform1(_shader.U("uBloom"), 1);
+        _gl.Uniform1(_shader.U("uBloom"), 13);
 
         _gl.ActiveTexture(TextureUnit.Texture2);
         _gl.BindTexture(TextureTarget.Texture2D, aoTex);

@@ -15,18 +15,21 @@ public sealed class IblProbe : IDisposable
     private readonly GL _gl;
     private readonly ShaderProgram _skyFaceShader;
     private readonly ShaderProgram _convolveShader;
+    private readonly ShaderProgram _specularPrefilterShader;
     private readonly uint _quadVao;
     private readonly uint _quadVbo;
     private readonly uint _captureFbo;
 
     public uint SkyCube { get; private set; }
     public uint IrradianceCube { get; private set; }
+    public uint SpecularCube { get; private set; }
 
     public IblProbe(GL gl)
     {
         _gl = gl;
         _skyFaceShader = new ShaderProgram(gl, Shaders.SkyFaceVert, Shaders.SkyFaceFrag);
         _convolveShader = new ShaderProgram(gl, Shaders.IrradianceConvolveVert, Shaders.IrradianceConvolveFrag);
+        _specularPrefilterShader = new ShaderProgram(gl, Shaders.SpecularPrefilterVert, Shaders.SpecularPrefilterFrag);
 
         // Fullscreen quad in clip space [-1,1].
         Span<float> quad = [-1f, -1f, 3f, -1f, -1f, 3f];
@@ -45,24 +48,32 @@ public sealed class IblProbe : IDisposable
 
         _captureFbo = gl.GenFramebuffer();
 
-        SkyCube = AllocateCubemap(SkySize);
-        IrradianceCube = AllocateCubemap(IrradianceSize);
+        SkyCube = AllocateCubemap(SkySize, mipmapped: true);
+        IrradianceCube = AllocateCubemap(IrradianceSize, mipmapped: false);
+        SpecularCube = AllocateCubemap(SkySize, mipmapped: true);
     }
 
-    private uint AllocateCubemap(int size)
+    private uint AllocateCubemap(int size, bool mipmapped)
     {
         uint cube = _gl.GenTexture();
         _gl.BindTexture(TextureTarget.TextureCubeMap, cube);
-        for (int face = 0; face < 6; face++)
+        int maxLevel = mipmapped ? (int)MathF.Floor(MathF.Log2(size)) : 0;
+        for (int level = 0; level <= maxLevel; level++)
         {
-            unsafe
+            int levelSize = Math.Max(1, size >> level);
+            for (int face = 0; face < 6; face++)
             {
-                _gl.TexImage2D(TextureTarget.TextureCubeMapPositiveX + face, 0,
-                    InternalFormat.Rgba16f, (uint)size, (uint)size, 0,
-                    PixelFormat.Rgba, PixelType.HalfFloat, (void*)0);
+                unsafe
+                {
+                    _gl.TexImage2D(TextureTarget.TextureCubeMapPositiveX + face, level,
+                        InternalFormat.Rgba16f, (uint)levelSize, (uint)levelSize, 0,
+                        PixelFormat.Rgba, PixelType.HalfFloat, (void*)0);
+                }
             }
         }
-        _gl.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, (int)GLEnum.Linear);
+        _gl.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureBaseLevel, 0);
+        _gl.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureMaxLevel, maxLevel);
+        _gl.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, (int)(mipmapped ? GLEnum.LinearMipmapLinear : GLEnum.Linear));
         _gl.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, (int)GLEnum.Linear);
         _gl.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, (int)GLEnum.ClampToEdge);
         _gl.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, (int)GLEnum.ClampToEdge);
@@ -112,6 +123,10 @@ public sealed class IblProbe : IDisposable
             _gl.DrawArrays(PrimitiveType.Triangles, 0, 3);
         }
 
+        // Build sky mip chain so roughness-aware sky/specular lookups can use textureLod.
+        _gl.BindTexture(TextureTarget.TextureCubeMap, SkyCube);
+        _gl.GenerateMipmap(TextureTarget.TextureCubeMap);
+
         // --- Pass 2: convolve sky into IrradianceCube ---
         _convolveShader.Use();
         _gl.Uniform1(_convolveShader.U("uSky"), 0);
@@ -130,6 +145,30 @@ public sealed class IblProbe : IDisposable
             _gl.DrawArrays(PrimitiveType.Triangles, 0, 3);
         }
 
+        // --- Pass 3: prefilter sky into SpecularCube for roughness-aware reflections ---
+        int specMipCount = (int)MathF.Floor(MathF.Log2(SkySize));
+        _specularPrefilterShader.Use();
+        _gl.Uniform1(_specularPrefilterShader.U("uSky"), 0);
+        _gl.ActiveTexture(TextureUnit.Texture0);
+        _gl.BindTexture(TextureTarget.TextureCubeMap, SkyCube);
+        for (int mip = 0; mip <= specMipCount; mip++)
+        {
+            int mipSize = Math.Max(1, SkySize >> mip);
+            float roughness = specMipCount > 0 ? mip / (float)specMipCount : 0.0f;
+            _gl.Viewport(0, 0, (uint)mipSize, (uint)mipSize);
+            _gl.Uniform1(_specularPrefilterShader.U("uRoughness"), roughness);
+            for (int i = 0; i < 6; i++)
+            {
+                _gl.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0,
+                    TextureTarget.TextureCubeMapPositiveX + i, SpecularCube, mip);
+                var f = faces[i];
+                _gl.Uniform3(_specularPrefilterShader.U("uFaceForward"), f.fwd.X, f.fwd.Y, f.fwd.Z);
+                _gl.Uniform3(_specularPrefilterShader.U("uFaceRight"), f.right.X, f.right.Y, f.right.Z);
+                _gl.Uniform3(_specularPrefilterShader.U("uFaceUp"), f.up.X, f.up.Y, f.up.Z);
+                _gl.DrawArrays(PrimitiveType.Triangles, 0, 3);
+            }
+        }
+
         _gl.BindVertexArray(0);
         _gl.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
         _gl.DepthMask(true);
@@ -140,12 +179,15 @@ public sealed class IblProbe : IDisposable
     {
         if (SkyCube != 0) _gl.DeleteTexture(SkyCube);
         if (IrradianceCube != 0) _gl.DeleteTexture(IrradianceCube);
+        if (SpecularCube != 0) _gl.DeleteTexture(SpecularCube);
         _gl.DeleteFramebuffer(_captureFbo);
         _gl.DeleteBuffer(_quadVbo);
         _gl.DeleteVertexArray(_quadVao);
         _skyFaceShader.Dispose();
         _convolveShader.Dispose();
+        _specularPrefilterShader.Dispose();
         SkyCube = 0;
         IrradianceCube = 0;
+        SpecularCube = 0;
     }
 }

@@ -104,6 +104,8 @@ public sealed class SsaoPass : IDisposable
             _gl.TexImage2D(TextureTarget.Texture2D, 0, InternalFormat.R16f,
                 (uint)w, (uint)h, 0, PixelFormat.Red, PixelType.HalfFloat, (void*)0);
         }
+        _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBaseLevel, 0);
+        _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, 0);
         _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)GLEnum.Linear);
         _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)GLEnum.Linear);
         _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)GLEnum.ClampToEdge);
@@ -140,9 +142,9 @@ public sealed class SsaoPass : IDisposable
         _gl.ActiveTexture(TextureUnit.Texture0);
         _gl.BindTexture(TextureTarget.Texture2D, depthTex);
         _gl.Uniform1(_ssao.U("uDepth"), 0);
-        _gl.ActiveTexture(TextureUnit.Texture1);
+        _gl.ActiveTexture(TextureUnit.Texture11);
         _gl.BindTexture(TextureTarget.Texture2D, normalTex);
-        _gl.Uniform1(_ssao.U("uNormal"), 1);
+        _gl.Uniform1(_ssao.U("uNormal"), 11);
         _gl.ActiveTexture(TextureUnit.Texture2);
         _gl.BindTexture(TextureTarget.Texture2D, _noiseTex);
         _gl.Uniform1(_ssao.U("uNoise"), 2);
@@ -161,9 +163,9 @@ public sealed class SsaoPass : IDisposable
         _gl.ActiveTexture(TextureUnit.Texture0);
         _gl.BindTexture(TextureTarget.Texture2D, _aoTex);
         _gl.Uniform1(_blur.U("uAo"), 0);
-        _gl.ActiveTexture(TextureUnit.Texture1);
+        _gl.ActiveTexture(TextureUnit.Texture12);
         _gl.BindTexture(TextureTarget.Texture2D, depthTex);
-        _gl.Uniform1(_blur.U("uDepth"), 1);
+        _gl.Uniform1(_blur.U("uDepth"), 12);
         _gl.Uniform2(_blur.U("uTexel"), 1f / _w, 1f / _h);
         _gl.DrawArrays(PrimitiveType.Triangles, 0, 3);
 

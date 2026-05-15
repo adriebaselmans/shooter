@@ -44,7 +44,7 @@ public sealed class WorldRenderer : IDisposable
     }
 
     public unsafe void DrawOpaque(Matrix4x4 view, Matrix4x4 viewProj, GameWorld world, PickupSystem pickups,
-        LightingEnvironment env, ShadowMap shadow, IblProbe ibl)
+        LightingEnvironment env, ShadowMap shadow, IblProbe ibl, bool drawStandard = true, bool drawNonStandard = true, bool drawPickups = true)
     {
         Matrix4x4.Invert(view, out var invView);
         var cameraPos = new Vector3(invView.M41, invView.M42, invView.M43);
@@ -59,7 +59,7 @@ public sealed class WorldRenderer : IDisposable
         UploadMatrix(_shader.U("uView"), view);
         _gl.Uniform1(_shader.U("uReceiveShadows"), env.ShadowsEnabled ? 1 : 0);
         _gl.Uniform1(_shader.U("uBaseColor"), 0);
-        _gl.Uniform1(_shader.U("uNormalMap"), 1);
+        _gl.Uniform1(_shader.U("uNormalMap"), 14);
         _gl.Uniform1(_shader.U("uRoughnessMap"), 2);
         _gl.Uniform1(_shader.U("uMetallicMap"), 3);
         _gl.Uniform1(_shader.U("uAoMap"), 6);
@@ -72,6 +72,11 @@ public sealed class WorldRenderer : IDisposable
         {
             if (wb.MaterialKind == BrushMaterialKind.Water)
                 continue;
+            bool isStandard = wb.MaterialKind == BrushMaterialKind.Standard;
+            if (isStandard && !drawStandard)
+                continue;
+            if (!isStandard && !drawNonStandard)
+                continue;
 
             var glMesh = _brushMeshes[wb.BrushId];
             UploadMatrix(_shader.U("uModel"), wb.Model);
@@ -80,7 +85,7 @@ public sealed class WorldRenderer : IDisposable
             var material = _textures.GetMaterialSet(wb.TexturePath);
             _gl.ActiveTexture(TextureUnit.Texture0);
             _gl.BindTexture(TextureTarget.Texture2D, material.BaseColorHandle);
-            _gl.ActiveTexture(TextureUnit.Texture1);
+            _gl.ActiveTexture(TextureUnit.Texture14);
             _gl.BindTexture(TextureTarget.Texture2D, material.NormalHandle);
             _gl.ActiveTexture(TextureUnit.Texture2);
             _gl.BindTexture(TextureTarget.Texture2D, material.RoughnessHandle);
@@ -105,7 +110,8 @@ public sealed class WorldRenderer : IDisposable
             _gl.DrawElements(PrimitiveType.Triangles, (uint)glMesh.IndexCount, DrawElementsType.UnsignedInt, (void*)0);
         }
 
-        DrawPickups(pickups);
+        if (drawPickups)
+            DrawPickups(pickups);
         _gl.BindVertexArray(0);
     }
 
@@ -227,8 +233,22 @@ public sealed class WorldRenderer : IDisposable
         _gl.Uniform4(_shader.U("uMaterialParams"), 0.68f, 0.0f, 0.0f, 1f);
         _gl.Uniform4(_shader.U("uMaterialFx0"), 0f, 0f, 1f, 0f);
         _gl.Uniform4(_shader.U("uMaterialFx1"), 0f, 0f, 0f, 0f);
+        var fallback = _textures.GetMaterialSet(null);
         _gl.ActiveTexture(TextureUnit.Texture0);
-        _gl.BindTexture(TextureTarget.Texture2D, _textures.GetOrWhite(null));
+        _gl.BindTexture(TextureTarget.Texture2D, fallback.BaseColorHandle);
+        _gl.ActiveTexture(TextureUnit.Texture1);
+        _gl.BindTexture(TextureTarget.Texture2D, fallback.NormalHandle);
+        _gl.ActiveTexture(TextureUnit.Texture14);
+        _gl.BindTexture(TextureTarget.Texture2D, fallback.NormalHandle);
+        _gl.ActiveTexture(TextureUnit.Texture2);
+        _gl.BindTexture(TextureTarget.Texture2D, fallback.RoughnessHandle);
+        _gl.ActiveTexture(TextureUnit.Texture3);
+        _gl.BindTexture(TextureTarget.Texture2D, fallback.MetallicHandle);
+        _gl.ActiveTexture(TextureUnit.Texture6);
+        _gl.BindTexture(TextureTarget.Texture2D, fallback.AoHandle);
+        _gl.ActiveTexture(TextureUnit.Texture7);
+        _gl.BindTexture(TextureTarget.Texture2D, fallback.HeightHandle);
+        _gl.ActiveTexture(TextureUnit.Texture0);
         _pickupCube.Bind();
         float baseY = MathF.Sin((float)Environment.TickCount / 600f) * 0.08f;
         foreach (var p in pickups.Active)
@@ -263,6 +283,10 @@ public sealed class WorldRenderer : IDisposable
         _gl.ActiveTexture(TextureUnit.Texture8);
         _gl.BindTexture(TextureTarget.TextureCubeMap, ibl.SkyCube);
         _gl.Uniform1(s.U("uSkyCube"), 8);
+
+        _gl.ActiveTexture(TextureUnit.Texture15);
+        _gl.BindTexture(TextureTarget.TextureCubeMap, ibl.SpecularCube);
+        _gl.Uniform1(s.U("uSpecularEnv"), 15);
 
         UploadMatrix(s.U("uLightSpace"), shadow.LightSpace);
         var d = Vector3.Normalize(env.SunDirection);

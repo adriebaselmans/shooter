@@ -7,6 +7,7 @@ namespace Shooter.RenderSystem;
 /// <summary>Owns the OpenGL frame render flow and pass ordering.</summary>
 internal sealed class OpenGLFrameRenderer
 {
+    private static readonly bool UseDeferredOpaque = true;
     private Matrix4x4 _prevViewProj = Matrix4x4.Identity;
 
     public void Render(OpenGLRenderResources resources, double dt, RenderFrameData frame)
@@ -47,8 +48,51 @@ internal sealed class OpenGLFrameRenderer
         viewNoTrans.M42 = 0f;
         viewNoTrans.M43 = 0f;
 
-        resources.Scene.SkyRenderer.Draw(viewNoTrans, proj, frame.Lighting);
-        resources.Scene.WorldRenderer.DrawOpaque(view, viewProj, frame.World, frame.Pickups, frame.Lighting, resources.Lighting.ShadowMap, resources.Lighting.IblProbe);
+        if (UseDeferredOpaque)
+        {
+            resources.Post.GBufferTarget.Bind();
+            resources.Gl.ClearColor(0f, 0f, 0f, 1f);
+            resources.Gl.Clear(Silk.NET.OpenGL.ClearBufferMask.ColorBufferBit | Silk.NET.OpenGL.ClearBufferMask.DepthBufferBit);
+            resources.Scene.WorldGBufferRenderer.Draw(view, viewProj, frame.World);
+            resources.Post.GBufferTarget.Resolve();
+
+            if (frame.Lighting.SsaoEnabled)
+                resources.Post.SsaoPass.Run(resources.Post.GBufferTarget.DepthTex, resources.Post.GBufferTarget.G1Tex, proj, frame.Lighting.SsaoRadius, frame.Lighting.SsaoBias);
+
+            if (frame.Lighting.ShadowsEnabled)
+            {
+                var toSunView = Vector3.Normalize(Vector3.TransformNormal(frame.Lighting.ToSun, view));
+                resources.Post.ContactShadowPass.Run(resources.Post.GBufferTarget.DepthTex, resources.Post.GBufferTarget.G1Tex, proj, toSunView);
+            }
+
+            resources.Post.HdrTarget.Bind();
+            resources.Gl.ClearColor(0f, 0f, 0f, 1f);
+            resources.Gl.Clear(Silk.NET.OpenGL.ClearBufferMask.ColorBufferBit | Silk.NET.OpenGL.ClearBufferMask.DepthBufferBit);
+            resources.Scene.SkyRenderer.Draw(viewNoTrans, proj, frame.Lighting);
+            resources.Post.HdrTarget.BlitDepthFrom(resources.Post.GBufferTarget.ResolveFbo);
+            Matrix4x4.Invert(view, out var invView);
+            var cameraPos = new Vector3(invView.M41, invView.M42, invView.M43);
+            resources.Post.DeferredLightingPass.Draw(
+                resources.Post.GBufferTarget,
+                frame.Lighting.SsaoEnabled ? resources.Post.SsaoPass.AoTex : 0,
+                frame.Lighting.ShadowsEnabled ? resources.Post.ContactShadowPass.VisibilityTex : 0,
+                resources.Post.HdrTarget,
+                frame.Lighting,
+                resources.Lighting.ShadowMap,
+                resources.Lighting.IblProbe,
+                resources.Scene.WorldRenderer,
+                cameraPos,
+                view,
+                viewProj);
+            resources.Scene.WorldRenderer.DrawOpaque(view, viewProj, frame.World, frame.Pickups, frame.Lighting, resources.Lighting.ShadowMap, resources.Lighting.IblProbe, drawStandard: false, drawNonStandard: true, drawPickups: true);
+            resources.Post.HdrTarget.Resolve();
+            resources.Post.SsrPass.Run(resources.Post.HdrTarget.ColorTex, resources.Post.GBufferTarget, resources.Post.HdrTarget, resources.Lighting.IblProbe, view, proj, _prevViewProj);
+        }
+        else
+        {
+            resources.Scene.SkyRenderer.Draw(viewNoTrans, proj, frame.Lighting);
+            resources.Scene.WorldRenderer.DrawOpaque(view, viewProj, frame.World, frame.Pickups, frame.Lighting, resources.Lighting.ShadowMap, resources.Lighting.IblProbe);
+        }
 
         // Resolve the opaque scene so water can refract the already-rendered pool floor.
         resources.Post.HdrTarget.Resolve();
@@ -80,7 +124,7 @@ internal sealed class OpenGLFrameRenderer
     {
         resources.Post.HdrTarget.Resolve();
 
-        if (frame.Lighting.SsaoEnabled)
+        if (frame.Lighting.SsaoEnabled && !UseDeferredOpaque)
             resources.Post.SsaoPass.Run(resources.Post.HdrTarget.DepthTex, resources.Post.HdrTarget.NormalTex, proj, frame.Lighting.SsaoRadius, frame.Lighting.SsaoBias);
         if (frame.Lighting.BloomEnabled)
             resources.Post.Bloom.Run(resources.Post.HdrTarget.ColorTex);
