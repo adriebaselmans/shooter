@@ -165,13 +165,16 @@ void main(){
     if (kind == 1) {
         // Industry-standard PBR water
         // Base color is kept clean. Panning creates flow, normal maps create 3D ripple reflections.
-        float fresnel = uMaterialFx0.w + (1.0 - uMaterialFx0.w) * pow(1.0 - max(dot(n, viewDir), 0.0), 5.0);
+        
+        // Multiply authored fresnel by 0.1 so it doesn't totally blow out the texture
+        float baseFresnel = uMaterialFx0.w * 0.1; 
+        float fresnel = baseFresnel + (1.0 - baseFresnel) * pow(1.0 - max(dot(n, viewDir), 0.0), 5.0);
+        
         float sparkle = pow(max(dot(reflect(-viewDir, n), -uSunDir), 0.0), 128.0); // Extremely sharp sun reflection
         
         vec3 reflection = iblAmbient(n) * 1.5; // Skybox reflection
         
-        // PBR mix: Look straight down -> see base texture. Look across -> see reflection mirror.
-        // We use 'albedo' so the texture's natural authored tint is respected.
+        // Mix between underlying texture and sky reflection based on view angle
         lit = mix(albedo, reflection, clamp(fresnel, 0.0, 1.0));
         lit += uSunColor * sparkle * vis * 1.5; // Add sun glint
     } else if (kind == 2) {
