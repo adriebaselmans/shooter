@@ -106,8 +106,9 @@ void main(){
     
     // For water (kind == 1), only the normal maps cross-scroll. 
     // The base texture is drawn cleanly with a simple slow pan.
-    vec2 normalScrollA = baseUv + uMaterialFx1.xy * uTime;
-    vec2 normalScrollB = baseUv + vec2(-uMaterialFx1.y, uMaterialFx1.x) * (uTime * 0.85); // perpendicular scroll
+    // We scale the normal maps relative to the base texture so the ripples match the high resolution
+    vec2 normalScrollA = (baseUv * 2.5) + uMaterialFx1.xy * uTime * 2.0;
+    vec2 normalScrollB = (baseUv * 2.5) + vec2(-uMaterialFx1.y, uMaterialFx1.x) * (uTime * 1.6); // perpendicular scroll
     
     // Lava (kind == 2) maintains the chaotic color warping
     vec2 rippleA = (kind == 2) ? vec2(
