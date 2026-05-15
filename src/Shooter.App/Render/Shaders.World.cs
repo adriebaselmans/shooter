@@ -93,7 +93,10 @@ vec3 proceduralWaterNormal(vec2 p, float t) {
     float h2 = proceduralWaterHeight(p - vec2(eps, 0.0), t);
     float h3 = proceduralWaterHeight(p + vec2(0.0, eps), t);
     float h4 = proceduralWaterHeight(p - vec2(0.0, eps), t);
-    return normalize(vec3(h2 - h1, 2.0 * eps, h4 - h3));
+    // Mathematically, the Y component should be `2.0 * eps`. 
+    // By reducing this value, we artificially steepen the normals, 
+    // making the ripples catch much more light and shadow visually.
+    return normalize(vec3(h2 - h1, 0.05 * eps, h4 - h3));
 }
 
 vec3 reliefNormal(vec2 uv, vec3 geomN, float strength){
