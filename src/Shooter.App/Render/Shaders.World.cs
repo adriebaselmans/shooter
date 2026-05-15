@@ -138,16 +138,26 @@ void main(){
              + sunSpecular(n, viewDir, -uSunDir, roughness, f0, vis) * mix(0.82, 1.0, reliefShadow)
              + albedo * uSelfIllum;
     if (kind == 1) {
-        float fres = pow(1.0 - max(dot(n, viewDir), 0.0), 5.0) * max(0.25, uMaterialFx0.w);
-        float sparkle = pow(max(dot(reflect(-viewDir, n), -uSunDir), 0.0), 24.0);
-        vec3 waterDeep = vec3(0.05, 0.22, 0.34);
-        vec3 waterShallow = vec3(0.10, 0.44, 0.60);
-        vec3 waterTint = mix(waterDeep, waterShallow, clamp(tex.g * 0.9 + tex.b * 1.1 + 0.10, 0.0, 1.0));
-        vec3 reflection = mix(uFogColor * 0.32 + iblAmbient(n) * 0.78, uSunColor * (1.05 + sparkle * 1.8) + iblAmbient(n), clamp(fres + sparkle * 0.35, 0.0, 1.0));
-        vec3 body = waterTint * 0.84 + tex * 0.10 + iblAmbient(n) * 0.16;
-        vec3 waterF0 = mix(vec3(0.04), waterDeep, uMaterialParams.y);
-        lit = mix(body, reflection + sunSpecular(n, viewDir, -uSunDir, 0.035, waterF0, 1.0), clamp(0.28 + fres * 0.78, 0.0, 1.0));
-        lit += waterTint * sparkle * 0.28;
+        // Compute view ray distance intersecting the ground plane for depth fade
+        float eyeH = uCameraPos.y;
+        float fragH = vWorldPos.y;
+        float distToGround = length(vWorldPos - uCameraPos);
+        float fade = clamp(distToGround * 0.05, 0.0, 1.0); // simple linear fade based on distance
+        
+        // PBR Water overrides
+        float fres = clamp(uMaterialFx0.w + (1.0 - uMaterialFx0.w) * pow(1.0 - max(dot(n, viewDir), 0.0), 5.0), 0.0, 1.0);
+        float sparkle = pow(max(dot(reflect(-viewDir, n), -uSunDir), 0.0), 80.0);
+        
+        vec3 waterDeep = vec3(0.01, 0.08, 0.12);
+        vec3 waterShallow = vec3(0.04, 0.22, 0.28);
+        vec3 waterTint = mix(waterDeep, waterShallow, clamp(tex.g * 1.5 + 0.1, 0.0, 1.0));
+        
+        vec3 skyReflection = mix(uFogColor * 0.6 + vec3(0.1), uSunColor * 1.5, sparkle * 0.5) + iblAmbient(n) * 1.5;
+        vec3 body = waterTint * (1.0 - fade * 0.5) + tex * 0.05 * waterShallow;
+        
+        vec3 waterF0 = mix(vec3(0.02), waterDeep, uMaterialParams.y);
+        lit = mix(body, skyReflection, clamp(fres * 0.8 + sparkle * 0.6, 0.0, 1.0));
+        lit += sunSpecular(n, viewDir, -uSunDir, 0.02, waterF0, 1.0) * mix(0.5, 1.5, vis);
     } else if (kind == 2) {
         float pulse = 1.0 + sin(uTime * 4.0 + vWorldPos.x * 0.35 + vWorldPos.z * 0.28) * uMaterialFx1.w;
         float heat = 0.65 + 0.35 * sin(uTime * 2.5 + vWorldPos.x * 0.42 - vWorldPos.z * 0.33);
