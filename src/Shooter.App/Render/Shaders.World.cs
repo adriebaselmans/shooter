@@ -178,10 +178,14 @@ void main(){
         ? normalize(mix(normalize(vTbn * mapN), detailN, useRelief ? 0.20 : 0.08))
         : detailN;
         
-    // Override n directly for procedural water to avoid normal map flattening
-    // Note: The world positions are usually small numbers in this engine (e.g. 0 to 10)
-    // multiplying by 6.0 forces much tighter waves.
-    if (kind == 1) n = normalize(vTbn * proceduralWaterNormal(vWorldPos.xz * 6.0, uTime));
+    // Override n directly for procedural water
+    // Transform raw math normals into absolute world space. 
+    // Do NOT multiply by vTbn. The procedural normals are already in absolute world space (xz plane, y up)
+    if (kind == 1) {
+        vec3 pN = proceduralWaterNormal(vWorldPos.xz * 6.0, uTime);
+        // The procedural normal assumes Y is up.
+        n = normalize(pN);
+    }
         
     float roughness = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, sampleUv).r : uMaterialParams.x;
     roughness = clamp(max(roughness, uMaterialParams.x * 0.45), 0.02, 1.0);
