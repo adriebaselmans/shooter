@@ -7347,7 +7347,7 @@
           3.6
         ]
       },
-      "material_name": "textures/dust/water_river_1k.jpg",
+      "material_name": "textures/dust/seamless_clear_water_surface_pbr_texture_with_light_reflections_2k_tile.png",
       "material_properties": {
         "kind": "water",
         "roughness": 0.05,
@@ -7365,7 +7365,7 @@
       },
       "surface_mappings": {
         "top": {
-          "texture_key": "textures/dust/water_river_1k.jpg",
+          "texture_key": "textures/dust/seamless_clear_water_surface_pbr_texture_with_light_reflections_2k_tile.png",
           "offset": [
             0,
             0
@@ -7378,7 +7378,7 @@
           "texture_locked": true
         },
         "bottom": {
-          "texture_key": "textures/dust/water_river_1k.jpg",
+          "texture_key": "textures/dust/seamless_clear_water_surface_pbr_texture_with_light_reflections_2k_tile.png",
           "offset": [
             0,
             0
@@ -7391,7 +7391,7 @@
           "texture_locked": true
         },
         "front": {
-          "texture_key": "textures/dust/water_river_1k.jpg",
+          "texture_key": "textures/dust/seamless_clear_water_surface_pbr_texture_with_light_reflections_2k_tile.png",
           "offset": [
             0,
             0
@@ -7404,7 +7404,7 @@
           "texture_locked": true
         },
         "back": {
-          "texture_key": "textures/dust/water_river_1k.jpg",
+          "texture_key": "textures/dust/seamless_clear_water_surface_pbr_texture_with_light_reflections_2k_tile.png",
           "offset": [
             0,
             0
@@ -7417,7 +7417,7 @@
           "texture_locked": true
         },
         "right": {
-          "texture_key": "textures/dust/water_river_1k.jpg",
+          "texture_key": "textures/dust/seamless_clear_water_surface_pbr_texture_with_light_reflections_2k_tile.png",
           "offset": [
             0,
             0
@@ -7430,7 +7430,7 @@
           "texture_locked": true
         },
         "left": {
-          "texture_key": "textures/dust/water_river_1k.jpg",
+          "texture_key": "textures/dust/seamless_clear_water_surface_pbr_texture_with_light_reflections_2k_tile.png",
           "offset": [
             0,
             0
