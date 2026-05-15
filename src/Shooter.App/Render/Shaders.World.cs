@@ -67,12 +67,13 @@ uniform vec3 uTint;
 uniform float uSelfIllum;
 uniform vec2 uTexelSize;
 uniform float uParallaxScale;
+uniform float uTaaMipBias;
 uniform vec4 uMaterialParams;
 uniform vec4 uMaterialFx0;
 uniform vec4 uMaterialFx1;
 """ + "\n" + LightingHeader + "\n" + """
 float heightFromMap(vec2 uv){
-    return texture(uHeightMap, uv).r;
+    return texture(uHeightMap, uv, uTaaMipBias).r;
 }
 
 vec3 reliefNormal(vec2 uv, vec3 geomN, float strength){
@@ -121,21 +122,21 @@ void main(){
         sin((vWorldPos.x - uTime * 0.5) * 1.5)) * (uMaterialFx1.z * 0.04);
     vec2 sampleUv = flowUvA + rippleA;
     vec2 sampleUv2 = flowUvB - rippleB;
-    vec3 texA = (uHasTexture == 1) ? texture(uBaseColor, sampleUv).rgb : vec3(1.0);
-    vec3 texB = (uHasTexture == 1) ? texture(uBaseColor, sampleUv2).rgb : vec3(1.0);
+    vec3 texA = (uHasTexture == 1) ? texture(uBaseColor, sampleUv, uTaaMipBias).rgb : vec3(1.0);
+    vec3 texB = (uHasTexture == 1) ? texture(uBaseColor, sampleUv2, uTaaMipBias).rgb : vec3(1.0);
     vec3 tex = mix(texA, texB, 0.35);
     vec3 albedo = tex * uTint;
     vec3 detailN = useRelief
         ? reliefNormal(sampleUv, baseN, max(0.08, uMaterialParams.z * 0.55 + uParallaxScale * 4.5))
         : detailNormalFromAlbedo(uBaseColor, sampleUv, uTexelSize, baseN, uMaterialParams.z, uHasTexture);
-    vec3 mapN = texture(uNormalMap, sampleUv).xyz * 2.0 - 1.0;
+    vec3 mapN = texture(uNormalMap, sampleUv, uTaaMipBias).xyz * 2.0 - 1.0;
     vec3 n = (uHasNormalMap == 1)
         ? normalize(mix(normalize(vTbn * mapN), detailN, useRelief ? 0.20 : 0.08))
         : detailN;
-    float roughness = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, sampleUv).r : uMaterialParams.x;
+    float roughness = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, sampleUv, uTaaMipBias).r : uMaterialParams.x;
     roughness = clamp(max(roughness, uMaterialParams.x * 0.45), 0.02, 1.0);
-    float metallic = (uHasMetallicMap == 1) ? texture(uMetallicMap, sampleUv).r : uMaterialParams.y;
-    float ao = (uHasAoMap == 1) ? texture(uAoMap, sampleUv).r : 1.0;
+    float metallic = (uHasMetallicMap == 1) ? texture(uMetallicMap, sampleUv, uTaaMipBias).r : uMaterialParams.y;
+    float ao = (uHasAoMap == 1) ? texture(uAoMap, sampleUv, uTaaMipBias).r : 1.0;
     float vis = pcfShadow(vWorldPos, n);
     reliefShadow = useRelief ? reliefShadowTerm(sampleUv, max(0.08, uMaterialParams.z * 0.55 + uParallaxScale * 4.5)) : 1.0;
     
@@ -203,22 +204,23 @@ uniform int  uWriteNormal;
 uniform int  uViewSpaceLighting;
 uniform int  uApplyFog;
 uniform vec2 uTexelSize;
+uniform float uTaaMipBias;
 uniform vec4 uMaterialParams;
 uniform vec4 uMaterialFx0;
 uniform vec4 uMaterialFx1;
 """ + "\n" + LightingHeader + "\n" + """
 void main(){
-    vec4 base = (uHasTexture == 1) ? texture(uBaseColor, vUv) * uBaseColorFactor : uBaseColorFactor;
+    vec4 base = (uHasTexture == 1) ? texture(uBaseColor, vUv, uTaaMipBias) * uBaseColorFactor : uBaseColorFactor;
     if (base.a < 0.05) discard;
     vec3 pos = vWorldPos;
     vec3 geomN = normalize(uViewSpaceLighting == 1 ? vViewNormal : vNormal);
-    vec3 mapN = texture(uNormalMap, vUv).xyz * 2.0 - 1.0;
+    vec3 mapN = texture(uNormalMap, vUv, uTaaMipBias).xyz * 2.0 - 1.0;
     vec3 n = (uHasNormalMap == 1)
         ? normalize(vTbn * mapN)
         : detailNormalFromAlbedo(uBaseColor, vUv, uTexelSize, geomN, uMaterialParams.z, uHasTexture);
-    float roughness = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, vUv).r : uMaterialParams.x;
-    float metallic = (uHasMetallicMap == 1) ? texture(uMetallicMap, vUv).r : uMaterialParams.y;
-    float ao = (uHasAoMap == 1) ? texture(uAoMap, vUv).r : 1.0;
+    float roughness = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, vUv, uTaaMipBias).r : uMaterialParams.x;
+    float metallic = (uHasMetallicMap == 1) ? texture(uMetallicMap, vUv, uTaaMipBias).r : uMaterialParams.y;
+    float ao = (uHasAoMap == 1) ? texture(uAoMap, vUv, uTaaMipBias).r : 1.0;
     vec3 lightDir = normalize(uViewSpaceLighting == 1 ? uToSunView : -uSunDir);
     vec3 viewDir = normalize(uViewSpaceLighting == 1 ? -vWorldPos : (uCameraPos - vWorldPos));
     float vis = (uViewSpaceLighting == 1) ? 1.0 : pcfShadow(vWorldPos, normalize(vNormal));

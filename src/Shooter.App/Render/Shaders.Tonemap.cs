@@ -70,6 +70,22 @@ void main(){
         vec3 rgbB = rgbA * 0.5 + 0.25 * (tonemap(vUv + dir * -0.5) + tonemap(vUv + dir * 0.5));
         float lumaB = luma(rgbB);
         c = (lumaB < lumaMin || lumaB > lumaMax) ? rgbA : rgbB;
+    } else {
+        // Optional subtle RCAS / Unsharp mask if FXAA is OFF (used alongside TAA)
+        vec2 texel = 1.0 / vec2(textureSize(uHdr, 0));
+        vec3 cTL = tonemap(vUv + texel * vec2(-1.0, -1.0));
+        vec3 cTC = tonemap(vUv + texel * vec2( 0.0, -1.0));
+        vec3 cTR = tonemap(vUv + texel * vec2( 1.0, -1.0));
+        vec3 cML = tonemap(vUv + texel * vec2(-1.0,  0.0));
+        vec3 cMC = c;
+        vec3 cMR = tonemap(vUv + texel * vec2( 1.0,  0.0));
+        vec3 cBL = tonemap(vUv + texel * vec2(-1.0,  1.0));
+        vec3 cBC = tonemap(vUv + texel * vec2( 0.0,  1.0));
+        vec3 cBR = tonemap(vUv + texel * vec2( 1.0,  1.0));
+        
+        vec3 blurred = (cTL + cTC*2.0 + cTR + cML*2.0 + cMC*4.0 + cMR*2.0 + cBL + cBC*2.0 + cBR) / 16.0;
+        // Moderate unsharp mask
+        c = clamp(c + (c - blurred) * 1.5, 0.0, 1.0);
     }
     c = pow(c, vec3(1.0 / 2.2));
     vec2 q = vUv * 2.0 - 1.0;

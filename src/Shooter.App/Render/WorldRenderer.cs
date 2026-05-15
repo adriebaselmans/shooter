@@ -160,6 +160,7 @@ public sealed class WorldRenderer : IDisposable
         _gl.Uniform1(s.U("uFogHeightFalloff"), env.FogHeightFalloff);
         _gl.Uniform1(s.U("uFogBaseHeight"), env.FogBaseHeight);
         _gl.Uniform1(s.U("uTime"), Environment.TickCount / 1000f);
+        _gl.Uniform1(s.U("uTaaMipBias"), env.TaaEnabled ? -1.0f : 0f);
 
         _gl.ActiveTexture(TextureUnit.Texture0); // leave unit 0 active for downstream textures
     }

@@ -31,6 +31,45 @@ vec3 YCoCgToRGB(vec3 ycocg) {
     );
 }
 
+vec3 sampleBicubic(sampler2D tex, vec2 uv, vec2 texSize) {
+    vec2 invTexSize = 1.0 / texSize;
+    uv = uv * texSize - 0.5;
+    vec2 f = fract(uv);
+    vec2 p = floor(uv);
+
+    float f2x = f.x * f.x;
+    float f3x = f.x * f2x;
+    float w0x = f3x - 2.0 * f2x + f.x;
+    float w1x = -2.0 * f3x + 3.0 * f2x + 1.0;
+    float w2x = f3x - 2.0 * f2x + f.x; // Wait, Catmull-Rom weights are standard, let's use the optimized 5-tap version.
+    
+    // Optimized Catmull-Rom (5 taps using bilinear hardware)
+    vec2 w0 = f * (-0.5 + f * (1.0 - 0.5 * f));
+    vec2 w1 = 1.0 + f * f * (-2.5 + 1.5 * f);
+    vec2 w2 = f * (0.5 + f * (2.0 - 1.5 * f));
+    vec2 w3 = f * f * (-0.5 + 0.5 * f);
+    
+    vec2 w12 = w1 + w2;
+    vec2 offset12 = w2 / (w1 + w2);
+    
+    vec2 tex0 = p - 1.0;
+    vec2 tex3 = p + 2.0;
+    vec2 tex12 = p + offset12;
+    
+    tex0 *= invTexSize;
+    tex3 *= invTexSize;
+    tex12 *= invTexSize;
+    
+    vec3 result = vec3(0.0);
+    result += texture(tex, vec2(tex0.x, tex12.y)).rgb * w0.x * w12.y;
+    result += texture(tex, vec2(tex12.x, tex0.y)).rgb * w12.x * w0.y;
+    result += texture(tex, vec2(tex12.x, tex12.y)).rgb * w12.x * w12.y;
+    result += texture(tex, vec2(tex3.x, tex12.y)).rgb * w3.x * w12.y;
+    result += texture(tex, vec2(tex12.x, tex3.y)).rgb * w12.x * w3.y;
+    
+    return max(result, 0.0);
+}
+
 void main() {
     vec3 current = texture(uCurrent, vUv).rgb;
     if (uFirstFrame == 1) {
@@ -46,11 +85,11 @@ void main() {
         return;
     }
 
-    // Bicubic or catmull-rom could be used here, but linear is a start
-    vec3 history = texture(uHistory, prevUv).rgb;
+    vec2 texSize = vec2(textureSize(uCurrent, 0));
+    vec2 texelSize = 1.0 / texSize;
 
-    // Neighborhood clamping
-    vec2 texelSize = 1.0 / vec2(textureSize(uCurrent, 0));
+    // Bicubic history sampling
+    vec3 history = sampleBicubic(uHistory, prevUv, texSize);
     vec3 cTL = texture(uCurrent, vUv + vec2(-texelSize.x, -texelSize.y)).rgb;
     vec3 cTC = texture(uCurrent, vUv + vec2( 0.0,         -texelSize.y)).rgb;
     vec3 cTR = texture(uCurrent, vUv + vec2( texelSize.x, -texelSize.y)).rgb;
