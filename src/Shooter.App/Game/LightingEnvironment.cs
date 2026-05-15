@@ -138,9 +138,6 @@ public sealed class LightingEnvironment
     /// <summary>Enables the bloom post-pass contribution.</summary>
     public bool BloomEnabled { get; set; } = true;
 
-    /// <summary>Enables a lightweight FXAA pass in the final post process.</summary>
-    public bool FxaaEnabled { get; set; } = true;
-
     // -----------------------------------------------------------------
     // Hybrid path tracing (Metal)
     // -----------------------------------------------------------------

@@ -14,7 +14,7 @@ public sealed class GameSession
     private bool _menuOpen;
     private int _menuSelection;
 
-    private const int MenuItemCount = 8;
+    private const int MenuItemCount = 7;
 
     public GameWorld World { get; }
     public Player Player { get; }
@@ -135,14 +135,11 @@ public sealed class GameSession
                 if (increase || decrease) Lighting.AutoExposureEnabled = !Lighting.AutoExposureEnabled;
                 break;
             case 5:
-                if (increase || decrease) Lighting.FxaaEnabled = !Lighting.FxaaEnabled;
-                break;
-            case 6:
                 float step = 0.005f;
                 if (increase) Lighting.PomScale = Math.Clamp(Lighting.PomScale + step, 0f, 0.12f);
                 if (decrease) Lighting.PomScale = Math.Clamp(Lighting.PomScale - step, 0f, 0.12f);
                 break;
-            case 7:
+            case 6:
                 if (increase || input.WasPressed(InputKey.Enter))
                     QuitRequested = true;
                 break;
