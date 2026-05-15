@@ -102,31 +102,60 @@ void main(){
     bool useRelief = (kind == 0 && uEnableParallax == 1 && uHasHeightMap == 1);
     float reliefShadow = 1.0;
     vec2 baseUv = vUv;
-    vec2 flowUvA = baseUv + uMaterialFx1.xy * uTime;
-    vec2 flowUvB = baseUv - uMaterialFx1.xy * (uTime * 0.73 + 0.17);
-    vec2 rippleA = vec2(
-        sin((vWorldPos.x + uTime * 0.9) * 1.7),
-        cos((vWorldPos.z - uTime * 0.7) * 1.4)) * (uMaterialFx1.z * 0.06);
-    vec2 rippleB = vec2(
-        cos((vWorldPos.z + uTime * 0.6) * 1.2),
-        sin((vWorldPos.x - uTime * 0.5) * 1.5)) * (uMaterialFx1.z * 0.04);
+    vec2 flowUvA = baseUv + (kind == 1 ? uMaterialFx1.xy * uTime : vec2(0.0));
+    vec2 flowUvB = baseUv - (kind == 1 ? uMaterialFx1.xy * (uTime * 0.73 + 0.17) : vec2(0.0));
+    
+    // Rotate second UV grid 45 degrees and scale to break square tiling ONLY for water
+    if (kind == 1) {
+        float cos45 = 0.7071;
+        float sin45 = 0.7071;
+        mat2 rot45 = mat2(cos45, -sin45, sin45, cos45);
+        flowUvB = (rot45 * baseUv) * 1.618 - uMaterialFx1.xy * (uTime * 0.73 + 0.17);
+    }
+    
+    vec2 rippleA = (kind == 1 || kind == 2) ? vec2(
+        sin((vWorldPos.x * 2.0 + uTime * 0.9) * 1.7),
+        cos((vWorldPos.z * 2.0 - uTime * 0.7) * 1.4)) * (uMaterialFx1.z * 0.02) : vec2(0.0);
+    vec2 rippleB = (kind == 1 || kind == 2) ? vec2(
+        cos((vWorldPos.z * 1.5 + uTime * 0.6) * 1.2),
+        sin((vWorldPos.x * 1.5 - uTime * 0.5) * 1.5)) * (uMaterialFx1.z * 0.015) : vec2(0.0);
+        
     vec2 sampleUv = flowUvA + rippleA;
     vec2 sampleUv2 = flowUvB - rippleB;
+    
     vec3 texA = (uHasTexture == 1) ? texture(uBaseColor, sampleUv).rgb : vec3(1.0);
     vec3 texB = (uHasTexture == 1) ? texture(uBaseColor, sampleUv2).rgb : vec3(1.0);
-    vec3 tex = mix(texA, texB, 0.35);
+    
+    float blend = (kind == 1) ? (0.5 + 0.5 * sin(vWorldPos.x * 2.1 + vWorldPos.z * 1.7 + uTime * 0.8)) : 0.0;
+    vec3 tex = mix(texA, texB, blend);
+    
     vec3 albedo = tex * uTint;
+    
     vec3 detailN = useRelief
         ? reliefNormal(sampleUv, baseN, max(0.08, uMaterialParams.z * 0.55 + uParallaxScale * 4.5))
         : detailNormalFromAlbedo(uBaseColor, sampleUv, uTexelSize, baseN, uMaterialParams.z, uHasTexture);
-    vec3 mapN = texture(uNormalMap, sampleUv).xyz * 2.0 - 1.0;
+        
+    vec3 mapNA = texture(uNormalMap, sampleUv).xyz * 2.0 - 1.0;
+    vec3 mapNB = texture(uNormalMap, sampleUv2).xyz * 2.0 - 1.0;
+    vec3 mapN = mix(mapNA, mapNB, blend);
+    
     vec3 n = (uHasNormalMap == 1)
         ? normalize(mix(normalize(vTbn * mapN), detailN, useRelief ? 0.20 : 0.08))
         : detailN;
-    float roughness = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, sampleUv).r : uMaterialParams.x;
+        
+    float roughA = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, sampleUv).r : uMaterialParams.x;
+    float roughB = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, sampleUv2).r : uMaterialParams.x;
+    float roughness = mix(roughA, roughB, blend);
     roughness = clamp(max(roughness, uMaterialParams.x * 0.45), 0.02, 1.0);
-    float metallic = (uHasMetallicMap == 1) ? texture(uMetallicMap, sampleUv).r : uMaterialParams.y;
-    float ao = (uHasAoMap == 1) ? texture(uAoMap, sampleUv).r : 1.0;
+    
+    float metA = (uHasMetallicMap == 1) ? texture(uMetallicMap, sampleUv).r : uMaterialParams.y;
+    float metB = (uHasMetallicMap == 1) ? texture(uMetallicMap, sampleUv2).r : uMaterialParams.y;
+    float metallic = mix(metA, metB, blend);
+    
+    float aoA = (uHasAoMap == 1) ? texture(uAoMap, sampleUv).r : 1.0;
+    float aoB = (uHasAoMap == 1) ? texture(uAoMap, sampleUv2).r : 1.0;
+    float ao = mix(aoA, aoB, blend);
+    
     float vis = pcfShadow(vWorldPos, n);
     reliefShadow = useRelief ? reliefShadowTerm(sampleUv, max(0.08, uMaterialParams.z * 0.55 + uParallaxScale * 4.5)) : 1.0;
     
@@ -142,16 +171,12 @@ void main(){
         float fres = pow(1.0 - max(dot(n, viewDir), 0.0), 5.0) * max(0.25, uMaterialFx0.w);
         float sparkle = pow(max(dot(reflect(-viewDir, n), -uSunDir), 0.0), 32.0);
         
-        vec3 waterDeep = vec3(0.02, 0.15, 0.22);
-        vec3 waterShallow = vec3(0.08, 0.35, 0.45);
-        vec3 waterTint = mix(waterDeep, waterShallow, clamp(tex.g * 0.9 + tex.b * 1.1 + 0.10, 0.0, 1.0));
+        vec3 body = tex;
         
         vec3 reflection = mix(uFogColor * 0.4 + iblAmbient(n), uSunColor * (1.2 + sparkle), clamp(fres + sparkle * 0.5, 0.0, 1.0));
-        vec3 body = waterTint * 0.8 + tex * 0.15 + iblAmbient(n) * 0.2;
-        
-        vec3 waterF0 = mix(vec3(0.02), waterDeep, uMaterialParams.y);
-        lit = mix(body, reflection + sunSpecular(n, viewDir, -uSunDir, 0.04, waterF0, 1.0), clamp(0.2 + fres * 0.6, 0.0, 1.0));
-        lit += waterTint * sparkle * 0.5;
+        vec3 waterF0 = mix(vec3(0.02), tex, uMaterialParams.y);
+        lit = mix(body, reflection + sunSpecular(n, viewDir, -uSunDir, 0.04, waterF0, 1.0), clamp(0.1 + fres * 0.7, 0.0, 1.0));
+        lit += tex * sparkle * 0.5;
     } else if (kind == 2) {
         float pulse = 1.0 + sin(uTime * 4.0 + vWorldPos.x * 0.35 + vWorldPos.z * 0.28) * uMaterialFx1.w;
         float heat = 0.65 + 0.35 * sin(uTime * 2.5 + vWorldPos.x * 0.42 - vWorldPos.z * 0.33);
