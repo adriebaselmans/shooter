@@ -167,7 +167,8 @@ void main(){
     vec3 mapN;
     if (kind == 1) {
         // Procedural normals via Gerstner math
-        vec3 pN = proceduralWaterNormal(vWorldPos.xz * 2.0, uTime); // scale world pos to match basin
+        // Scale world pos significantly to map waves cleanly to the small basin size
+        vec3 pN = proceduralWaterNormal(vWorldPos.xz * 6.0, uTime); 
         mapN = normalize(pN); // Transform to tangent space
     } else {
         mapN = texture(uNormalMap, sampleUv).xyz * 2.0 - 1.0;
@@ -178,7 +179,9 @@ void main(){
         : detailN;
         
     // Override n directly for procedural water to avoid normal map flattening
-    if (kind == 1) n = normalize(vTbn * proceduralWaterNormal(vWorldPos.xz * 2.0, uTime));
+    // Note: The world positions are usually small numbers in this engine (e.g. 0 to 10)
+    // multiplying by 6.0 forces much tighter waves.
+    if (kind == 1) n = normalize(vTbn * proceduralWaterNormal(vWorldPos.xz * 6.0, uTime));
         
     float roughness = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, sampleUv).r : uMaterialParams.x;
     roughness = clamp(max(roughness, uMaterialParams.x * 0.45), 0.02, 1.0);
@@ -198,7 +201,7 @@ void main(){
              + albedo * uSelfIllum;
     if (kind == 1) {
         // Procedural Deep & Shallow Colors
-        float h = proceduralWaterHeight(vWorldPos.xz * 2.0, uTime);
+        float h = proceduralWaterHeight(vWorldPos.xz * 6.0, uTime);
         vec3 deepColor = vec3(0.01, 0.1, 0.15);
         vec3 shallowColor = vec3(0.05, 0.3, 0.4);
         vec3 waterAlbedo = mix(deepColor, shallowColor, clamp((h + 0.1) * 5.0, 0.0, 1.0));
