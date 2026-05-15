@@ -1,23 +1,14 @@
-id: design-shooter-anisotropy-and-fxaa
-title: Design — Anisotropic Filtering and FXAA
-status: approved
-parent: req-shooter-anisotropy-and-fxaa
-created_at: 2026-05-06T20:47:00Z
-
-decisions:
-  Q1_texture_filtering:
-    decision: "Set world/material textures to anisotropic filtering at upload time."
-    rationale: "This improves floor/wall clarity at shallow viewing angles."
-  Q2_aa_technique:
-    decision: "Use FXAA in the existing tone-map pass."
-    rationale: "FXAA is lightweight, easy to toggle, and fits the current single-pass post-processing design."
-  Q3_menu:
-    decision: "Expose FXAA as a live in-game menu toggle alongside the other render features."
-    rationale: "This keeps tuning ergonomic without adding a new UI layer."
-
-implementation_plan:
-  - "Apply anisotropic filtering in TextureCache after each texture upload."
-  - "Add FXAA enable state to LightingEnvironment and wire it through the post process."
-  - "Extend the tone-map shader with a simple FXAA resolve."
-  - "Add an FXAA item to the in-game menu."
-  - "Validate with build, format verification, and OpenGL smoke startup."
+phase: architecture
+status: in-progress
+system: Shooter.App
+components:
+  - TAA
+  - HdrTarget
+  - Shaders
+design:
+  - Add Temporal Anti-Aliasing (TAA) to replace/augment FXAA.
+  - 1. Jittered Projection: Apply Halton sequence subpixel jitter to the projection matrix.
+  - 2. Velocity Buffer: Add an RG16F render target to HdrTarget (location 2).
+  - 3. Motion Vectors: Pass `uPrevViewProj` and `uPrevModel` to shaders. Output `(ndc - prevNdc) * 0.5` as velocity.
+  - 4. History Buffer: Ping-pong RGBA16F textures storing the resolved frame.
+  - 5. Resolve Pass: Reproject history using velocity, apply neighborhood clamping (AABB) to prevent ghosting, and blend.

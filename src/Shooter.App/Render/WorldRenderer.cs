@@ -36,7 +36,7 @@ public sealed class WorldRenderer : IDisposable
         _pickupCube = new GlMesh(gl, cubeMesh);
     }
 
-    public unsafe void Draw(Matrix4x4 view, Matrix4x4 viewProj, GameWorld world, PickupSystem pickups,
+    public unsafe void Draw(Matrix4x4 view, Matrix4x4 viewProj, Matrix4x4 prevViewProj, GameWorld world, PickupSystem pickups,
         LightingEnvironment env, ShadowMap shadow, IblProbe ibl)
     {
         Matrix4x4.Invert(view, out var invView);
@@ -49,6 +49,7 @@ public sealed class WorldRenderer : IDisposable
         _shader.Use();
         BindLighting(_shader, env, shadow, ibl, cameraPos, view);
         UploadMatrix(_shader.U("uViewProj"), viewProj);
+        UploadMatrix(_shader.U("uPrevViewProj"), prevViewProj);
         UploadMatrix(_shader.U("uView"), view);
         _gl.Uniform1(_shader.U("uReceiveShadows"), env.ShadowsEnabled ? 1 : 0);
         _gl.Uniform1(_shader.U("uBaseColor"), 0);
@@ -65,6 +66,7 @@ public sealed class WorldRenderer : IDisposable
         {
             var glMesh = _brushMeshes[wb.BrushId];
             UploadMatrix(_shader.U("uModel"), wb.Model);
+            UploadMatrix(_shader.U("uPrevModel"), wb.Model); // Static brushes don't move
             UploadMatrix(_shader.U("uNormalMat"), wb.NormalMatrix);
             _gl.Uniform3(_shader.U("uTint"), wb.TintColor.X, wb.TintColor.Y, wb.TintColor.Z);
             var material = _textures.GetMaterialSet(wb.TexturePath);
@@ -118,6 +120,7 @@ public sealed class WorldRenderer : IDisposable
             var pos = p.Position + new Vector3(0, baseY + 0.5f, 0);
             var model = Matrix4x4.CreateScale(0.4f) * Matrix4x4.CreateRotationY(pickups.SpinAngle) * Matrix4x4.CreateTranslation(pos);
             UploadMatrix(_shader.U("uModel"), model);
+            UploadMatrix(_shader.U("uPrevModel"), model); // Pickup TAA spin is fine to fake as static or we pass prev rot
             Matrix4x4.Invert(model, out var inv);
             UploadMatrix(_shader.U("uNormalMat"), Matrix4x4.Transpose(inv));
             _gl.Uniform3(_shader.U("uTint"), color.X, color.Y, color.Z);

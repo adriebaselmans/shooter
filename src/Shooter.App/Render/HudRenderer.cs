@@ -162,10 +162,11 @@ public sealed class HudRenderer : IDisposable
         DrawMenuToggleRow(viewportWidth, viewportHeight, rowX, rowY - rowH, rowH, selection == 1, "SSAO", env.SsaoEnabled ? "ON" : "OFF", env.SsaoEnabled);
         DrawMenuToggleRow(viewportWidth, viewportHeight, rowX, rowY - rowH * 2f, rowH, selection == 2, "BLOOM", env.BloomEnabled ? "ON" : "OFF", env.BloomEnabled);
         DrawMenuToggleRow(viewportWidth, viewportHeight, rowX, rowY - rowH * 3f, rowH, selection == 3, "SHADOWS", env.ShadowsEnabled ? "ON" : "OFF", env.ShadowsEnabled);
-        DrawMenuToggleRow(viewportWidth, viewportHeight, rowX, rowY - rowH * 4f, rowH, selection == 4, "AUTO EXPOSURE", env.AutoExposureEnabled ? "ON" : "OFF", env.AutoExposureEnabled);
-        DrawMenuToggleRow(viewportWidth, viewportHeight, rowX, rowY - rowH * 5f, rowH, selection == 5, "FXAA", env.FxaaEnabled ? "ON" : "OFF", env.FxaaEnabled);
-        DrawMenuSliderRow(viewportWidth, viewportHeight, rowX, rowY - rowH * 6f, rowH, selection == 6, "RELIEF STRENGTH", env.PomScale, 0f, 0.12f);
-        DrawMenuActionRow(viewportWidth, viewportHeight, rowX, rowY - rowH * 7f, rowH, selection == 7, "QUIT GAME", true);
+        DrawMenuToggleRow(viewportWidth, viewportHeight, rowX, rowY - rowH * 4f, rowH, selection == 4, "TAA (ANTI-ALIASING)", env.TaaEnabled ? "ON" : "OFF", env.TaaEnabled);
+        DrawMenuToggleRow(viewportWidth, viewportHeight, rowX, rowY - rowH * 5f, rowH, selection == 5, "AUTO EXPOSURE", env.AutoExposureEnabled ? "ON" : "OFF", env.AutoExposureEnabled);
+        DrawMenuToggleRow(viewportWidth, viewportHeight, rowX, rowY - rowH * 6f, rowH, selection == 6, "FXAA", env.FxaaEnabled ? "ON" : "OFF", env.FxaaEnabled);
+        DrawMenuSliderRow(viewportWidth, viewportHeight, rowX, rowY - rowH * 7f, rowH, selection == 7, "RELIEF STRENGTH", env.PomScale, 0f, 0.12f);
+        DrawMenuActionRow(viewportWidth, viewportHeight, rowX, rowY - rowH * 8f, rowH, selection == 8, "QUIT GAME", true);
 
         _text.DrawText("UP/DOWN SELECT", panelX + 0.05f, panelY - panelH + 0.14f, 11f, new Vector4(0.82f, 0.84f, 0.88f, 0.9f));
         _text.DrawText("LEFT/RIGHT CHANGE", panelX + 0.05f, panelY - panelH + 0.105f, 11f, new Vector4(0.82f, 0.84f, 0.88f, 0.9f));

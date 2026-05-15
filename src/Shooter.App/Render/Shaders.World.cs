@@ -10,14 +10,18 @@ layout(location=2) in vec2 aUv;
 layout(location=3) in vec3 aTangent;
 layout(location=4) in vec3 aBitangent;
 uniform mat4 uModel;
+uniform mat4 uPrevModel;
 uniform mat4 uView;
 uniform mat4 uViewProj;
+uniform mat4 uPrevViewProj;
 uniform mat4 uNormalMat;
 out vec3 vWorldPos;
 out vec3 vNormal;
 out vec3 vViewNormal;
 out vec2 vUv;
 out mat3 vTbn;
+out vec4 vClipPos;
+out vec4 vPrevClipPos;
 void main(){
     vec4 wp = uModel * vec4(aPos,1.0);
     vWorldPos = wp.xyz;
@@ -28,7 +32,9 @@ void main(){
     vViewNormal = mat3(uView) * wn;
     vUv = aUv;
     vTbn = mat3(wt, wb, wn);
-    gl_Position = uViewProj * wp;
+    vClipPos = uViewProj * wp;
+    vPrevClipPos = uPrevViewProj * (uPrevModel * vec4(aPos,1.0));
+    gl_Position = vClipPos;
 }
 """;
 
@@ -39,8 +45,11 @@ in vec3 vNormal;
 in vec3 vViewNormal;
 in vec2 vUv;
 in mat3 vTbn;
+in vec4 vClipPos;
+in vec4 vPrevClipPos;
 layout(location=0) out vec4 oColor;
 layout(location=1) out vec4 oViewNormal;
+layout(location=2) out vec2 oVelocity;
 uniform sampler2D uBaseColor;
 uniform sampler2D uNormalMap;
 uniform sampler2D uRoughnessMap;
@@ -158,6 +167,9 @@ void main(){
     lit = applyFog(lit, vWorldPos, uMaterialParams.w);
     oColor = vec4(lit, 1.0);
     oViewNormal = vec4(normalize(vViewNormal), 1.0);
+    vec2 ndc = (vClipPos.xy / vClipPos.w);
+    vec2 prevNdc = (vPrevClipPos.xy / vPrevClipPos.w);
+    oVelocity = (ndc - prevNdc) * 0.5;
 }
 """;
 
@@ -171,8 +183,11 @@ in vec3 vNormal;
 in vec3 vViewNormal;
 in vec2 vUv;
 in mat3 vTbn;
+in vec4 vClipPos;
+in vec4 vPrevClipPos;
 layout(location=0) out vec4 oColor;
 layout(location=1) out vec4 oViewNormal;
+layout(location=2) out vec2 oVelocity;
 uniform sampler2D uBaseColor;
 uniform sampler2D uNormalMap;
 uniform sampler2D uRoughnessMap;

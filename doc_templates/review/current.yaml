@@ -1,24 +1,8 @@
-id: review-shooter-anisotropy-and-fxaa
-title: Review — Anisotropic Filtering and FXAA
-status: approved
-parent: design-shooter-anisotropy-and-fxaa
-created_at: 2026-05-06T20:50:00Z
-
-summary:
-  outcome: approved
-  scope_reviewed:
-    - src/Shooter.App/Game/LightingEnvironment.cs
-    - src/Shooter.App/Game/GameSession.cs
-    - src/Shooter.App/Render/TextureCache.cs
-    - src/Shooter.App/Render/PostFx.cs
-    - src/Shooter.App/Render/Shaders.Tonemap.cs
-    - src/Shooter.App/Render/HudRenderer.cs
-    - src/Shooter.App/RenderSystem/OpenGLFrameRenderer.cs
-
-findings:
-  - severity: info
-    note: "World/material textures now use anisotropic filtering at upload time."
-  - severity: info
-    note: "FXAA is wired through the tone-map post pass and can be toggled from the menu."
-  - severity: info
-    note: "The menu now includes an FXAA entry and the existing relief / quit items remain intact."
+phase: review
+status: pending
+checklist:
+  - Check buffer layouts and formats for velocity/history targets.
+  - Ensure jitter doesn't break culling or UI.
+  - Ensure previous matrices are actually updated at the correct time (after render, or start of next frame).
+  - Verify velocity calculation math in vertex/fragment shaders.
+  - Add menu toggle to enable/disable TAA and compare against FXAA.

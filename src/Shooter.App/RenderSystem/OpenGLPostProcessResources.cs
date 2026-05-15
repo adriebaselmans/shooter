@@ -10,14 +10,16 @@ internal sealed class OpenGLPostProcessResources : IDisposable
     public Bloom Bloom { get; }
     public SsaoPass SsaoPass { get; }
     public AutoExposure AutoExposure { get; }
+    public TaaPass TaaPass { get; }
     public PostFx PostFx { get; }
 
-    private OpenGLPostProcessResources(HdrTarget hdrTarget, Bloom bloom, SsaoPass ssaoPass, AutoExposure autoExposure, PostFx postFx)
+    private OpenGLPostProcessResources(HdrTarget hdrTarget, Bloom bloom, SsaoPass ssaoPass, AutoExposure autoExposure, TaaPass taaPass, PostFx postFx)
     {
         HdrTarget = hdrTarget;
         Bloom = bloom;
         SsaoPass = ssaoPass;
         AutoExposure = autoExposure;
+        TaaPass = taaPass;
         PostFx = postFx;
     }
 
@@ -28,6 +30,7 @@ internal sealed class OpenGLPostProcessResources : IDisposable
             new Bloom(gl),
             new SsaoPass(gl),
             new AutoExposure(gl),
+            new TaaPass(gl),
             new PostFx(gl));
         post.Resize(width, height);
         return post;
@@ -38,11 +41,13 @@ internal sealed class OpenGLPostProcessResources : IDisposable
         HdrTarget.Resize(width, height);
         Bloom.Resize(width, height);
         SsaoPass.Resize(width, height);
+        TaaPass.Resize(width, height);
     }
 
     public void Dispose()
     {
         PostFx.Dispose();
+        TaaPass.Dispose();
         AutoExposure.Dispose();
         SsaoPass.Dispose();
         Bloom.Dispose();

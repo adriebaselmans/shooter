@@ -76,6 +76,9 @@ public sealed class LightingEnvironment
     // Visual tuning / grading
     // -----------------------------------------------------------------
 
+    /// <summary>Is Temporal Anti-Aliasing (TAA) enabled?</summary>
+    public bool TaaEnabled { get; set; } = true;
+
     /// <summary>Bloom contribution in the final post combine.</summary>
     public float BloomStrength { get; set; } = 0.035f;
 

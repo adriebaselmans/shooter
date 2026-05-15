@@ -48,7 +48,7 @@ public sealed class WeaponViewmodelRenderer : IDisposable
 
     public bool HasModel(WeaponKind kind) => _models.ContainsKey(kind);
 
-    public void Draw(int fbWidth, int fbHeight, WeaponSystem weapons,
+    public void Draw(int fbWidth, int fbHeight, Matrix4x4 prevViewProj, WeaponSystem weapons,
         LightingEnvironment env, ShadowMap shadow, IblProbe ibl, WorldRenderer worldRen)
     {
         var w = weapons.Current;
@@ -73,10 +73,12 @@ public sealed class WeaponViewmodelRenderer : IDisposable
         // The view-space normal is also wrong for SSAO (the viewmodel lives in a different
         // projection), so writeNormal=false makes the shader emit 0 to leave the normal buffer
         // intact.
-        _modelRen.BeginPass(Matrix4x4.Identity, proj, clearDepthFirst: true, env, shadow, ibl, worldRen,
+        // We don't want TAA ghosting for the viewmodel, so we pass current proj for prevViewProj as well.
+        // This ensures oVelocity is 0 for viewmodel pixels.
+        _modelRen.BeginPass(Matrix4x4.Identity, proj, proj, clearDepthFirst: true, env, shadow, ibl, worldRen,
             receiveShadows: false, writeNormal: false, viewSpaceLighting: true, applyFog: false,
             roughness: 0.28f, specularStrength: 0.24f);
-        _modelRen.DrawModel(model, modelMat);
+        _modelRen.DrawModel(model, modelMat, modelMat);
     }
 
     public void Dispose()

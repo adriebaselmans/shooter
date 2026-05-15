@@ -9,6 +9,7 @@ namespace Shooter.Render;
 ///   COLOR1 (RGBA16F) – view-space normal (xyz; w unused). Written by lit opaque passes;
 ///                      non-opaque passes write 0 here so blending preserves the existing
 ///                      normal under transparent overlays.
+///   COLOR2 (RG16F)   – motion vectors (velocity) for TAA.
 ///   DEPTH  (DEPTH_COMPONENT24, sampleable) – depth texture so SSAO and auto-exposure
 ///                      passes can read it as a regular sampler2D.
 /// </summary>
@@ -18,6 +19,7 @@ public sealed class HdrTarget : IDisposable
     public uint Fbo { get; private set; }
     public uint ColorTex { get; private set; }
     public uint NormalTex { get; private set; }
+    public uint VelocityTex { get; private set; }
     public uint DepthTex { get; private set; }
     public int Width { get; private set; }
     public int Height { get; private set; }
@@ -48,6 +50,11 @@ public sealed class HdrTarget : IDisposable
         _gl.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1,
             TextureTarget.Texture2D, NormalTex, 0);
 
+        // COLOR2: velocity
+        VelocityTex = AllocColor(width, height, (InternalFormat)0x822F); // GL_RG16F
+        _gl.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment2,
+            TextureTarget.Texture2D, VelocityTex, 0);
+
         // DEPTH: sampleable depth texture (GL_NEAREST – we don't want filtered depth in SSAO)
         DepthTex = _gl.GenTexture();
         _gl.BindTexture(TextureTarget.Texture2D, DepthTex);
@@ -60,8 +67,8 @@ public sealed class HdrTarget : IDisposable
         _gl.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment,
             TextureTarget.Texture2D, DepthTex, 0);
 
-        Span<GLEnum> bufs = [GLEnum.ColorAttachment0, GLEnum.ColorAttachment1];
-        fixed (GLEnum* p = bufs) _gl.DrawBuffers(2, p);
+        Span<GLEnum> bufs = [GLEnum.ColorAttachment0, GLEnum.ColorAttachment1, GLEnum.ColorAttachment2];
+        fixed (GLEnum* p = bufs) _gl.DrawBuffers(3, p);
 
         var status = _gl.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
         if (status != GLEnum.FramebufferComplete)
@@ -78,8 +85,9 @@ public sealed class HdrTarget : IDisposable
         _gl.BindTexture(TextureTarget.Texture2D, tex);
         unsafe
         {
+            var pfmt = (int)fmt == 0x822F ? (PixelFormat)0x8227 /* GL_RG */ : PixelFormat.Rgba;
             _gl.TexImage2D(TextureTarget.Texture2D, 0, fmt,
-                (uint)w, (uint)h, 0, PixelFormat.Rgba, PixelType.HalfFloat, (void*)0);
+                (uint)w, (uint)h, 0, pfmt, PixelType.HalfFloat, (void*)0);
         }
         _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)GLEnum.Linear);
         _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)GLEnum.Linear);
@@ -105,6 +113,7 @@ public sealed class HdrTarget : IDisposable
         if (Fbo != 0) { _gl.DeleteFramebuffer(Fbo); Fbo = 0; }
         if (ColorTex != 0) { _gl.DeleteTexture(ColorTex); ColorTex = 0; }
         if (NormalTex != 0) { _gl.DeleteTexture(NormalTex); NormalTex = 0; }
+        if (VelocityTex != 0) { _gl.DeleteTexture(VelocityTex); VelocityTex = 0; }
         if (DepthTex != 0) { _gl.DeleteTexture(DepthTex); DepthTex = 0; }
         Width = 0; Height = 0;
     }

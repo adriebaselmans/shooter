@@ -7,6 +7,8 @@ namespace Shooter.RenderSystem;
 /// <summary>Owns the OpenGL frame render flow and pass ordering.</summary>
 internal sealed class OpenGLFrameRenderer
 {
+    private Matrix4x4 _prevViewProj = Matrix4x4.Identity;
+
     public void Render(OpenGLRenderResources resources, double dt, RenderFrameData frame)
     {
         resources.EnsureFramebufferSized();
@@ -15,6 +17,21 @@ internal sealed class OpenGLFrameRenderer
         float aspect = fb.Y > 0 ? (float)fb.X / fb.Y : 16f / 9f;
         var view = Matrix4x4.CreateLookAt(frame.Player.EyePosition, frame.Player.EyePosition + frame.Player.Forward(), Vector3.UnitY);
         var proj = Matrix4x4.CreatePerspectiveFieldOfView(WeaponViewmodelRenderer.FovYRadians, aspect, 0.05f, 1000f);
+
+        // Apply TAA Jitter
+        if (frame.Lighting.TaaEnabled)
+        {
+            var jitter = resources.Post.TaaPass.GetJitter();
+            float jx = jitter.jx * 2f / fb.X;
+            float jy = jitter.jy * 2f / fb.Y;
+            proj.M31 += jx;
+            proj.M32 += jy;
+        }
+        else
+        {
+            resources.Post.TaaPass.Initialized = false;
+        }
+
         var viewProj = view * proj;
 
         if (frame.Lighting.ShadowsEnabled)
@@ -23,6 +40,9 @@ internal sealed class OpenGLFrameRenderer
         RunPostPass(resources, frame, proj, dt, fb.X, fb.Y);
         RunHudPass(resources, frame, fb.X, fb.Y);
         UpdateDebugTitle(frame);
+
+        _prevViewProj = viewProj;
+        resources.Post.TaaPass.FrameIndex++;
     }
 
     private static void RunShadowPass(OpenGLRenderResources resources, RenderFrameData frame)
@@ -31,7 +51,7 @@ internal sealed class OpenGLFrameRenderer
         resources.Lighting.ShadowMap.RenderPass(frame.World.Brushes, (Dictionary<Guid, GlMesh>)resources.Scene.WorldRenderer.BrushMeshes, lightSpace);
     }
 
-    private static void RunScenePass(OpenGLRenderResources resources, RenderFrameData frame, Matrix4x4 view, Matrix4x4 proj, Matrix4x4 viewProj, int fbWidth, int fbHeight)
+    private void RunScenePass(OpenGLRenderResources resources, RenderFrameData frame, Matrix4x4 view, Matrix4x4 proj, Matrix4x4 viewProj, int fbWidth, int fbHeight)
     {
         resources.Post.HdrTarget.Bind();
         resources.Gl.ClearColor(0f, 0f, 0f, 1f);
@@ -43,13 +63,13 @@ internal sealed class OpenGLFrameRenderer
         viewNoTrans.M43 = 0f;
 
         resources.Scene.SkyRenderer.Draw(viewNoTrans, proj, frame.Lighting);
-        resources.Scene.WorldRenderer.Draw(view, viewProj, frame.World, frame.Pickups, frame.Lighting, resources.Lighting.ShadowMap, resources.Lighting.IblProbe);
+        resources.Scene.WorldRenderer.Draw(view, viewProj, _prevViewProj, frame.World, frame.Pickups, frame.Lighting, resources.Lighting.ShadowMap, resources.Lighting.IblProbe);
         resources.Scene.DecalRenderer.Draw(viewProj, frame.Holes);
         resources.Scene.ScorchRenderer.Draw(viewProj, frame.Scorches);
         resources.Scene.TracerRenderer.Draw(viewProj, frame.Tracers);
-        resources.Scene.RocketRenderer.Draw(view, viewProj, frame.Rockets, frame.Lighting, resources.Lighting.ShadowMap, resources.Lighting.IblProbe, resources.Scene.WorldRenderer);
+        resources.Scene.RocketRenderer.Draw(view, viewProj, _prevViewProj, frame.Rockets, frame.Lighting, resources.Lighting.ShadowMap, resources.Lighting.IblProbe, resources.Scene.WorldRenderer);
         resources.Scene.ParticleRenderer.Draw(viewProj, frame.Player.Right(), Vector3.Cross(frame.Player.Right(), frame.Player.Forward()), frame.Particles);
-        resources.Scene.WeaponViewmodelRenderer.Draw(fbWidth, fbHeight, frame.Weapons, frame.Lighting, resources.Lighting.ShadowMap, resources.Lighting.IblProbe, resources.Scene.WorldRenderer);
+        resources.Scene.WeaponViewmodelRenderer.Draw(fbWidth, fbHeight, proj, frame.Weapons, frame.Lighting, resources.Lighting.ShadowMap, resources.Lighting.IblProbe, resources.Scene.WorldRenderer);
         if (frame.MuzzleFlash is not null)
             resources.Scene.MuzzleFlashRenderer.Draw(fbWidth, fbHeight, frame.MuzzleFlash);
     }
@@ -60,9 +80,18 @@ internal sealed class OpenGLFrameRenderer
             resources.Post.SsaoPass.Run(resources.Post.HdrTarget.DepthTex, resources.Post.HdrTarget.NormalTex, proj, frame.Lighting.SsaoRadius, frame.Lighting.SsaoBias);
         if (frame.Lighting.BloomEnabled)
             resources.Post.Bloom.Run(resources.Post.HdrTarget.ColorTex);
-        resources.Post.AutoExposure.Run(resources.Post.HdrTarget.ColorTex, frame.Lighting, (float)dt);
+            
+        // TAA Resolve
+        uint finalHdrTex = resources.Post.HdrTarget.ColorTex;
+        if (frame.Lighting.TaaEnabled)
+        {
+            resources.Post.TaaPass.Resolve(resources.Post.HdrTarget.ColorTex, resources.Post.HdrTarget.VelocityTex);
+            finalHdrTex = resources.Post.TaaPass.OutputTex;
+        }
+
+        resources.Post.AutoExposure.Run(finalHdrTex, frame.Lighting, (float)dt);
         resources.Post.PostFx.Draw(
-            resources.Post.HdrTarget.ColorTex,
+            finalHdrTex,
             resources.Post.Bloom.OutputTex,
             resources.Post.SsaoPass.AoTex,
             frame.Lighting,
