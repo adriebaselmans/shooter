@@ -48,7 +48,24 @@ internal sealed class OpenGLFrameRenderer
         viewNoTrans.M43 = 0f;
 
         resources.Scene.SkyRenderer.Draw(viewNoTrans, proj, frame.Lighting);
-        resources.Scene.WorldRenderer.Draw(view, viewProj, frame.World, frame.Pickups, frame.Lighting, resources.Lighting.ShadowMap, resources.Lighting.IblProbe);
+        resources.Scene.WorldRenderer.DrawOpaque(view, viewProj, frame.World, frame.Pickups, frame.Lighting, resources.Lighting.ShadowMap, resources.Lighting.IblProbe);
+
+        // Resolve the opaque scene so water can refract the already-rendered pool floor.
+        resources.Post.HdrTarget.Resolve();
+        resources.Post.HdrTarget.Bind();
+        resources.Scene.WorldRenderer.DrawWater(
+            view,
+            proj,
+            viewProj,
+            frame.World,
+            frame.Lighting,
+            resources.Lighting.ShadowMap,
+            resources.Lighting.IblProbe,
+            resources.Post.HdrTarget.ColorTex,
+            resources.Post.HdrTarget.DepthTex,
+            fbWidth,
+            fbHeight);
+
         resources.Scene.DecalRenderer.Draw(viewProj, frame.Holes);
         resources.Scene.ScorchRenderer.Draw(viewProj, frame.Scorches);
         resources.Scene.TracerRenderer.Draw(viewProj, frame.Tracers);

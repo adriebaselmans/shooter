@@ -32,6 +32,74 @@ void main(){
 }
 """;
 
+    public static readonly string WaterVert = """
+#version 330 core
+layout(location=0) in vec3 aPos;
+layout(location=1) in vec3 aNormal;
+layout(location=2) in vec2 aUv;
+layout(location=3) in vec3 aTangent;
+layout(location=4) in vec3 aBitangent;
+uniform mat4 uModel;
+uniform mat4 uView;
+uniform mat4 uViewProj;
+uniform vec4 uMaterialFx1;
+uniform float uTime;
+out vec3 vWorldPos;
+out vec3 vNormal;
+out vec3 vViewNormal;
+out vec2 vUv;
+out mat3 vTbn;
+
+float gerstnerWave(vec2 p, vec2 d, float steepness, float wavelength, float speed, float t) {
+    float k = 2.0 * 3.14159265 / wavelength;
+    float c = sqrt(9.8 / k);
+    float f = k * (dot(d, p) - c * t * speed);
+    return steepness * sin(f);
+}
+
+float proceduralWaterHeight(vec2 p, float t) {
+    t *= 0.72;
+    float h = 0.0;
+    // Calm, broad pool swells
+    h += gerstnerWave(p, normalize(vec2(1.0, 0.35)), 0.112, 7.2, 0.52, t);
+    h += gerstnerWave(p, normalize(vec2(-0.65, 1.0)), 0.062, 4.4, 0.68, t);
+    h += gerstnerWave(p, normalize(vec2(0.9, -0.8)), 0.022, 2.6, 0.92, t);
+    // Very soft breakup only
+    h += 0.003 * sin(p.x * 1.9 + t * 0.92) * cos(p.y * 2.2 + t * 1.04);
+    return h;
+}
+
+vec3 proceduralWaterNormal(vec2 p, float t) {
+    float eps = 0.035;
+    float hx = proceduralWaterHeight(p + vec2(eps, 0.0), t) - proceduralWaterHeight(p - vec2(eps, 0.0), t);
+    float hz = proceduralWaterHeight(p + vec2(0.0, eps), t) - proceduralWaterHeight(p - vec2(0.0, eps), t);
+    return normalize(vec3(-hx * 10.0, 1.0, -hz * 10.0));
+}
+
+void main(){
+    vec4 baseWp = uModel * vec4(aPos, 1.0);
+    float flowMag = max(length(uMaterialFx1.xy), 0.02);
+    vec2 flowDir = dot(uMaterialFx1.xy, uMaterialFx1.xy) > 0.0001
+        ? normalize(uMaterialFx1.xy)
+        : normalize(vec2(0.8, 0.35));
+    // Slower, broader world-space wave field so the motion reads like water instead of chop
+    vec2 wavePos = baseWp.xz * 0.82 + flowDir * uTime * (0.18 + flowMag * 1.25);
+    float waveHeight = proceduralWaterHeight(wavePos, uTime) * 0.125;
+    vec3 worldPos = baseWp.xyz + vec3(0.0, waveHeight, 0.0);
+    vec3 wn = proceduralWaterNormal(wavePos, uTime);
+    vec3 wt = normalize(vec3(1.0, 0.0, 0.0) - wn * dot(wn, vec3(1.0, 0.0, 0.0)));
+    if (length(wt) < 0.001) wt = normalize(cross(vec3(0.0, 0.0, 1.0), wn));
+    vec3 wb = normalize(cross(wn, wt));
+
+    vWorldPos = worldPos;
+    vNormal = wn;
+    vViewNormal = mat3(uView) * wn;
+    vUv = aUv;
+    vTbn = mat3(wt, wb, wn);
+    gl_Position = uViewProj * vec4(worldPos, 1.0);
+}
+""";
+
     public static readonly string WorldFrag = """
 #version 330 core
 in vec3 vWorldPos;
@@ -214,12 +282,14 @@ void main(){
         float baseFresnel = uMaterialFx0.w * 0.1; 
         float fresnel = baseFresnel + (1.0 - baseFresnel) * pow(1.0 - max(dot(n, viewDir), 0.0), 5.0);
         
-        float sparkle = pow(max(dot(reflect(-viewDir, n), -uSunDir), 0.0), 256.0); // Extremely sharp sun reflection
+        vec3 reflectDir = reflect(-viewDir, n);
+        float sparkle = pow(max(dot(reflectDir, -uSunDir), 0.0), 192.0);
         
-        vec3 reflection = iblAmbient(n) * 1.5; // Skybox reflection
+        // Real directional sky reflection. Using irradiance here was too blurred to reveal ripples.
+        vec3 reflection = texture(uSkyCube, reflectDir).rgb * 1.35;
         
         lit = mix(waterAlbedo, reflection, clamp(fresnel, 0.0, 1.0));
-        lit += uSunColor * sparkle * vis * 2.0; // Add intense sun glint on wave peaks
+        lit += uSunColor * sparkle * vis * 2.4;
     } else if (kind == 2) {
         float pulse = 1.0 + sin(uTime * 4.0 + vWorldPos.x * 0.35 + vWorldPos.z * 0.28) * uMaterialFx1.w;
         float heat = 0.65 + 0.35 * sin(uTime * 2.5 + vWorldPos.x * 0.42 - vWorldPos.z * 0.33);
@@ -230,6 +300,103 @@ void main(){
     lit = applyFog(lit, vWorldPos, uMaterialParams.w);
     oColor = vec4(lit, 1.0);
     oViewNormal = vec4(normalize(vViewNormal), 1.0);
+}
+""";
+
+    public static readonly string WaterFrag = """
+#version 330 core
+in vec3 vWorldPos;
+in vec3 vNormal;
+in vec3 vViewNormal;
+in vec2 vUv;
+in mat3 vTbn;
+layout(location=0) out vec4 oColor;
+layout(location=1) out vec4 oViewNormal;
+uniform sampler2D uSceneColor;
+uniform sampler2D uSceneDepth;
+uniform vec2 uInvViewport;
+uniform mat4 uInvProj;
+uniform vec3 uTint;
+uniform vec4 uMaterialFx0;
+uniform vec4 uMaterialFx1;
+""" + "\n" + LightingHeader + "\n" + AtmosphereSnippet + "\n" + """
+float gerstnerWave(vec2 p, vec2 d, float steepness, float wavelength, float speed, float t) {
+    float k = 2.0 * 3.14159265 / wavelength;
+    float c = sqrt(9.8 / k);
+    float f = k * (dot(d, p) - c * t * speed);
+    return steepness * sin(f);
+}
+
+float proceduralWaterHeight(vec2 p, float t) {
+    t *= 0.72;
+    float h = 0.0;
+    h += gerstnerWave(p, normalize(vec2(1.0, 0.35)), 0.112, 7.2, 0.52, t);
+    h += gerstnerWave(p, normalize(vec2(-0.65, 1.0)), 0.062, 4.4, 0.68, t);
+    h += gerstnerWave(p, normalize(vec2(0.9, -0.8)), 0.022, 2.6, 0.92, t);
+    h += 0.003 * sin(p.x * 1.9 + t * 0.92) * cos(p.y * 2.2 + t * 1.04);
+    return h;
+}
+
+vec3 proceduralWaterNormal(vec2 p, float t) {
+    float eps = 0.035;
+    float hx = proceduralWaterHeight(p + vec2(eps, 0.0), t) - proceduralWaterHeight(p - vec2(eps, 0.0), t);
+    float hz = proceduralWaterHeight(p + vec2(0.0, eps), t) - proceduralWaterHeight(p - vec2(0.0, eps), t);
+    return normalize(vec3(-hx * 10.0, 1.0, -hz * 10.0));
+}
+
+float linearViewDepth(vec2 uv, float rawDepth) {
+    vec4 clip = vec4(uv * 2.0 - 1.0, rawDepth * 2.0 - 1.0, 1.0);
+    vec4 view = uInvProj * clip;
+    return -view.z / max(view.w, 0.0001);
+}
+
+void main(){
+    vec2 screenUv = gl_FragCoord.xy * uInvViewport;
+    vec3 geomN = normalize(vNormal);
+    vec3 viewDir = normalize(uCameraPos - vWorldPos);
+    float flowMag = max(length(uMaterialFx1.xy), 0.02);
+    vec2 flowDir = dot(uMaterialFx1.xy, uMaterialFx1.xy) > 0.0001
+        ? normalize(uMaterialFx1.xy)
+        : normalize(vec2(0.8, 0.35));
+    vec2 wavePos = vWorldPos.xz * 0.82 + flowDir * uTime * (0.18 + flowMag * 1.25);
+
+    // Keep distortion/macro motion stable, but add a slightly finer shading normal
+    // so highlights break up into smaller pieces without bringing back jitter.
+    vec3 nDistort = normalize(mix(geomN, proceduralWaterNormal(wavePos * 0.92 + flowDir * uTime * 0.04, uTime), 0.035));
+    vec3 nShade = normalize(mix(geomN, proceduralWaterNormal(wavePos * 2.05 + flowDir * uTime * 0.08, uTime), 0.11));
+    float vis = mix(0.86, 1.0, pcfShadow(vWorldPos, nShade));
+
+    float waterDepth = linearViewDepth(screenUv, gl_FragCoord.z);
+    float sceneRawDepth = texture(uSceneDepth, screenUv).r;
+    float floorDepth = linearViewDepth(screenUv, sceneRawDepth);
+    float thickness = max(floorDepth - waterDepth, 0.0);
+    float shallow = 1.0 - smoothstep(0.10, 1.35, thickness);
+
+    float topMask = clamp(dot(geomN, vec3(0.0, 1.0, 0.0)), 0.0, 1.0);
+    float distortionStrength = mix(0.0006, 0.0034, shallow) * mix(0.90, 1.30, clamp(uMaterialFx1.z * 6.0, 0.0, 1.0));
+    vec2 distortion = mix(geomN.xz, nDistort.xz, 0.30) * distortionStrength * topMask;
+    vec2 refractUv = clamp(screenUv + distortion, vec2(0.001), vec2(0.999));
+    vec3 floorColor = texture(uSceneColor, refractUv).rgb;
+
+    vec3 reflectDir = reflect(-viewDir, nShade);
+    vec3 skyReflectDir = normalize(vec3(reflectDir.x, max(reflectDir.y, -0.02), reflectDir.z));
+    vec3 reflection = atmosphere(skyReflectDir) * 1.12;
+
+    vec3 deepColor = vec3(0.05, 0.15, 0.17);
+    vec3 shallowColor = vec3(0.10, 0.31, 0.34);
+    vec3 tint = mix(deepColor, shallowColor, shallow) * mix(vec3(1.0), uTint, 0.16);
+    vec3 transmitted = mix(floorColor, floorColor * tint, mix(0.10, 0.26, shallow));
+
+    float baseFresnel = uMaterialFx0.w * 0.06;
+    float fresnel = baseFresnel + (1.0 - baseFresnel) * pow(1.0 - max(dot(nShade, viewDir), 0.0), 5.0);
+    float sparkle = pow(max(dot(reflectDir, -uSunDir), 0.0), 160.0);
+
+    vec3 lit = mix(transmitted, reflection, clamp(fresnel, 0.0, 1.0));
+    lit += uSunColor * sparkle * vis * mix(1.1, 1.8, topMask);
+    lit = applyFog(lit, vWorldPos, 1.0);
+
+    oColor = vec4(lit, 1.0);
+    oViewNormal = vec4(0.0);
 }
 """;
 

@@ -7,6 +7,7 @@ internal static partial class Shaders
     public const string LightingHeader = """
 uniform sampler2DShadow uShadowMap;
 uniform samplerCube uIrradiance;
+uniform samplerCube uSkyCube;
 uniform mat4  uLightSpace;
 uniform vec3  uSunDir;          // direction light travels (normalized)
 uniform vec3  uSunColor;        // linear HDR
