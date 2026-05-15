@@ -66,6 +66,32 @@ float heightFromMap(vec2 uv){
     return texture(uHeightMap, uv).r;
 }
 
+// Procedural water waves via Gerstner octaves
+float gerstnerWave(vec2 p, vec2 d, float steepness, float wavelength, float speed, float t) {
+    float k = 2.0 * 3.14159265 / wavelength;
+    float c = sqrt(9.8 / k);
+    float f = k * (dot(d, p) - c * t * speed);
+    return steepness * sin(f);
+}
+
+float proceduralWaterHeight(vec2 p, float t) {
+    float h = 0.0;
+    h += gerstnerWave(p, normalize(vec2(1.0, 1.2)), 0.05, 3.0, 1.5, t);
+    h += gerstnerWave(p, normalize(vec2(-1.0, 0.8)), 0.04, 2.0, 1.2, t);
+    h += gerstnerWave(p, normalize(vec2(0.8, -1.1)), 0.02, 1.0, 2.0, t);
+    h += gerstnerWave(p, normalize(vec2(-0.6, -0.9)), 0.01, 0.5, 2.5, t);
+    return h;
+}
+
+vec3 proceduralWaterNormal(vec2 p, float t) {
+    float eps = 0.01;
+    float h1 = proceduralWaterHeight(p + vec2(eps, 0.0), t);
+    float h2 = proceduralWaterHeight(p - vec2(eps, 0.0), t);
+    float h3 = proceduralWaterHeight(p + vec2(0.0, eps), t);
+    float h4 = proceduralWaterHeight(p - vec2(0.0, eps), t);
+    return normalize(vec3(h2 - h1, 2.0 * eps, h4 - h3));
+}
+
 vec3 reliefNormal(vec2 uv, vec3 geomN, float strength){
     if (uEnableParallax == 0 || uHasHeightMap == 0 || strength <= 0.0001)
         return normalize(geomN);
@@ -136,9 +162,9 @@ void main(){
     // Dual-scrolling normals for water
     vec3 mapN;
     if (kind == 1) {
-        vec3 mapNA = texture(uNormalMap, normalScrollA).xyz * 2.0 - 1.0;
-        vec3 mapNB = texture(uNormalMap, normalScrollB).xyz * 2.0 - 1.0;
-        mapN = normalize(mapNA + mapNB); // Additive blending for intersecting ripples
+        // Procedural normals via Gerstner math
+        vec3 pN = proceduralWaterNormal(vWorldPos.xz * 2.0, uTime); // scale world pos to match basin
+        mapN = normalize(pN); // Transform to tangent space
     } else {
         mapN = texture(uNormalMap, sampleUv).xyz * 2.0 - 1.0;
     }
@@ -146,6 +172,9 @@ void main(){
     vec3 n = (uHasNormalMap == 1)
         ? normalize(mix(normalize(vTbn * mapN), detailN, useRelief ? 0.20 : 0.08))
         : detailN;
+        
+    // Override n directly for procedural water to avoid normal map flattening
+    if (kind == 1) n = normalize(vTbn * proceduralWaterNormal(vWorldPos.xz * 2.0, uTime));
         
     float roughness = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, sampleUv).r : uMaterialParams.x;
     roughness = clamp(max(roughness, uMaterialParams.x * 0.45), 0.02, 1.0);
@@ -164,20 +193,21 @@ void main(){
              + sunSpecular(n, viewDir, -uSunDir, roughness, f0, vis) * mix(0.82, 1.0, reliefShadow)
              + albedo * uSelfIllum;
     if (kind == 1) {
-        // Industry-standard PBR water
-        // Base color is kept clean. Panning creates flow, normal maps create 3D ripple reflections.
+        // Procedural Deep & Shallow Colors
+        float h = proceduralWaterHeight(vWorldPos.xz * 2.0, uTime);
+        vec3 deepColor = vec3(0.01, 0.1, 0.15);
+        vec3 shallowColor = vec3(0.05, 0.3, 0.4);
+        vec3 waterAlbedo = mix(deepColor, shallowColor, clamp((h + 0.1) * 5.0, 0.0, 1.0));
         
-        // Multiply authored fresnel by 0.1 so it doesn't totally blow out the texture
         float baseFresnel = uMaterialFx0.w * 0.1; 
         float fresnel = baseFresnel + (1.0 - baseFresnel) * pow(1.0 - max(dot(n, viewDir), 0.0), 5.0);
         
-        float sparkle = pow(max(dot(reflect(-viewDir, n), -uSunDir), 0.0), 128.0); // Extremely sharp sun reflection
+        float sparkle = pow(max(dot(reflect(-viewDir, n), -uSunDir), 0.0), 256.0); // Extremely sharp sun reflection
         
         vec3 reflection = iblAmbient(n) * 1.5; // Skybox reflection
         
-        // Mix between underlying texture and sky reflection based on view angle
-        lit = mix(albedo, reflection, clamp(fresnel, 0.0, 1.0));
-        lit += uSunColor * sparkle * vis * 1.5; // Add sun glint
+        lit = mix(waterAlbedo, reflection, clamp(fresnel, 0.0, 1.0));
+        lit += uSunColor * sparkle * vis * 2.0; // Add intense sun glint on wave peaks
     } else if (kind == 2) {
         float pulse = 1.0 + sin(uTime * 4.0 + vWorldPos.x * 0.35 + vWorldPos.z * 0.28) * uMaterialFx1.w;
         float heat = 0.65 + 0.35 * sin(uTime * 2.5 + vWorldPos.x * 0.42 - vWorldPos.z * 0.33);
