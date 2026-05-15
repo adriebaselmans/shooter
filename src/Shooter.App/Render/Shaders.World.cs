@@ -88,15 +88,13 @@ float proceduralWaterHeight(vec2 p, float t) {
 }
 
 vec3 proceduralWaterNormal(vec2 p, float t) {
-    float eps = 0.01;
+    float eps = 0.05;
     float h1 = proceduralWaterHeight(p + vec2(eps, 0.0), t);
     float h2 = proceduralWaterHeight(p - vec2(eps, 0.0), t);
     float h3 = proceduralWaterHeight(p + vec2(0.0, eps), t);
     float h4 = proceduralWaterHeight(p - vec2(0.0, eps), t);
-    // Mathematically, the Y component should be `2.0 * eps`. 
-    // By reducing this value, we artificially steepen the normals, 
-    // making the ripples catch much more light and shadow visually.
-    return normalize(vec3(h2 - h1, 0.05 * eps, h4 - h3));
+    // Increase the x/z components massively relative to Y to force deep normals
+    return normalize(vec3((h1 - h2) * 50.0, 1.0, (h3 - h4) * 50.0));
 }
 
 vec3 reliefNormal(vec2 uv, vec3 geomN, float strength){
@@ -183,11 +181,11 @@ void main(){
         
     // Override n directly for procedural water
     // Transform raw math normals into absolute world space. 
-    // Do NOT multiply by vTbn. The procedural normals are already in absolute world space (xz plane, y up)
+    // In our coordinate system, Y is up. The normal calculation returned (x, y, z) 
+    // where x/z represent horizontal slopes, and y represents vertical up.
     if (kind == 1) {
         vec3 pN = proceduralWaterNormal(vWorldPos.xz * 6.0, uTime);
-        // The procedural normal assumes Y is up.
-        n = normalize(pN);
+        n = normalize(vec3(pN.x, pN.y, pN.z));
     }
         
     float roughness = (uHasRoughnessMap == 1) ? texture(uRoughnessMap, sampleUv).r : uMaterialParams.x;
