@@ -17,7 +17,6 @@ uniform float uSaturation;
 uniform float uShadowCool;
 uniform float uHighlightWarm;
 uniform float uVignetteStrength;
-uniform int uFxaaEnabled;
 
 vec3 aces(vec3 x){
     const float a = 2.51;
@@ -47,46 +46,23 @@ float luma(vec3 c){ return dot(c, vec3(0.299, 0.587, 0.114)); }
 
 void main(){
     vec3 c = tonemap(vUv);
-    if (uFxaaEnabled == 1) {
-        vec2 texel = 1.0 / vec2(textureSize(uHdr, 0));
-        vec3 rgbNW = tonemap(vUv + texel * vec2(-1.0, -1.0));
-        vec3 rgbNE = tonemap(vUv + texel * vec2( 1.0, -1.0));
-        vec3 rgbSW = tonemap(vUv + texel * vec2(-1.0,  1.0));
-        vec3 rgbSE = tonemap(vUv + texel * vec2( 1.0,  1.0));
-        float lumaNW = luma(rgbNW);
-        float lumaNE = luma(rgbNE);
-        float lumaSW = luma(rgbSW);
-        float lumaSE = luma(rgbSE);
-        float lumaM  = luma(c);
-        float lumaMin = min(lumaM, min(min(lumaNW, lumaNE), min(lumaSW, lumaSE)));
-        float lumaMax = max(lumaM, max(max(lumaNW, lumaNE), max(lumaSW, lumaSE)));
-        vec2 dir;
-        dir.x = -((lumaNW + lumaNE) - (lumaSW + lumaSE));
-        dir.y =  ((lumaNW + lumaSW) - (lumaNE + lumaSE));
-        float dirReduce = max((lumaNW + lumaNE + lumaSW + lumaSE) * 0.25 * 0.25, 0.0001);
-        float rcpDirMin = 1.0 / (min(abs(dir.x), abs(dir.y)) + dirReduce);
-        dir = clamp(dir * rcpDirMin * texel * 1.5, -8.0 * texel, 8.0 * texel);
-        vec3 rgbA = 0.5 * (tonemap(vUv + dir * (1.0 / 3.0 - 0.5)) + tonemap(vUv + dir * (2.0 / 3.0 - 0.5)));
-        vec3 rgbB = rgbA * 0.5 + 0.25 * (tonemap(vUv + dir * -0.5) + tonemap(vUv + dir * 0.5));
-        float lumaB = luma(rgbB);
-        c = (lumaB < lumaMin || lumaB > lumaMax) ? rgbA : rgbB;
-    } else {
-        // Optional subtle RCAS / Unsharp mask if FXAA is OFF (used alongside TAA)
-        vec2 texel = 1.0 / vec2(textureSize(uHdr, 0));
-        vec3 cTL = tonemap(vUv + texel * vec2(-1.0, -1.0));
-        vec3 cTC = tonemap(vUv + texel * vec2( 0.0, -1.0));
-        vec3 cTR = tonemap(vUv + texel * vec2( 1.0, -1.0));
-        vec3 cML = tonemap(vUv + texel * vec2(-1.0,  0.0));
-        vec3 cMC = c;
-        vec3 cMR = tonemap(vUv + texel * vec2( 1.0,  0.0));
-        vec3 cBL = tonemap(vUv + texel * vec2(-1.0,  1.0));
-        vec3 cBC = tonemap(vUv + texel * vec2( 0.0,  1.0));
-        vec3 cBR = tonemap(vUv + texel * vec2( 1.0,  1.0));
-        
-        vec3 blurred = (cTL + cTC*2.0 + cTR + cML*2.0 + cMC*4.0 + cMR*2.0 + cBL + cBC*2.0 + cBR) / 16.0;
-        // Moderate unsharp mask
-        c = clamp(c + (c - blurred) * 1.5, 0.0, 1.0);
-    }
+    
+    // Subtle RCAS / Unsharp mask to keep details crisp
+    vec2 texel = 1.0 / vec2(textureSize(uHdr, 0));
+    vec3 cTL = tonemap(vUv + texel * vec2(-1.0, -1.0));
+    vec3 cTC = tonemap(vUv + texel * vec2( 0.0, -1.0));
+    vec3 cTR = tonemap(vUv + texel * vec2( 1.0, -1.0));
+    vec3 cML = tonemap(vUv + texel * vec2(-1.0,  0.0));
+    vec3 cMC = c;
+    vec3 cMR = tonemap(vUv + texel * vec2( 1.0,  0.0));
+    vec3 cBL = tonemap(vUv + texel * vec2(-1.0,  1.0));
+    vec3 cBC = tonemap(vUv + texel * vec2( 0.0,  1.0));
+    vec3 cBR = tonemap(vUv + texel * vec2( 1.0,  1.0));
+    
+    vec3 blurred = (cTL + cTC*2.0 + cTR + cML*2.0 + cMC*4.0 + cMR*2.0 + cBL + cBC*2.0 + cBR) / 16.0;
+    // Moderate unsharp mask
+    c = clamp(c + (c - blurred) * 1.5, 0.0, 1.0);
+    
     c = pow(c, vec3(1.0 / 2.2));
     vec2 q = vUv * 2.0 - 1.0;
     float vignette = 1.0 - dot(q, q) * 0.22 * uVignetteStrength;

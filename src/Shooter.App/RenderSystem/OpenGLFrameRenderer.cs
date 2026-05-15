@@ -61,6 +61,8 @@ internal sealed class OpenGLFrameRenderer
 
     private static void RunPostPass(OpenGLRenderResources resources, RenderFrameData frame, Matrix4x4 proj, double dt, int fbWidth, int fbHeight)
     {
+        resources.Post.HdrTarget.Resolve();
+
         if (frame.Lighting.SsaoEnabled)
             resources.Post.SsaoPass.Run(resources.Post.HdrTarget.DepthTex, resources.Post.HdrTarget.NormalTex, proj, frame.Lighting.SsaoRadius, frame.Lighting.SsaoBias);
         if (frame.Lighting.BloomEnabled)
@@ -77,7 +79,6 @@ internal sealed class OpenGLFrameRenderer
             frame.Lighting.BloomEnabled ? frame.Lighting.BloomStrength : 0f,
             frame.Lighting.SsaoEnabled ? frame.Lighting.SsaoStrength : 0f,
             resources.Post.AutoExposure.CurrentExposure,
-            frame.Lighting.FxaaEnabled,
             fbWidth,
             fbHeight);
     }
