@@ -76,10 +76,14 @@ float gerstnerWave(vec2 p, vec2 d, float steepness, float wavelength, float spee
 
 float proceduralWaterHeight(vec2 p, float t) {
     float h = 0.0;
-    h += gerstnerWave(p, normalize(vec2(1.0, 1.2)), 0.05, 3.0, 1.5, t);
-    h += gerstnerWave(p, normalize(vec2(-1.0, 0.8)), 0.04, 2.0, 1.2, t);
-    h += gerstnerWave(p, normalize(vec2(0.8, -1.1)), 0.02, 1.0, 2.0, t);
-    h += gerstnerWave(p, normalize(vec2(-0.6, -0.9)), 0.01, 0.5, 2.5, t);
+    // Scale time to make it animate much more energetically
+    t *= 2.5; 
+    h += gerstnerWave(p, normalize(vec2(1.0, 1.2)), 0.08, 2.0, 2.0, t);
+    h += gerstnerWave(p, normalize(vec2(-1.0, 0.8)), 0.06, 1.2, 2.4, t);
+    h += gerstnerWave(p, normalize(vec2(0.8, -1.1)), 0.04, 0.6, 3.2, t);
+    h += gerstnerWave(p, normalize(vec2(-0.6, -0.9)), 0.02, 0.3, 4.0, t);
+    // Add high frequency noise-like micro-ripples
+    h += 0.01 * sin(p.x * 12.0 + t * 4.0) * cos(p.y * 14.0 + t * 4.5);
     return h;
 }
 
