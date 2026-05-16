@@ -198,7 +198,11 @@ void main(){
     vec3 viewDir = normalize(uCameraPos - vWorldPos);
     vec3 baseN = normalize(vNormal);
     int kind = int(uMaterialFx0.x + 0.5);
-    bool useRelief = (kind == 0 && uEnableParallax == 1 && uHasHeightMap == 1);
+    float reliefAmount = (kind == 0 && uEnableParallax == 1 && uHasHeightMap == 1)
+        ? clamp(uParallaxScale / 0.12, 0.0, 1.0)
+        : 0.0;
+    bool useRelief = reliefAmount > 0.001;
+    float reliefStrength = max(0.02, max(uMaterialParams.z, 0.35) * mix(0.12, 1.45, reliefAmount));
     float reliefShadow = 1.0;
     vec2 baseUv = vUv;
     vec2 flowUvA = baseUv + uMaterialFx1.xy * uTime;
@@ -229,7 +233,7 @@ void main(){
     vec3 albedo = tex * uTint;
     
     vec3 detailN = useRelief
-        ? reliefNormal(sampleUv, baseN, max(0.08, uMaterialParams.z * 0.55 + uParallaxScale * 4.5))
+        ? reliefNormal(sampleUv, baseN, reliefStrength)
         : detailNormalFromAlbedo(uBaseColor, sampleUv, uTexelSize, baseN, uMaterialParams.z, uHasTexture);
         
     // Dual-scrolling normals for water
@@ -243,8 +247,9 @@ void main(){
         mapN = texture(uNormalMap, sampleUv).xyz * 2.0 - 1.0;
     }
     
+    float reliefBlend = useRelief ? mix(0.03, 0.36, reliefAmount) : 0.08;
     vec3 n = (uHasNormalMap == 1)
-        ? normalize(mix(normalize(vTbn * mapN), detailN, useRelief ? 0.20 : 0.08))
+        ? normalize(mix(normalize(vTbn * mapN), detailN, reliefBlend))
         : detailN;
         
     // Override n directly for procedural water
@@ -263,7 +268,7 @@ void main(){
     float ao = (uHasAoMap == 1) ? texture(uAoMap, sampleUv).r : 1.0;
     
     float vis = pcfShadow(vWorldPos, n);
-    reliefShadow = useRelief ? reliefShadowTerm(sampleUv, max(0.08, uMaterialParams.z * 0.55 + uParallaxScale * 4.5)) : 1.0;
+    reliefShadow = useRelief ? mix(1.0, reliefShadowTerm(sampleUv, reliefStrength), reliefAmount) : 1.0;
     
     vec3 f0 = mix(vec3(0.04), albedo, metallic);
     vec3 diffuseColor = albedo * (1.0 - metallic);

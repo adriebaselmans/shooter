@@ -120,7 +120,7 @@ public sealed class LightingEnvironment
     public bool ParallaxEnabled { get; set; } = true;
 
     /// <summary>Relief strength. Keep conservative; this now drives bump-like normal detail and crevice shadowing, not UV warp.</summary>
-    public float ParallaxScale { get; set; } = 0.045f;
+    public float ParallaxScale { get; set; } = 0.090f;
 
     /// <summary>Relief strength alias for the menu / feature naming.</summary>
     public float PomScale

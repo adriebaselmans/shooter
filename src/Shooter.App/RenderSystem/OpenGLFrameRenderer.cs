@@ -53,7 +53,7 @@ internal sealed class OpenGLFrameRenderer
             resources.Post.GBufferTarget.Bind();
             resources.Gl.ClearColor(0f, 0f, 0f, 1f);
             resources.Gl.Clear(Silk.NET.OpenGL.ClearBufferMask.ColorBufferBit | Silk.NET.OpenGL.ClearBufferMask.DepthBufferBit);
-            resources.Scene.WorldGBufferRenderer.Draw(view, viewProj, frame.World);
+            resources.Scene.WorldGBufferRenderer.Draw(view, viewProj, frame.World, frame.Lighting);
             resources.Post.GBufferTarget.Resolve();
 
             if (frame.Lighting.SsaoEnabled)

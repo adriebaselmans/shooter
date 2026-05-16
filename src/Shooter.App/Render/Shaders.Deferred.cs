@@ -13,16 +13,39 @@ layout(location=0) out vec4 oAlbedoAo;
 layout(location=1) out vec4 oNormal;
 layout(location=2) out vec4 oMaterial;
 uniform sampler2D uBaseColor;
+uniform sampler2D uNormalMap;
 uniform sampler2D uRoughnessMap;
 uniform sampler2D uMetallicMap;
 uniform sampler2D uAoMap;
+uniform sampler2D uHeightMap;
 uniform int uHasTexture;
+uniform int uHasNormalMap;
 uniform int uHasRoughnessMap;
 uniform int uHasMetallicMap;
 uniform int uHasAoMap;
+uniform int uHasHeightMap;
+uniform int uEnableParallax;
 uniform vec3 uTint;
+uniform vec2 uTexelSize;
+uniform float uParallaxScale;
 uniform vec4 uMaterialParams;
 uniform vec4 uMaterialFx0;
+uniform mat4 uView;
+""" + "\n" + LightingHeader + "\n" + """
+float reliefShadowTerm(vec2 uv, float strength){
+    if (uEnableParallax == 0 || uHasHeightMap == 0 || strength <= 0.0001)
+        return 1.0;
+    vec2 texel = max(uTexelSize, vec2(0.0005));
+    float center = texture(uHeightMap, uv).r;
+    float left   = texture(uHeightMap, uv - vec2(texel.x, 0.0)).r;
+    float right  = texture(uHeightMap, uv + vec2(texel.x, 0.0)).r;
+    float down   = texture(uHeightMap, uv - vec2(0.0, texel.y)).r;
+    float up     = texture(uHeightMap, uv + vec2(0.0, texel.y)).r;
+    float crevice = clamp(1.0 - center, 0.0, 1.0);
+    float slope = clamp((abs(left - right) + abs(up - down)) * 1.6, 0.0, 1.0);
+    float shadow = 1.0 - (crevice * 0.22 + slope * 0.10) * clamp(strength * 6.0, 0.0, 1.0);
+    return clamp(shadow, 0.72, 1.0);
+}
 
 void main(){
     vec3 albedo = ((uHasTexture == 1) ? texture(uBaseColor, vUv).rgb : vec3(1.0)) * uTint;
@@ -32,8 +55,25 @@ void main(){
     float emissive = uMaterialFx0.y;
     float wetness = 0.0;
 
+    vec3 baseN = normalize(vNormal);
+    float reliefAmount = (uEnableParallax == 1 && uHasHeightMap == 1)
+        ? clamp(uParallaxScale / 0.12, 0.0, 1.0)
+        : 0.0;
+    bool useRelief = reliefAmount > 0.001;
+    float reliefStrength = max(0.02, max(uMaterialParams.z, 0.35) * mix(0.12, 1.45, reliefAmount));
+    vec3 detailN = useRelief
+        ? detailNormalFromHeight(uHeightMap, vUv, max(uTexelSize, vec2(0.0005)), baseN, reliefStrength, uHasHeightMap)
+        : detailNormalFromAlbedo(uBaseColor, vUv, uTexelSize, baseN, uMaterialParams.z, uHasTexture);
+    vec3 mapN = texture(uNormalMap, vUv).xyz * 2.0 - 1.0;
+    float reliefBlend = useRelief ? mix(0.03, 0.36, reliefAmount) : 0.08;
+    vec3 n = (uHasNormalMap == 1)
+        ? normalize(mix(normalize(vTbn * mapN), detailN, reliefBlend))
+        : detailN;
+
+    ao *= useRelief ? mix(1.0, reliefShadowTerm(vUv, reliefStrength), reliefAmount) : 1.0;
+
     oAlbedoAo = vec4(albedo, ao);
-    oNormal = vec4(normalize(vViewNormal), 1.0);
+    oNormal = vec4(normalize((uView * vec4(n, 0.0)).xyz), 1.0);
     oMaterial = vec4(clamp(roughness, 0.0, 1.0), clamp(metallic, 0.0, 1.0), clamp(emissive, 0.0, 1.0), wetness);
 }
 """;

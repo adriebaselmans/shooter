@@ -22,7 +22,7 @@ public sealed class WorldGBufferRenderer : IDisposable
         _textures = new TextureCache(gl);
     }
 
-    public unsafe void Draw(Matrix4x4 view, Matrix4x4 viewProj, GameWorld world)
+    public unsafe void Draw(Matrix4x4 view, Matrix4x4 viewProj, GameWorld world, LightingEnvironment env)
     {
         _gl.Enable(EnableCap.DepthTest);
         _gl.Enable(EnableCap.CullFace);
@@ -33,9 +33,13 @@ public sealed class WorldGBufferRenderer : IDisposable
         UploadMatrix(_shader.U("uViewProj"), viewProj);
         UploadMatrix(_shader.U("uView"), view);
         _gl.Uniform1(_shader.U("uBaseColor"), 0);
+        _gl.Uniform1(_shader.U("uNormalMap"), 14);
         _gl.Uniform1(_shader.U("uRoughnessMap"), 2);
         _gl.Uniform1(_shader.U("uMetallicMap"), 3);
         _gl.Uniform1(_shader.U("uAoMap"), 6);
+        _gl.Uniform1(_shader.U("uHeightMap"), 7);
+        _gl.Uniform1(_shader.U("uEnableParallax"), env.ParallaxEnabled ? 1 : 0);
+        _gl.Uniform1(_shader.U("uParallaxScale"), env.ParallaxScale);
 
         foreach (var wb in world.Brushes)
         {
@@ -53,16 +57,23 @@ public sealed class WorldGBufferRenderer : IDisposable
             var material = _textures.GetMaterialSet(wb.TexturePath);
             _gl.ActiveTexture(TextureUnit.Texture0);
             _gl.BindTexture(TextureTarget.Texture2D, material.BaseColorHandle);
+            _gl.ActiveTexture(TextureUnit.Texture14);
+            _gl.BindTexture(TextureTarget.Texture2D, material.NormalHandle);
             _gl.ActiveTexture(TextureUnit.Texture2);
             _gl.BindTexture(TextureTarget.Texture2D, material.RoughnessHandle);
             _gl.ActiveTexture(TextureUnit.Texture3);
             _gl.BindTexture(TextureTarget.Texture2D, material.MetallicHandle);
             _gl.ActiveTexture(TextureUnit.Texture6);
             _gl.BindTexture(TextureTarget.Texture2D, material.AoHandle);
+            _gl.ActiveTexture(TextureUnit.Texture7);
+            _gl.BindTexture(TextureTarget.Texture2D, material.HeightHandle);
             _gl.Uniform1(_shader.U("uHasTexture"), _textures.HasTexture(wb.TexturePath) ? 1 : 0);
+            _gl.Uniform1(_shader.U("uHasNormalMap"), material.HasNormalMap ? 1 : 0);
             _gl.Uniform1(_shader.U("uHasRoughnessMap"), material.HasRoughnessMap ? 1 : 0);
             _gl.Uniform1(_shader.U("uHasMetallicMap"), material.HasMetallicMap ? 1 : 0);
             _gl.Uniform1(_shader.U("uHasAoMap"), material.HasAoMap ? 1 : 0);
+            _gl.Uniform1(_shader.U("uHasHeightMap"), material.HasHeightMap ? 1 : 0);
+            _gl.Uniform2(_shader.U("uTexelSize"), material.TexelSizeX, material.TexelSizeY);
 
             _gl.ActiveTexture(TextureUnit.Texture0);
             glMesh.Bind();
