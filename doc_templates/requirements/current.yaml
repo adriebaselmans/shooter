@@ -1,38 +1,44 @@
-id: req-shooter-anisotropy-and-fxaa
-title: Anisotropic Filtering and FXAA in the Shooter Renderer
+id: req-shooter-hybrid-cinematic-renderer
+title: Hybrid Cinematic Renderer Roadmap for OpenGL 3.3
 status: approved
-created_at: 2026-05-06T20:45:00Z
+created_at: 2026-05-06T22:30:00Z
 
 context: >
-  The user wants sharper textured floors/walls and a lightweight anti-aliasing option. The runtime
-  should enable anisotropic texture filtering and provide an FXAA toggle in the in-game menu.
+  The user wants a concrete architecture proposal, stored in the project wiki, for evolving the
+  Shooter.App OpenGL 3.3 renderer toward a modern cinematic pseudo-RTX look using only
+  rasterization, fullscreen fragment shaders, screen-space raymarching, and post-processing.
+  The deliverable in this request is planning only: no implementation yet.
 
 functional:
-  - id: L1001
-    text: "Enable anisotropic filtering for world/material textures."
-  - id: L1002
-    text: "Provide a lightweight FXAA anti-aliasing option in the final post process."
-  - id: L1003
-    text: "Expose the FXAA option in the in-game menu."
+  - id: L3001
+    text: "Define a practical renderer architecture for OpenGL 3.3 using hybrid rendering: rasterization + screen-space raymarching + post-processing."
+  - id: L3002
+    text: "Cover the requested feature set: SSR, contact shadows, soft shadow filtering, volumetric fog, wet reflective surfaces, PBR-style lighting, temporal stabilization, and cubemap fallback."
+  - id: L3003
+    text: "Map the design to the current Shooter.App codebase and identify the main new passes, resources, and class boundaries."
+  - id: L3004
+    text: "Store the approved proposal in the project wiki under the architecture category."
+  - id: L3005
+    text: "Produce a parallelizable implementation plan suitable for multiple specialist sub-agents working concurrently."
 
 non_functional:
-  - id: NL701
-    text: "Keep the implementation lightweight and compatible with the existing OpenGL HDR pipeline."
-  - id: NL702
-    text: "Maintain existing gameplay and render feature toggles."
-  - id: NL703
-    text: "Build, format verification, and OpenGL smoke startup must pass."
+  - id: NL3001
+    text: "Keep the proposal compatible with legacy OpenGL 3.3 and fullscreen fragment-shader execution only."
+  - id: NL3002
+    text: "Preserve practical real-time performance targets for mid-range GPUs."
+  - id: NL3003
+    text: "Respect the current project preference for crisp rendering and selective temporal smoothing instead of whole-frame TAA blur."
+  - id: NL3004
+    text: "The planning deliverable must avoid implementation changes outside coordinator-owned documentation and wiki artifacts."
 
 acceptance_criteria:
-  - id: AC1001
-    text: "World/material textures use anisotropic filtering."
-  - id: AC1002
-    text: "The post process can run with FXAA enabled or disabled."
-  - id: AC1003
-    text: "The in-game menu exposes an FXAA toggle."
-  - id: AC1004
-    text: "dotnet build shooter.slnx -nologo passes."
-  - id: AC1005
-    text: "dotnet format shooter.slnx --verify-no-changes --severity warn -v minimal passes."
-  - id: AC1006
-    text: "dotnet run --project src/Shooter.App -- dust.shmap still starts successfully."
+  - id: AC3001
+    text: "The requirements artifact captures scope, constraints, and success criteria for the planning deliverable."
+  - id: AC3002
+    text: "The design artifact describes the target pipeline, GBuffer strategy, pass order, major classes/resources, and phased adoption path for this repository."
+  - id: AC3003
+    text: "A wiki architecture page is added with the renderer proposal and repository-specific implementation guidance."
+  - id: AC3004
+    text: "The plan includes a concrete parallel work breakdown for sub-agents, including dependencies and merge order."
+  - id: AC3005
+    text: "Review and DoD artifacts are updated for the planning-only deliverable."

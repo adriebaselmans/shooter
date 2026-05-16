@@ -99,7 +99,7 @@ public sealed class ShadowMap : IDisposable
         _gl.Enable(EnableCap.CullFace);
         _gl.CullFace(TriangleFace.Back);
         _gl.Enable(EnableCap.PolygonOffsetFill);
-        _gl.PolygonOffset(0.75f, 1.5f);
+        _gl.PolygonOffset(1.10f, 2.2f);
 
         _shader.Use();
         UploadMatrix(_shader.U("uLightSpace"), lightSpace);

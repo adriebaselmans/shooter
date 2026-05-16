@@ -1,6 +1,6 @@
 version: 1
-updated: 2026-05-01T13:05:00Z
-total_pages: 17
+updated: 2026-05-06T23:05:00Z
+total_pages: 20
 categories:
   project:
     count: 1
@@ -11,7 +11,7 @@ categories:
         tags: [shooter, map-editor, wpf, dotnet, silk-net, identity]
         rev: 1
   architecture:
-    count: 6
+    count: 9
     summary: "Stack, modules, interfaces, deployment topology"
     hot:
       - id: lighting-pipeline
@@ -30,6 +30,10 @@ categories:
         summary: "Avalonia viewports render with OpenGlControlBase and route input through an overlay."
         tags: [opengl, avalonia, silk-net, viewports, input, overlay]
         rev: 2
+      - id: hybrid-cinematic-renderer-plan
+        summary: "GL 3.3 hybrid cinematic renderer roadmap: deferred opaque lighting, SSR, contact shadows, volumetrics, wetness, and selective temporal stabilization."
+        tags: [renderer, opengl, gl33, deferred, ssr, volumetrics, wetness, shadows, roadmap]
+        rev: 1
   decisions:
     count: 5
     summary: "ADR-style decision records with rationale"

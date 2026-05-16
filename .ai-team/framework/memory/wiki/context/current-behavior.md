@@ -1,11 +1,11 @@
 ---
 id: current-behavior
 cat: context
-rev: 9
+rev: 10
 created: 2026-04-26T12:00:00Z
-updated: 2026-05-01T23:50:00Z
-by: coordinator
-tags: [behavior, ux, editor, viewports, shortcuts, primitives, shooter, gameplay, lighting, textures, metal]
+updated: 2026-05-06T22:30:00Z
+by: developer
+tags: [behavior, ux, editor, viewports, shortcuts, primitives, shooter, gameplay, lighting, textures, metal, deferred, msaa]
 summary: "Stable user-facing behaviors that must not regress."
 status: active
 ---
@@ -29,33 +29,29 @@ status: active
 - Rocket launcher spawns a visible textured rocket model along the firing direction.
 - Rocket detonation leaves one large noisy scorch smudge, not a bullet-hole ring.
 - All 3 weapons selectable (1/2/3) from spawn with starter ammo.
-- `.shmap` files saved by the editor (1.3.0) load without code changes.
+- `.shmap` files saved by the editor (1.4.0) load without code changes.
 - Shooter.App treats image-backed brush `material_name` values as optional diffuse texture paths; missing files must fall back to tint rendering rather than aborting load.
 
 ## Must stay true (Shooter.App lighting)
-- All world-space geometry renders into an HDR (RGBA16F) offscreen target, not the default framebuffer.
-- The default framebuffer is written exactly twice per frame: PostFx tone-map, then HUD.
-- Sky is procedural analytic (no asset), driven by `LightingEnvironment.SunDirection` + `Turbidity`.
-- Sun casts a soft (PCF) shadow from world brushes onto the floor and other brushes; pickups and rockets receive the shadow; the weapon viewmodel does not.
-- Ambient is image-based: comes from a convolved sky cubemap, not a flat constant.
-- Bright effects (muzzle flash, scorch core) bloom; non-emissive surfaces do not.
-- Final image is ACES tone-mapped and gamma-encoded; exposure is a single uniform on the post pass unless auto-exposure is enabled.
-- Static world brushes may sample diffuse/albedo textures through their authored UVs; pickups remain untextured self-illuminated cubes.
-- HUD remains crisp, LDR, unaffected by exposure / bloom / tone map.
-- The visual baseline is intentionally less over-bright than before: exposure, ambient, sun, and bloom are tuned to preserve stronger contrast and more readable highlights.
-- Textured world surfaces now receive heuristic roughness/specular/detail-normal response even when dedicated normal maps are not yet authored.
-- Brush material behavior can now be authored directly in the editor and persisted into `.shmap` through a brush-level `material_properties` block.
-- Shooter.App still supports runtime companion maps by filename convention, but authored material properties now define intended behavior directly for Standard/Water/Lava brushes.
-- Distant outdoor geometry picks up subtle dust-style haze/fog, and the final frame receives mild color grading plus vignette.
-- Rocket smoke, explosion dust/debris, and muzzle smoke particles now add lightweight motion polish.
-- `dust.shmap` now includes a water-authored demo brush to verify the workflow visually.
+- Standard opaque world surfaces render through the hybrid deferred OpenGL path; special cases stay on forward/specialized paths.
+- All main world-space geometry renders into HDR offscreen targets, not directly to the default framebuffer.
+- The final default framebuffer write sequence is still post first, HUD last.
+- Sky is procedural analytic, driven by `LightingEnvironment.SunDirection` + `Turbidity`.
+- Sun casts soft shadows; recent tuning should avoid obvious diagonal self-shadow patterns on flat walls/floors.
+- Ambient is image-based: comes from sky-derived cubemaps, not a flat constant.
+- Bright effects bloom; HUD remains crisp and unaffected by tone mapping.
+- Hardware **4x MSAA** remains the active anti-aliasing strategy.
+- TAA / FXAA remain removed.
+- Volumetric fog is currently **not** part of the active renderer.
+- Brush relief toggle and relief-strength slider must visibly affect the main world render; current default relief strength is `0.090`.
+- Brush material behavior can be authored directly in the editor and persisted into `.shmap` through a brush-level `material_properties` block.
+- Shooter.App still supports runtime companion maps by filename convention, while authored material properties define intended behavior directly for Standard/Water/Lava brushes.
+- Distant outdoor geometry still uses the lighter dust-style haze/fog baked into the main lighting/post behavior; the removed volumetric pass must not silently return.
+- `dust.shmap` still includes a water-authored demo brush to verify the workflow visually.
 
-## Must stay true (Shooter.App Metal backend)
-- `Shooter.App --backend=metal` initializes a concrete Metal backend on macOS instead of routing through OpenGL.
-- The Metal backend renders world/models into HDR scene textures, runs directional shadowing, SSAO, bloom, and tone mapping, then draws HUD last.
-- Metal decals, scorch marks, and muzzle flash render in the HDR scene path rather than being omitted.
-- Metal also includes a hybrid path-traced indirect-lighting layer that accumulates while the camera is stable and resets on movement/resize.
-- Metal remains compatible with the backend abstraction and does not change the default OpenGL startup path.
+## Must stay true (Shooter.App Metal/backend remnants)
+- Metal/backend-abstraction code may remain in-repo, but current visual iteration/reference behavior is the OpenGL renderer.
+- Existing OpenGL behavior must not regress while backend leftovers remain present.
 
 ## open
 - None.

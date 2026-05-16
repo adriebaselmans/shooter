@@ -86,7 +86,8 @@ float pcfShadow(vec3 worldPos, vec3 n){
     proj = proj * 0.5 + 0.5;
     if (proj.z > 1.0 || proj.x < 0.0 || proj.x > 1.0 || proj.y < 0.0 || proj.y > 1.0)
         return 1.0;
-    float bias = max(0.00022 * (1.0 - max(dot(n, -uSunDir), 0.0)), 0.00005);
+    float ndl = max(dot(n, -uSunDir), 0.0);
+    float bias = mix(0.00060, 0.00016, ndl);
     float depth = proj.z - bias;
     vec2 texel = 1.0 / vec2(textureSize(uShadowMap, 0));
     float distToCamera = length(uCameraPos - worldPos);

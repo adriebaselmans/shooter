@@ -54,7 +54,7 @@ public sealed class ContactShadowPass : IDisposable
         _gl.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
     }
 
-    public unsafe void Run(uint depthTex, uint normalTex, Matrix4x4 proj, Vector3 lightDirView, float maxDistance = 1.2f, float thickness = 0.10f, float bias = 0.03f)
+    public unsafe void Run(uint depthTex, uint normalTex, Matrix4x4 proj, Vector3 lightDirView, float maxDistance = 0.75f, float thickness = 0.055f, float bias = 0.05f)
     {
         if (_fbo == 0) return;
 

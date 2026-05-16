@@ -1,5 +1,5 @@
 category: architecture
-updated: 2026-04-29T19:55:00Z
+updated: 2026-05-06T22:35:00Z
 pages:
   - id: lighting-pipeline
     summary: "Shooter.App HDR-linear lighting pipeline: sky, IBL, shadows, bloom, ACES."
@@ -31,3 +31,18 @@ pages:
     tags: [coordinates, axes, left-handed, y-up, viewports, colors]
     rev: 1
     updated: 2026-04-26T12:00:00Z
+  - id: hybrid-cinematic-renderer-plan
+    summary: "Repository-specific plan for a GL 3.3 hybrid cinematic renderer: deferred opaque lighting, SSR, contact shadows, volumetrics, wet materials, and selective temporal stabilization."
+    tags: [renderer, opengl, gl33, deferred, ssr, volumetrics, pbr, wetness, shadows, shooter, roadmap]
+    rev: 1
+    updated: 2026-05-06T22:35:00Z
+  - id: hybrid-cinematic-renderer-workstreams
+    summary: "Kickoff packet for parallel sub-agent implementation of the GL 3.3 hybrid cinematic renderer roadmap."
+    tags: [renderer, opengl, gl33, deferred, ssr, volumetrics, workstreams, sub-agents, shooter]
+    rev: 1
+    updated: 2026-05-06T22:50:00Z
+  - id: hybrid-cinematic-renderer-worker-packets
+    summary: "Concrete worker packets for the first parallel implementation wave of the GL 3.3 hybrid cinematic renderer roadmap."
+    tags: [renderer, opengl, gl33, deferred, sub-agents, ws1, ws2, ws4, shooter]
+    rev: 1
+    updated: 2026-05-06T23:05:00Z

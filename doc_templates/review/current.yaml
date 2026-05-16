@@ -1,8 +1,17 @@
 phase: review
-status: pending
+status: approved
 checklist:
-  - Check buffer layouts and formats for velocity/history targets.
-  - Ensure jitter doesn't break culling or UI.
-  - Ensure previous matrices are actually updated at the correct time (after render, or start of next frame).
-  - Verify velocity calculation math in vertex/fragment shaders.
-  - Add menu toggle to enable/disable TAA and compare against FXAA.
+  - "Confirm the proposal stays within OpenGL 3.3 and fullscreen fragment-shader constraints."
+  - "Confirm the architecture is repository-specific rather than a generic renderer essay."
+  - "Confirm the proposal preserves the project's selective-temporal / crisp-rendering preference and does not quietly reintroduce whole-frame TAA."
+  - "Confirm the pass graph is concrete and ordered: GBuffer -> SSAO -> Deferred Lighting -> SSR -> Volumetrics -> Forward Specials -> Bloom -> Tonemap."
+  - "Confirm the plan distinguishes deferred opaque rendering from forward special-case rendering."
+  - "Confirm the GBuffer layout, probe upgrades, SSR fallback path, and volumetric resolution strategy are explicit."
+  - "Confirm the wiki page was added and indexed under the architecture category."
+  - "Confirm the parallel work breakdown identifies workstreams, dependencies, and merge order suitable for sub-agents."
+findings:
+  - "The proposal is compatible with GL 3.3 and relies on rasterization, fullscreen fragment shaders, screen-space raymarching, and post-processing only."
+  - "The proposal maps directly onto current Shooter.App components such as OpenGLFrameRenderer, HdrTarget, ShadowMap, IblProbe, and WorldRenderer."
+  - "The plan explicitly keeps whole-frame TAA out of the baseline and reserves temporal smoothing for SSR and volumetrics only."
+  - "The wiki architecture page and indexes were updated to persist the design in repository memory."
+  - "The sub-agent plan is parallelizable, but requires an upfront contract freeze for GBuffer layout, pass order, texture-unit usage, and ownership boundaries before coding begins."

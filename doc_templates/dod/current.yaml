@@ -1,28 +1,32 @@
-id: dod-shooter-anisotropy-and-fxaa
-title: DoD — Anisotropic Filtering and FXAA
+id: dod-shooter-hybrid-cinematic-renderer-plan
+title: DoD — Hybrid Cinematic Renderer Planning Deliverable
 status: approved
-parent: req-shooter-anisotropy-and-fxaa
-created_at: 2026-05-06T20:52:00Z
+parent: req-shooter-hybrid-cinematic-renderer
+created_at: 2026-05-06T22:40:00Z
 
 checklist:
-  - item: "Anisotropic filtering enabled for world/material textures"
+  - item: "Requirements artifact updated for the planning request"
     status: done
-  - item: "FXAA implemented in the post process"
+  - item: "Architecture/design artifact updated with repository-specific renderer proposal"
     status: done
-  - item: "FXAA toggle added to the in-game menu"
+  - item: "Wiki architecture page added for the hybrid cinematic renderer plan"
     status: done
-  - item: "Build validation passed"
+  - item: "Wiki indexes updated so the page is discoverable"
     status: done
-  - item: "Format verification passed"
+  - item: "Parallelizable sub-agent implementation plan documented"
     status: done
-  - item: "OpenGL smoke startup passed on dust.shmap"
+  - item: "Review artifact updated for the planning-only deliverable"
     status: done
 
 evidence:
-  build: "dotnet build shooter.slnx -nologo"
-  format: "dotnet format shooter.slnx --verify-no-changes --severity warn -v minimal"
-  smoke: "dotnet run --project src/Shooter.App -- dust.shmap"
+  requirements: "doc_templates/requirements/current.yaml"
+  design: "doc_templates/design/current.yaml"
+  review: "doc_templates/review/current.yaml"
+  wiki: ".ai-team/framework/memory/wiki/architecture/hybrid-cinematic-renderer-plan.md"
+  wiki_indexes:
+    - ".ai-team/framework/memory/wiki/_index.yaml"
+    - ".ai-team/framework/memory/wiki/architecture/_index.yaml"
 
 notes:
-  - "Anisotropic filtering is applied during texture upload in TextureCache."
-  - "FXAA is a lightweight toggle integrated into the existing tone-map pass."
+  - "This DoD covers planning/documentation only. No renderer implementation was performed in this request."
+  - "The implementation plan assumes a contract freeze before parallel sub-agent work begins."

@@ -1,63 +1,71 @@
 ---
 id: shooter-runtime
 cat: architecture
-rev: 3
+rev: 4
 created: 2026-04-29T16:00:00Z
-updated: 2026-05-01T13:05:00Z
-by: coordinator
-tags: [shooter, runtime, opengl, metal, silk-net, gameplay, weapons, rendering, textures, backends]
+updated: 2026-05-06T22:30:00Z
+by: developer
+tags: [shooter, runtime, opengl, metal, silk-net, gameplay, weapons, rendering, textures, backends, deferred, msaa]
 summary: "Shooter.App game runtime: physics, weapons, rendering, asset pipeline."
 refs: [architecture/module-boundaries, decisions/glb-asset-pipeline]
 status: active
 ---
 
-## Pipeline (post-Lighting-Pass)
-See `architecture/lighting-pipeline` for the full HDR pass chain. The production OpenGL backend still draws world geometry into an offscreen HDR target with shadows + IBL ambient + Lambert direct, then bloom + ACES tone map composite to the default framebuffer; HUD on top.
+## Pipeline (current OpenGL runtime)
+See `architecture/lighting-pipeline` for the detailed pass chain. The active production renderer is now an OpenGL **hybrid deferred opaque + forward specials** pipeline.
 
-The Metal backend now renders the static textured brush world, held weapon model, active rocket models, decals/scorches/muzzle flash overlays, SSAO, bloom, and HUD through a fuller multi-pass HDR pipeline. It uses a directional shadow map, HDR scene color + normal MRT, sampleable depth, post-combined SSAO/bloom tone mapping, and a final HUD pass over the drawable.
+Current strategy:
+- render standard opaque world brushes into a multisampled GBuffer
+- resolve and light that GBuffer in a deferred fullscreen pass
+- keep non-standard opaque, water, pickups, viewmodel, rockets, decals, particles, and other special cases on forward/specialized paths
+- resolve the multisampled HDR target before post work such as SSR, bloom, auto-exposure, and tonemap
 
-Current Metal strategy: attach `CAMetalLayer` to the Silk Cocoa window, batch world/model/effect geometry into one explicit dynamic vertex layout, render a stable player-centered directional shadow map, shade the main scene in GPU fragment code using sun + hemispheric ambient + shadow visibility, write HDR color plus view-space normals, run fullscreen SSAO and bloom passes, tone-map to the drawable, then draw HUD quads last. The visual quality pass further adds tuned exposure/bloom defaults, roughness/specular/detail-normal material parameters, softer shadow filtering, distance/height fog, and post color grading so the backend is no longer just feature-complete but also visually better balanced.
+Important current facts:
+- **4x MSAA is still active** on both the GBuffer and the HDR scene target
+- the renderer resolves multisampled attachments into standard 2D textures before most post-processing
+- **volumetric fog was removed** after visual evaluation because it dulled scene color/contrast too much
+- world-surface **relief** is again threaded through the deferred standard-opaque path, so both the relief toggle and relief-strength slider affect the actual main world render
+- default relief strength is now `0.090`
+- recent shadow tuning increased bias / polygon offset and tightened contact-shadow defaults to suppress diagonal self-shadow patterns on walls and floors
 
-Across both backends, the renderer now trends more toward explicit GPU-side material/light/post data than toward deeper CPU-baked final shading. On Metal specifically, a first hybrid path-tracing layer now exists: primary visibility stays rasterized, while a reduced-resolution progressive GI pass reconstructs first-hit raster data, traces secondary visibility against static world triangles, accumulates history while the camera is stable, and blends the result in final post.
+The runtime supports two material-upgrade paths: (1) Shooter-side companion maps discovered by filename convention (`_normal`, `_roughness`, `_metallic`, `_ao`, `_height`), and (2) authored brush-level material properties persisted through `.shmap`. The authored material model currently supports Standard, Water, and Lava behavior families.
 
-This is not a full path-traced renderer yet, but it is the repository's first real raster/path-tracing coexistence point.
-
-The runtime also now supports two material-upgrade paths: (1) a purely Shooter-side fallback where companion normal/roughness/AO maps are discovered by filename convention, and (2) an authored brush-level material-properties model coming from the map editor and `.shmap`. The authored model currently supports Standard, Water, and Lava behavior families with parameters for roughness, specular, normal strength, emissive, opacity, flow, distortion, fresnel, and pulse.
+Metal/backend-abstraction code from earlier work still exists in the repository, but the currently iterated visual reference path is the OpenGL renderer above.
 
 ## Module
-- `Shooter.App` — single-exe game consuming `.shmap` 1.3.0 files via `MapEditor.Formats`.
+- `Shooter.App` — single-exe game consuming `.shmap` 1.4.0 files via `MapEditor.Formats`.
 - Net10.0, Silk.NET windowing, retina via `FramebufferSize`.
-- Rendering is now backend-selected at startup: default `OpenGL`, optional macOS `Metal` bootstrap.
+- Current production visual path is OpenGL with hybrid deferred + forward rendering.
 
 ## Subsystems
-- `Game/`: `GameWorld`, `Player`, `WeaponSystem`, `PickupSystem`, `BulletHoleManager`, `ScorchManager`, `RocketSystem`, `MuzzleFlash`, `TracerSystem` (idle).
+- `Game/`: `GameWorld`, `Player`, `WeaponSystem`, `PickupSystem`, `BulletHoleManager`, `ScorchManager`, `RocketSystem`, `MuzzleFlash`, `TracerSystem`, particles, runtime menu/light settings.
 - `Physics/`: `CollisionWorld` — sphere-vs-triangle, Möller-Trumbore raycast, AABB cull.
-- `Render/`: existing OpenGL feature renderer stack (`WorldRenderer`, `DecalRenderer`, `ScorchRenderer`, `TracerRenderer`, `RocketRenderer`, `WeaponViewmodelRenderer`, `MuzzleFlashRenderer`, `HudRenderer`, shared `TexturedModelRenderer`, `GpuModel`, `ModelData`, `Shaders`, `TextureCache`).
-- `RenderSystem/`: backend abstraction layer (`IRenderBackend`, `RenderBackendFactory`, `OpenGLRenderBackend`, `MetalBootstrapBackend`).
-- `Platform/Metal/`: tiny Objective-C / QuartzCore / Metal interop helpers for the bootstrap backend.
+- `Render/`: OpenGL renderer stack (`WorldRenderer`, `WorldGBufferRenderer`, `DeferredLightingPass`, `ContactShadowPass`, `SsrPass`, `DecalRenderer`, `ScorchRenderer`, `TracerRenderer`, `RocketRenderer`, `WeaponViewmodelRenderer`, `MuzzleFlashRenderer`, `HudRenderer`, shared `TexturedModelRenderer`, `GpuModel`, `ModelData`, `Shaders`, `TextureCache`).
+- `RenderSystem/`: frame orchestration / backend ownership (`OpenGLFrameRenderer`, `OpenGLRenderBackend`, resource containers, and older backend-abstraction leftovers from the Metal work).
+- `Platform/Metal/`: earlier Objective-C / QuartzCore / Metal interop helpers retained in-repo.
 
 ## Player + physics
-- Sphere collider (`Radius=0.4`); `HalfHeight=0.9` is *eye geometry only*, never used in collision math.
-- Spawn: snap-to-floor via downward raycast; sphere center sits `Radius+0.02` above the floor.
+- Sphere collider (`Radius=0.4`); `HalfHeight=0.9` is eye/camera geometry only.
+- Spawn snap-to-floor via downward raycast; sphere center sits `Radius + 0.02` above the floor.
 - `OnUpdate` clamps `dt` to `1/30s`; `Velocity.Y` clamped to terminal `-24 m/s` to prevent tunneling.
 
 ## Weapons
 - 3 kinds: AK-47 (auto, hitscan), Shotgun (8 pellets, hitscan), RocketLauncher (projectile, splash).
 - `WeaponDef` carries `FireMode`, `ProjectileSpeed`, `SplashRadius`, `RecoilStrength`.
-- Hitscan weapons emit a view-space muzzle flash (no tracers). Rocket spawns a `Rocket` entity.
+- Hitscan weapons emit a view-space muzzle flash. Rocket spawns a `Rocket` entity.
 
 ## View-space anchoring
 - `WeaponViewmodelRenderer.MuzzleViewOffset = (0.20, -0.16, -0.55)`, `FovYRadians = 75°`.
 - Rocket muzzle world-pos derives from this offset using camera basis so projectiles leave the visible barrel.
-- Per-weapon flash anchor + `RecoilStrength` tuned at the trigger site in `Program.cs` switch.
+- Per-weapon flash anchor + `RecoilStrength` tuned at the trigger site in `Program.cs` / runtime setup.
 
-## World-brush texturing
-- Static world brushes can now bind a diffuse/base-color texture when `material_name` is an image path (`.png`, `.jpg`, `.jpeg`, `.bmp`).
+## World-brush texturing + materials
+- Static world brushes can bind a diffuse/base-color texture when `material_name` is an image path.
 - Resolution order: absolute path → `AssetLocator.Root`-relative path → cwd-relative path.
-- `GameWorld.FromScene` resolves `WorldBrush.TexturePath`; missing files degrade to the old hashed tint path instead of failing map load.
-- `WorldRenderer` owns a small `TextureCache` keyed by absolute file path; textures are uploaded once, sampled through the existing brush UVs from `MeshGenerator`, and lit by the same HDR/IBL/shadow pipeline as before.
-- Current scope is **one texture per brush**, not per-face `surface_mappings` in Shooter.App.
+- Missing files degrade to hashed tint instead of failing map load.
+- `TextureCache` uploads and caches base color plus companion maps once per resolved texture path.
+- Brush material behavior can be authored directly in `.shmap` through brush-level `material_properties`.
 
 ## Scorch + flash
-- Rocket detonation → one `Scorch` decal sized at ~55% of splash radius. Noise-perturbed radial smudge shader.
+- Rocket detonation → one `Scorch` decal sized at ~55% of splash radius.
 - Muzzle flash: additive cross-quad billboard, view-space, ~55 ms, randomized rotation/scale per shot.
