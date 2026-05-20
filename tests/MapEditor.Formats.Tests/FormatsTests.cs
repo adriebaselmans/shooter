@@ -146,7 +146,7 @@ public sealed class MapSerializerTests
         scene.AddBrush(brush);
 
         var dto = MapSerializer.FromScene(scene);
-        dto.FormatVersion.Should().Be("1.1.0");
+        dto.FormatVersion.Should().Be("1.4.0");
         dto.Brushes[0].Geometry.Should().NotBeNull();
 
         var roundTripped = MapSerializer.ToScene(dto);

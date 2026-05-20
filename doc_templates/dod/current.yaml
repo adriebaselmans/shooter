@@ -1,32 +1,32 @@
-id: dod-shooter-hybrid-cinematic-renderer-plan
-title: DoD — Hybrid Cinematic Renderer Planning Deliverable
+id: dod-oasis-refinery-layout-pass
+title: DoD - Oasis Refinery Compact Map Rework
 status: approved
-parent: req-shooter-hybrid-cinematic-renderer
-created_at: 2026-05-06T22:40:00Z
+parent: req-oasis-refinery-layout-pass
+created_at: 2026-05-20T20:20:00Z
 
 checklist:
-  - item: "Requirements artifact updated for the planning request"
+  - item: "Requirements artifact updated for the map rework"
     status: done
-  - item: "Architecture/design artifact updated with repository-specific renderer proposal"
+  - item: "Design artifact updated with the final lane and material plan"
     status: done
-  - item: "Wiki architecture page added for the hybrid cinematic renderer plan"
+  - item: "oasis_refinery.shmap rewritten to the compact three-route layout"
     status: done
-  - item: "Wiki indexes updated so the page is discoverable"
+  - item: "Two elevated areas are present and stair-accessible"
     status: done
-  - item: "Parallelizable sub-agent implementation plan documented"
+  - item: "Review artifact updated with final findings"
     status: done
-  - item: "Review artifact updated for the planning-only deliverable"
+  - item: "Map JSON validated locally"
+    status: done
+  - item: "Cheap .NET format-layer validation completed successfully"
     status: done
 
 evidence:
   requirements: "doc_templates/requirements/current.yaml"
   design: "doc_templates/design/current.yaml"
   review: "doc_templates/review/current.yaml"
-  wiki: ".ai-team/framework/memory/wiki/architecture/hybrid-cinematic-renderer-plan.md"
-  wiki_indexes:
-    - ".ai-team/framework/memory/wiki/_index.yaml"
-    - ".ai-team/framework/memory/wiki/architecture/_index.yaml"
+  implementation: "oasis_refinery.shmap"
+  validation: "dotnet test tests/MapEditor.Formats.Tests/MapEditor.Formats.Tests.csproj --no-restore"
 
 notes:
-  - "This DoD covers planning/documentation only. No renderer implementation was performed in this request."
-  - "The implementation plan assumes a contract freeze before parallel sub-agent work begins."
+  - "No new external textures were required; the existing local CC0 texture set was sufficient."
+  - "Industrial realism comes from combining authored material_properties with the local metal companion maps resolved by filename convention."

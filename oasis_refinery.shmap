@@ -1,0 +1,822 @@
+{
+  "format_version": "1.4.0",
+  "editor_version": "shooter-handcrafted-2.0",
+  "world_settings": {
+    "ambient_color": [0.11, 0.11, 0.13],
+    "sky_color": [0.64, 0.76, 0.94]
+  },
+  "lights": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "name": "Sun",
+      "light_type": "point",
+      "transform": {
+        "position": [0.0, 110.0, 0.0],
+        "rotation": [56.0, 32.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      },
+      "color": [1.0, 0.95, 0.84],
+      "intensity": 1.05,
+      "range": 1200.0
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000002",
+      "name": "West Platform Lamp",
+      "light_type": "point",
+      "transform": {
+        "position": [-12.0, 5.0, 13.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      },
+      "color": [0.12, 0.88, 0.18],
+      "intensity": 0.72,
+      "range": 18.0
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000003",
+      "name": "East Platform Lamp",
+      "light_type": "point",
+      "transform": {
+        "position": [12.0, 5.0, -13.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      },
+      "color": [0.92, 0.24, 0.14],
+      "intensity": 0.72,
+      "range": 18.0
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000004",
+      "name": "North Bridge Lamp",
+      "light_type": "point",
+      "transform": {
+        "position": [0.0, 3.6, 14.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      },
+      "color": [1.0, 0.84, 0.46],
+      "intensity": 0.42,
+      "range": 14.0
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000005",
+      "name": "South Bridge Lamp",
+      "light_type": "point",
+      "transform": {
+        "position": [0.0, 3.6, -14.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      },
+      "color": [1.0, 0.84, 0.46],
+      "intensity": 0.42,
+      "range": 14.0
+    }
+  ],
+  "brushes": [
+    {
+      "id": "ground",
+      "name": "Courtyard Sand",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [0.0, -0.8, 0.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [76.0, 1.6, 76.0]
+      },
+      "material_name": "textures/dust/ground_sand_1k.jpg"
+    },
+    {
+      "id": "canal_water",
+      "name": "Central Canal Water",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [0.0, 0.08, 0.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [8.0, 0.1, 24.0]
+      },
+      "material_name": "textures/dust/seamless_clear_water_surface_pbr_texture_with_light_reflections_2k_tile.png",
+      "material_properties": {
+        "kind": "water",
+        "roughness": 0.04,
+        "metallic": 0.0,
+        "specular_strength": 0.78,
+        "normal_strength": 1.0,
+        "emissive_strength": 0.0,
+        "opacity": 0.82,
+        "flow_speed": [0.05, 0.02],
+        "distortion_strength": 0.09,
+        "fresnel_strength": 0.92,
+        "pulse_strength": 0.0
+      }
+    },
+    {
+      "id": "canal_wall_w",
+      "name": "Canal Retaining Wall West",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [-4.9, 0.55, 0.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [0.6, 1.1, 24.0]
+      },
+      "material_name": "textures/dust/wall_stone_1k.jpg"
+    },
+    {
+      "id": "canal_wall_e",
+      "name": "Canal Retaining Wall East",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [4.9, 0.55, 0.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [0.6, 1.1, 24.0]
+      },
+      "material_name": "textures/dust/wall_stone_1k.jpg"
+    },
+    {
+      "id": "bridge_n",
+      "name": "North Canal Bridge",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [0.0, 0.65, 14.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [11.0, 0.5, 2.7]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg",
+      "material_properties": {
+        "kind": "standard",
+        "roughness": 0.88,
+        "metallic": 0.0,
+        "specular_strength": 0.08,
+        "normal_strength": 0.30,
+        "emissive_strength": 0.0,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": "bridge_s",
+      "name": "South Canal Bridge",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [0.0, 0.65, -14.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [11.0, 0.5, 2.7]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg",
+      "material_properties": {
+        "kind": "standard",
+        "roughness": 0.88,
+        "metallic": 0.0,
+        "specular_strength": 0.08,
+        "normal_strength": 0.30,
+        "emissive_strength": 0.0,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": "perim_n",
+      "name": "North Outer Wall",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [0.0, 3.0, 37.4],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [76.0, 6.0, 0.8]
+      },
+      "material_name": "textures/dust/outer_wall_brick_1k.jpg"
+    },
+    {
+      "id": "perim_s",
+      "name": "South Outer Wall",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [0.0, 3.0, -37.4],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [76.0, 6.0, 0.8]
+      },
+      "material_name": "textures/dust/outer_wall_brick_1k.jpg"
+    },
+    {
+      "id": "perim_w",
+      "name": "West Outer Wall",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [-37.4, 3.0, 0.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [0.8, 6.0, 76.0]
+      },
+      "material_name": "textures/dust/outer_wall_brick_1k.jpg"
+    },
+    {
+      "id": "perim_e",
+      "name": "East Outer Wall",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [37.4, 3.0, 0.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [0.8, 6.0, 76.0]
+      },
+      "material_name": "textures/dust/outer_wall_brick_1k.jpg"
+    },
+    {
+      "id": "north_cover_w",
+      "name": "North Spawn Wall West",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [-16.0, 1.9, 31.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [8.0, 3.8, 1.2]
+      },
+      "material_name": "textures/dust/wall_plaster_1k.jpg"
+    },
+    {
+      "id": "north_cover_e",
+      "name": "North Spawn Wall East",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [16.0, 1.9, 31.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [8.0, 3.8, 1.2]
+      },
+      "material_name": "textures/dust/wall_plaster_1k.jpg"
+    },
+    {
+      "id": "south_cover_w",
+      "name": "South Spawn Wall West",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [-16.0, 1.9, -31.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [8.0, 3.8, 1.2]
+      },
+      "material_name": "textures/dust/wall_plaster_1k.jpg"
+    },
+    {
+      "id": "south_cover_e",
+      "name": "South Spawn Wall East",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [16.0, 1.9, -31.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [8.0, 3.8, 1.2]
+      },
+      "material_name": "textures/dust/wall_plaster_1k.jpg"
+    },
+    {
+      "id": "west_refinery_mass",
+      "name": "West Pump House",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [-23.5, 2.5, 10.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [7.5, 5.0, 12.0]
+      },
+      "material_name": "textures/dust/metal_rust_1k.jpg",
+      "material_properties": {
+        "kind": "standard",
+        "roughness": 0.62,
+        "metallic": 0.18,
+        "specular_strength": 0.24,
+        "normal_strength": 0.75,
+        "emissive_strength": 0.0,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": "west_platform",
+      "name": "West Service Platform",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [-12.0, 3.0, 10.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [4.8, 0.4, 10.0]
+      },
+      "material_name": "textures/dust/metal_panel_1k.jpg",
+      "material_properties": {
+        "kind": "standard",
+        "roughness": 0.16,
+        "metallic": 0.62,
+        "specular_strength": 0.82,
+        "normal_strength": 0.85,
+        "emissive_strength": 0.0,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": "west_platform_cover",
+      "name": "West Platform Rail",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [-12.0, 4.2, 16.4],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [4.8, 1.0, 0.8]
+      },
+      "material_name": "textures/dust/metal_panel_1k.jpg",
+      "material_properties": {
+        "kind": "standard",
+        "roughness": 0.18,
+        "metallic": 0.56,
+        "specular_strength": 0.75,
+        "normal_strength": 0.80,
+        "emissive_strength": 0.0,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": "west_step_1",
+      "name": "West Stairs Step 1",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [-7.2, 0.45, 14.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.4, 0.35, 2.8]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg"
+    },
+    {
+      "id": "west_step_2",
+      "name": "West Stairs Step 2",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [-8.4, 1.15, 14.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.4, 0.35, 2.8]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg"
+    },
+    {
+      "id": "west_step_3",
+      "name": "West Stairs Step 3",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [-9.6, 1.85, 14.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.4, 0.35, 2.8]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg"
+    },
+    {
+      "id": "west_step_4",
+      "name": "West Stairs Step 4",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [-10.8, 2.55, 14.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.4, 0.35, 2.8]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg"
+    },
+    {
+      "id": "west_machine",
+      "name": "West Boiler",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [-18.0, 1.5, 8.5],
+        "rotation": [0.0, 38.0, 0.0],
+        "scale": [2.6, 3.0, 2.6]
+      },
+      "material_name": "textures/dust/metal_rust_1k.jpg",
+      "material_properties": {
+        "kind": "standard",
+        "roughness": 0.60,
+        "metallic": 0.14,
+        "specular_strength": 0.18,
+        "normal_strength": 0.70,
+        "emissive_strength": 0.0,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": "west_lane_cover",
+      "name": "West Lane Concrete",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [-18.0, 1.1, -8.0],
+        "rotation": [0.0, 20.0, 0.0],
+        "scale": [3.2, 2.2, 1.5]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg"
+    },
+    {
+      "id": "west_awning",
+      "name": "West Market Awning",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [-24.0, 3.7, 27.5],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [5.5, 0.25, 3.0]
+      },
+      "material_name": "textures/dust/awning_blue_planks_1k.jpg"
+    },
+    {
+      "id": "east_loading_mass",
+      "name": "East Loading Bay",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [23.5, 2.5, -10.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [7.5, 5.0, 12.0]
+      },
+      "material_name": "textures/dust/metal_rust_1k.jpg",
+      "material_properties": {
+        "kind": "standard",
+        "roughness": 0.62,
+        "metallic": 0.18,
+        "specular_strength": 0.24,
+        "normal_strength": 0.75,
+        "emissive_strength": 0.0,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": "east_platform",
+      "name": "East Loading Platform",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [12.0, 3.0, -10.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [4.8, 0.4, 10.0]
+      },
+      "material_name": "textures/dust/metal_panel_1k.jpg",
+      "material_properties": {
+        "kind": "standard",
+        "roughness": 0.16,
+        "metallic": 0.62,
+        "specular_strength": 0.82,
+        "normal_strength": 0.85,
+        "emissive_strength": 0.0,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": "east_platform_cover",
+      "name": "East Platform Rail",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [12.0, 4.2, -16.4],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [4.8, 1.0, 0.8]
+      },
+      "material_name": "textures/dust/metal_panel_1k.jpg",
+      "material_properties": {
+        "kind": "standard",
+        "roughness": 0.18,
+        "metallic": 0.56,
+        "specular_strength": 0.75,
+        "normal_strength": 0.80,
+        "emissive_strength": 0.0,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": "east_step_1",
+      "name": "East Stairs Step 1",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [7.2, 0.45, -14.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.4, 0.35, 2.8]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg"
+    },
+    {
+      "id": "east_step_2",
+      "name": "East Stairs Step 2",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [8.4, 1.15, -14.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.4, 0.35, 2.8]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg"
+    },
+    {
+      "id": "east_step_3",
+      "name": "East Stairs Step 3",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [9.6, 1.85, -14.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.4, 0.35, 2.8]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg"
+    },
+    {
+      "id": "east_step_4",
+      "name": "East Stairs Step 4",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [10.8, 2.55, -14.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.4, 0.35, 2.8]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg"
+    },
+    {
+      "id": "east_crate_stack_low",
+      "name": "East Crate Stack Low",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [17.5, 1.0, -8.0],
+        "rotation": [0.0, 12.0, 0.0],
+        "scale": [2.0, 2.0, 2.0]
+      },
+      "material_name": "textures/dust/wood_planks_1k.jpg"
+    },
+    {
+      "id": "east_crate_stack_high",
+      "name": "East Crate Stack High",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [19.9, 1.6, -11.5],
+        "rotation": [0.0, -10.0, 0.0],
+        "scale": [1.5, 3.2, 1.5]
+      },
+      "material_name": "textures/dust/wood_planks_1k.jpg"
+    },
+    {
+      "id": "east_lane_cover",
+      "name": "East Lane Concrete",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [18.0, 1.1, 8.0],
+        "rotation": [0.0, -20.0, 0.0],
+        "scale": [3.2, 2.2, 1.5]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg"
+    },
+    {
+      "id": "east_awning",
+      "name": "East Market Awning",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [24.0, 3.7, -27.5],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [5.5, 0.25, 3.0]
+      },
+      "material_name": "textures/dust/awning_blue_planks_1k.jpg"
+    },
+    {
+      "id": "mid_cover_w",
+      "name": "Mid Cover West",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [-15.0, 1.3, 0.0],
+        "rotation": [0.0, 10.0, 0.0],
+        "scale": [2.8, 2.6, 2.1]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg"
+    },
+    {
+      "id": "mid_cover_e",
+      "name": "Mid Cover East",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [15.0, 1.3, 0.0],
+        "rotation": [0.0, -10.0, 0.0],
+        "scale": [2.8, 2.6, 2.1]
+      },
+      "material_name": "textures/dust/cover_concrete_1k.jpg"
+    },
+    {
+      "id": "mid_crate_n",
+      "name": "Mid Crate North",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [0.0, 1.0, 7.5],
+        "rotation": [0.0, 24.0, 0.0],
+        "scale": [2.2, 2.0, 1.6]
+      },
+      "material_name": "textures/dust/wood_planks_1k.jpg"
+    },
+    {
+      "id": "mid_crate_s",
+      "name": "Mid Crate South",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [0.0, 1.0, -7.5],
+        "rotation": [0.0, -24.0, 0.0],
+        "scale": [2.2, 2.0, 1.6]
+      },
+      "material_name": "textures/dust/wood_planks_1k.jpg"
+    },
+    {
+      "id": "west_kiosk",
+      "name": "West Service Kiosk",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [-28.0, 1.8, 0.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [3.5, 3.6, 5.2]
+      },
+      "material_name": "textures/dust/wall_plaster_1k.jpg"
+    },
+    {
+      "id": "east_kiosk",
+      "name": "East Service Kiosk",
+      "operation": "additive",
+      "primitive_type": "box",
+      "transform": {
+        "position": [28.0, 1.8, 0.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [3.5, 3.6, 5.2]
+      },
+      "material_name": "textures/dust/wall_plaster_1k.jpg"
+    }
+  ],
+  "spawn_points": [
+    {
+      "id": "spawn_nw_1",
+      "name": "Northwest Spawn",
+      "spawn_type": "player",
+      "transform": {
+        "position": [-26.0, 1.0, 31.5],
+        "rotation": [0.0, 180.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      }
+    },
+    {
+      "id": "spawn_nw_2",
+      "name": "North Inner Spawn",
+      "spawn_type": "player",
+      "transform": {
+        "position": [-10.0, 1.0, 29.0],
+        "rotation": [0.0, 180.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      }
+    },
+    {
+      "id": "spawn_ne_1",
+      "name": "Northeast Spawn",
+      "spawn_type": "player",
+      "transform": {
+        "position": [10.0, 1.0, 29.0],
+        "rotation": [0.0, 180.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      }
+    },
+    {
+      "id": "spawn_ne_2",
+      "name": "North Far Spawn",
+      "spawn_type": "player",
+      "transform": {
+        "position": [26.0, 1.0, 31.5],
+        "rotation": [0.0, 180.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      }
+    },
+    {
+      "id": "spawn_sw_1",
+      "name": "Southwest Spawn",
+      "spawn_type": "player",
+      "transform": {
+        "position": [-26.0, 1.0, -31.5],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      }
+    },
+    {
+      "id": "spawn_sw_2",
+      "name": "South Inner Spawn",
+      "spawn_type": "player",
+      "transform": {
+        "position": [-10.0, 1.0, -29.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      }
+    },
+    {
+      "id": "spawn_se_1",
+      "name": "Southeast Spawn",
+      "spawn_type": "player",
+      "transform": {
+        "position": [10.0, 1.0, -29.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      }
+    },
+    {
+      "id": "spawn_se_2",
+      "name": "South Far Spawn",
+      "spawn_type": "player",
+      "transform": {
+        "position": [26.0, 1.0, -31.5],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      }
+    }
+  ],
+  "pickups": [
+    {
+      "id": "pk_rl_west_platform",
+      "name": "West Platform Rocket Launcher",
+      "kind": "WeaponRocketLauncher",
+      "transform": {
+        "position": [-12.0, 3.7, 10.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      }
+    },
+    {
+      "id": "pk_shotgun_east_platform",
+      "name": "East Platform Shotgun",
+      "kind": "WeaponShotgun",
+      "transform": {
+        "position": [12.0, 3.7, -10.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      }
+    },
+    {
+      "id": "pk_hp_mid",
+      "name": "Canal Health Large",
+      "kind": "HealthLarge",
+      "transform": {
+        "position": [0.0, 0.6, 0.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      },
+      "amount": 50
+    },
+    {
+      "id": "pk_ammo_rocket",
+      "name": "North Bridge Rocket Ammo",
+      "kind": "AmmoRocket",
+      "transform": {
+        "position": [0.0, 1.1, 14.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      },
+      "amount": 6
+    },
+    {
+      "id": "pk_ammo_shotgun",
+      "name": "South Bridge Shotgun Ammo",
+      "kind": "AmmoShotgun",
+      "transform": {
+        "position": [0.0, 1.1, -14.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      },
+      "amount": 16
+    },
+    {
+      "id": "pk_hp_west",
+      "name": "West Lane Health Small",
+      "kind": "HealthSmall",
+      "transform": {
+        "position": [-21.5, 0.6, -18.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      },
+      "amount": 25
+    },
+    {
+      "id": "pk_hp_east",
+      "name": "East Lane Health Small",
+      "kind": "HealthSmall",
+      "transform": {
+        "position": [21.5, 0.6, 18.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      },
+      "amount": 25
+    }
+  ]
+}

@@ -138,14 +138,5 @@ public sealed class LightingEnvironment
     /// <summary>Enables the bloom post-pass contribution.</summary>
     public bool BloomEnabled { get; set; } = true;
 
-    // -----------------------------------------------------------------
-    // Hybrid path tracing (Metal)
-    // -----------------------------------------------------------------
 
-    /// <summary>Enables the Metal hybrid path-traced indirect-lighting layer.
-    /// Disabled by default because the current experimental pass can push the Metal image toward an overall sky-blue bias.</summary>
-    public bool HybridPathTracingEnabled { get; set; } = false;
-
-    /// <summary>Blend strength of the accumulated path-traced GI into the final image.</summary>
-    public float HybridPathTracingStrength { get; set; } = 0.38f;
 }

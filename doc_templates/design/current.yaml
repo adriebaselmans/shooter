@@ -1,102 +1,34 @@
 phase: architecture
 status: approved
-system: Shooter.App
+system: Shooter.App (Map Assets)
 components:
-  - OpenGLFrameRenderer
-  - HdrTarget
-  - GBufferTarget
-  - WorldRenderer / WorldGBufferRenderer
-  - DeferredLightingPass
-  - SsrPass
-  - VolumetricFogPass
-  - ShadowMap
-  - IblProbe
-  - PostFx
+  - MapSerializer
+  - Shooter.App.TextureCache
+  - Shooter.App.MaterialMapConventions
+  - WorldGeometry
 
 design:
-  - "Adopt a hybrid deferred pipeline for opaque world geometry only: ShadowMap -> GBuffer -> Resolve -> SSAO -> DeferredLighting -> SSR -> Volumetrics -> Forward specials -> Bloom -> Tonemap."
-  - "Keep viewmodel, particles, decals, muzzle flashes, tracers, water, and optional SDF VFX in forward/specialized passes rather than migrating everything to deferred at once."
-  - "Introduce a dedicated GBufferTarget separate from HdrTarget. GBuffer stores compact material data and depth; final HDR lighting/compositing still lands in HdrTarget."
-  - "Use depth reconstruction instead of a position buffer. Recommended resolved GBuffer layout: G0=RGBA8(albedo.rgb, ao), G1=RG16F(octa normal), G2=RGBA8(roughness, metallic, emissive, wetness), plus depth24."
-  - "Upgrade IblProbe to support a specular prefiltered environment cubemap in addition to the existing sky and diffuse irradiance cubemaps. SSR fallback and wet materials depend on this."
-  - "Implement deferred fullscreen PBR lighting as the new opaque world lighting core. Reuse current Cook-Torrance footing, shadow map, fog parameters, and environment lighting contracts where possible."
-  - "Implement half-resolution SSR with roughness-aware fading, edge fade, thickness tests, binary search refinement, and mandatory cubemap/specular-environment fallback."
-  - "Implement short-range screen-space contact shadows as a separate or modular deferred term; use them to complement, not replace, filtered sun shadow maps."
-  - "Implement volumetric fog as a quarter-resolution fullscreen raymarch with sparse shadow sampling, temporal accumulation, and bilateral/depth-aware upsampling."
-  - "Use selective temporal stabilization only for noisy effects (SSR and volumetrics first). Do not reintroduce whole-frame TAA as the default anti-aliasing path."
-  - "Represent wetness as a material scalar/channel that darkens diffuse slightly, lowers roughness, boosts Fresnel/reflection response, and biases surfaces toward SSR/specular fallback."
-  - "Preserve MSAA for the geometry stage, then resolve before fullscreen lighting/post. Accept that deferred/post stages operate on resolved textures as the practical GL 3.3 compromise."
-  - "Phase the implementation: (1) deferred foundation, (2) specular environment, (3) SSR, (4) wetness, (5) contact shadows + soft shadow filtering, (6) volumetrics, (7) temporal stabilization, (8) optional SDF VFX."
+  - "Use a compact 76x76 courtyard footprint to reduce dead travel time and keep engagements immediate."
+  - "Anchor the layout with a narrow central canal running north-south, then create safe crossings at two short bridges to support fast mid fights."
+  - "Build three readable combat routes: a west pump-house lane, a risky center canal lane, and an east loading-bay lane."
+  - "Create two mirrored elevated positions: a west service platform and an east loading platform, each reached by four simple stair brushes rather than jumps."
+  - "Break long spawn-to-mid sightlines with plaster spawn walls, kiosks, lane cover, and small wood/concrete props."
+  - "Keep the world grounded in a Dust-like refinery/oasis look using sand, brick, plaster, concrete, wood, rusted metal, blue awnings, and authored canal water."
+  - "Use textures/dust/metal_panel_1k.jpg and textures/dust/metal_rust_1k.jpg on key industrial surfaces so the renderer can automatically resolve _normal, _roughness, _metallic, and _height companions."
+  - "Tune material_properties explicitly: low-roughness/high-metallic values for catwalk metal, rougher values for corroded machinery, and water kind properties for animated reflections/refraction."
+  - "Keep pickups exposed on bridges, platforms, and lane edges so stronger resources reinforce movement and map control."
 
 parallel_plan:
   preconditions:
-    - "Architect defines and freezes shared contracts first: GBuffer layout, texture units, pass order, common uniform blocks/names, and ownership boundaries."
-    - "Coordinator opens a shared integration branch only after the contract doc is accepted."
+    - "Existing local CC0 texture set under assets/textures/dust/ is sufficient; no new downloads are required."
   workstreams:
     - id: WS1
-      owner: Foundation / Deferred Core
+      owner: Developer
       scope:
-        - "Add GBufferTarget and resolve path."
-        - "Split opaque world rendering into a GBuffer-writing pass."
-        - "Add DeferredLightingPass with current PBR/shadow/IBL parity."
-        - "Refactor OpenGLFrameRenderer pass order around the new opaque path."
+        - "Rewrite oasis_refinery.shmap with the new lane structure, stairs, cover, lights, spawns, and pickups."
       outputs:
-        - "Opaque deferred world parity branch."
+        - "oasis_refinery.shmap"
       dependencies: []
-      can_run_in_parallel_with: [WS2, WS4]
-    - id: WS2
-      owner: Environment / Reflection Infrastructure
-      scope:
-        - "Upgrade IblProbe to produce a prefiltered specular cubemap."
-        - "Define roughness-to-mip sampling contract."
-        - "Prepare shared reflection helpers used by deferred lighting and SSR fallback."
-      outputs:
-        - "Specular environment probe branch."
-      dependencies: []
-      can_run_in_parallel_with: [WS1, WS4]
-    - id: WS3
-      owner: SSR
-      scope:
-        - "Implement SsrPass using resolved depth, normal, lit HDR, and specular fallback."
-        - "Add confidence/fallback blending, roughness fade, and edge handling."
-        - "Integrate optional SSR-only temporal history after the base pass is stable."
-      outputs:
-        - "Half-resolution SSR branch."
-      dependencies: [WS1, WS2]
-      can_run_in_parallel_with: [WS5]
-    - id: WS4
-      owner: Shadow Quality / Contact
-      scope:
-        - "Improve sun shadow filtering (PCF/PCSS-lite)."
-        - "Implement short-range contact shadow fullscreen pass or modular deferred term."
-      outputs:
-        - "Shadow quality branch."
-      dependencies: []
-      can_run_in_parallel_with: [WS1, WS2, WS5]
-    - id: WS5
-      owner: Atmospherics / Temporal
-      scope:
-        - "Implement quarter-resolution volumetric fog raymarch."
-        - "Add effect-local temporal accumulation/history for volumetrics."
-        - "Integrate bilateral/depth-aware upsample and HDR composite."
-      outputs:
-        - "Volumetrics branch."
-      dependencies: [WS1]
-      can_run_in_parallel_with: [WS3, WS4]
-    - id: WS6
-      owner: Materials / Wetness / Content
-      scope:
-        - "Add wetness parameter through material/runtime data paths."
-        - "Apply wetness in deferred lighting and SSR weighting."
-        - "Author a small validation set of wet reflective surfaces in dust.shmap or successor maps."
-      outputs:
-        - "Wet materials branch."
-      dependencies: [WS1, WS2]
-      can_run_in_parallel_with: [WS3, WS5]
+      can_run_in_parallel_with: []
   merge_order:
-    - "Merge WS1 first; it defines the runtime frame graph."
-    - "Merge WS2 second or alongside WS1 if the probe contract stays stable."
-    - "Merge WS4 next because shadow quality is largely orthogonal and improves the base look immediately."
-    - "Merge WS3 and WS6 after WS1+WS2 land."
-    - "Merge WS5 after WS1 lands; then wire temporal smoothing once the fog path is visually stable."
-    - "Run a final integration pass to reconcile texture units, pass ordering, and shared post-processing resources."
+    - "Validate JSON structure and perform a cheap .NET map-format confidence check after implementation."

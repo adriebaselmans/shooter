@@ -289,7 +289,7 @@ public sealed class MeshGeneratorTests
         var topLeft = GetUv(mesh, 0);
         var bottomLeft = GetUv(mesh, 1);
         var bottomRight = GetUv(mesh, 2);
-        var topRight = GetUv(mesh, 3);
+        var topRight = GetUv(mesh, 5);
 
         bottomLeft.X.Should().BeApproximately(topLeft.X, 0.0001f);
         bottomRight.X.Should().BeApproximately(topRight.X, 0.0001f);
